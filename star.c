@@ -1,44 +1,104 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-typedef unsigned short uint16_t;            // two byte unsigned integer
-typedef unsigned int uint32_t;              // four byte unsigned integer
-typedef int int32_t;
-// uint64_t already declared in stdint.h
+typedef unsigned char uint8_t;      // single byte
+typedef unsigned short uint16_t;    // two byte unsigned integer
+typedef unsigned int uint32_t;      // four byte unsigned integer
+                                    // uint64_t already declared in stdint.h
 
-struct star
-{
-    uint32_t catalogNumber;  // not a type???
-    uint64_t rightAscension;
-    uint64_t declination;
-    float magnitude;
-};
-
- 
 /*
-Why use a binary format as opposed to ASCII or JSON. Binary version is far more condensed and easy to serialze.
+    BSC5 is stored in big endian format???
+*/
+/*
+Why use a binary format as opposed to ASCII or JSON. Binary version is far more condensed and easy to serialize.
 Screen saver aims to be lightweight--the binary file is ~5x as small as the smallest available JSON file.
 */
 
-struct star entryToStar(uint16_t *entry)
+uint16_t format_uint16(unsigned int index, uint8_t *buffer)
+{
+    uint16_t result = 0x0000;
+    for (int i = 0; i < sizeof(uint16_t); ++i)
+    {
+        result = result | (uint16_t) buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+
+uint32_t format_uint32(unsigned int index, uint8_t *buffer)
+{
+    uint32_t result = 0x00000000;
+    for (int i = 0; i < sizeof(uint32_t); ++i)
+    {
+        result = result | (uint32_t) buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+
+uint64_t format_uint64(unsigned int index, uint8_t *buffer)
+{
+    uint64_t result = 0x0000000000000000;
+    for (int i = 0; i < sizeof(uint64_t); ++i)
+    {
+        result = result | (uint64_t)buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+
+float format_float32(unsigned int index, uint8_t *buffer)
+{
+    float f;
+    
+    // Effectively reverse endianness
+    uint32_t reverse = format_uint32(index, buffer);
+
+    memcpy(&f, &reverse, sizeof(float));
+    return f;
+}
+
+
+double format_double64(unsigned int index, uint8_t *buffer)
+{
+    double d;
+
+    // Effectively reverse endianness
+    uint64_t reverse = format_uint64(index, buffer);
+
+    memcpy(&d, &reverse, sizeof(double));
+    return d;
+}
+
+struct star
+{
+    float catalogNumber;
+    double rightAscension;
+    double declination;
+    float magnitude;
+};
+
+void printStar(struct star *star)
+{
+    printf("ID#: %f\n", star->catalogNumber);
+    printf("RA: %f\n", star->rightAscension);
+    printf("DC: %f\n", star->declination);
+    printf("Mag: %f\n", star->magnitude);
+    return;
+}
+
+struct star entryToStar(uint8_t *entry)
 {
 
     struct star starData;
 
     // BSC5 Entry format
-    starData.catalogNumber =    (uint32_t) *(entry) << 16 |
-                                (uint32_t) *(entry + 1);
-    starData.rightAscension =   (uint64_t) *(entry + 2) << 48 |
-                                (uint64_t) *(entry + 3) << 32 |
-                                (uint64_t) *(entry + 4) << 16 |
-                                (uint64_t) *(entry + 5);
-    starData.declination =      (uint64_t) *(entry + 6) << 48 |
-                                (uint64_t) *(entry + 7) << 32 |
-                                (uint64_t) *(entry + 8) << 16 |
-                                (uint64_t) *(entry + 9);
-                                // Don't care about spectral type
-    starData.magnitude =        *(entry + 11); // float is 4 bytes--how to convert this?
+    starData.catalogNumber = format_float32(0, entry);
+    starData.rightAscension = format_double64(4, entry);
+    starData.declination = format_double64(12, entry);
+    starData.magnitude = (float)format_uint16(22, entry) / 100;
 
     return starData;
 }
@@ -51,40 +111,35 @@ struct star* processDatabase(const char *filePath)
     filePointer = fopen(filePath, "rb");
     
     // header is defined as 28 bytes
-    uint32_t headerBuffer[7];
+    uint8_t headerBuffer[28];
 
     fread(headerBuffer, sizeof(headerBuffer), 1, filePointer);
 
-    uint32_t numStars = abs((int32_t) headerBuffer[2]); // signed
-    uint32_t bytesPerEntry = headerBuffer[6];
+    uint32_t numStars = abs((int) format_uint32(8, headerBuffer)); // We know BSC5 uses J2000 cords.
+    uint32_t bytesPerEntry = format_uint32(24, headerBuffer);
+
+    printf("%u\n", bytesPerEntry);
 
     // Read entries
 
+    // Manually allocate variable sized arrays
     struct star* stars = (struct star *) malloc(numStars * sizeof(struct star));
-    uint16_t* entryBuffer = (uint16_t *) malloc(bytesPerEntry);
+    uint8_t *entryBuffer = (uint8_t *)malloc( bytesPerEntry);
 
-    printf("%d\n", numStars);
-    printf("%u\n", numStars);
-    printf("%x\n", numStars);
-
-    /*
     for (unsigned int i = 0; i < numStars; i++)
     {
-        fread(entryBuffer, sizeof(entryBuffer), 1, filePointer);
+        fread(entryBuffer, bytesPerEntry, 1, filePointer);
         stars[i] = entryToStar(entryBuffer);
-        printf("%zu", (unsigned int) stars[i].catalogNumber);
-        printf("EEE\n");
-    }*/
+    }
+
+    for (unsigned int i = 0; i < numStars; i++)
+    {
+        printStar(&stars[i]);
+    }
 
     free(entryBuffer);
 
     return stars;
-}
-
-uint32_t Combine(unsigned char b1, unsigned char b2, unsigned char b3, unsigned char b4)
-{
-    int combined = b1 << 8 | b2;
-    return combined;
 }
 
 int main()
