@@ -28,36 +28,41 @@ void printStar(struct star *star)
     return;
 }
 
+
+/* convert binary data entry to star struct
+ */
 struct star entryToStar(uint8_t *entry)
 {
-
     struct star starData;
 
     // BSC5 Entry format
-    starData.catalogNumber = format_float32(0, entry);
+    starData.catalogNumber  = format_float32(0, entry);
     starData.rightAscension = format_double64(4, entry);
-    starData.declination = format_double64(12, entry);
-    starData.magnitude = (float)format_uint16(22, entry) / 100;
+    starData.declination    = format_double64(12, entry);
+    starData.magnitude      = (float) format_uint16(22, entry) / 100;
 
     return starData;
 }
 
-struct star* processDatabase(const char *filePath)
+
+/* read BSC5 into memory for efficient access
+ * slightly generalized to read other catalogs in SAOTDC binary format
+ * TODO: requires more generalization if we're doing that
+ */
+struct star* readBSC5toMem(const char *filePath, int *returnNumStars)
 {
     // Read header
 
     FILE *filePointer;
     filePointer = fopen(filePath, "rb");
     
-    // header is defined as 28 bytes
-    uint8_t headerBuffer[28];
+    uint8_t headerBuffer[28]; // header defined as 28 bytes
 
     fread(headerBuffer, sizeof(headerBuffer), 1, filePointer);
 
-    uint32_t numStars = abs((int) format_uint32(8, headerBuffer)); // We know BSC5 uses J2000 cords.
+    // We know BSC5 uses J2000 cords.
+    uint32_t numStars = abs((int) format_uint32(8, headerBuffer));
     uint32_t bytesPerEntry = format_uint32(24, headerBuffer);
-
-    printf("%u\n", bytesPerEntry);
 
     // Read entries
 
