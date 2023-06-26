@@ -1,84 +1,23 @@
-#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <ncurses.h>
 
-typedef unsigned char uint8_t;      // single byte
-typedef unsigned short uint16_t;    // two byte unsigned integer
-typedef unsigned int uint32_t;      // four byte unsigned integer
-                                    // uint64_t already declared in stdint.h
+#include "bin_utils.c"
+#include "ascii_utils.c"
 
-/*
-    BSC5 is stored in big endian format???
-*/
-/*
-Why use a binary format as opposed to ASCII or JSON. Binary version is far more condensed and easy to serialize.
-Screen saver aims to be lightweight--the binary file is ~5x as small as the smallest available JSON file.
-*/
-
-uint16_t format_uint16(unsigned int index, uint8_t *buffer)
-{
-    uint16_t result = 0x0000;
-    for (int i = 0; i < sizeof(uint16_t); ++i)
-    {
-        result = result | (uint16_t) buffer[index + i] << (8 * i);
-    }
-    return result;
-}
-
-
-uint32_t format_uint32(unsigned int index, uint8_t *buffer)
-{
-    uint32_t result = 0x00000000;
-    for (int i = 0; i < sizeof(uint32_t); ++i)
-    {
-        result = result | (uint32_t) buffer[index + i] << (8 * i);
-    }
-    return result;
-}
-
-
-uint64_t format_uint64(unsigned int index, uint8_t *buffer)
-{
-    uint64_t result = 0x0000000000000000;
-    for (int i = 0; i < sizeof(uint64_t); ++i)
-    {
-        result = result | (uint64_t)buffer[index + i] << (8 * i);
-    }
-    return result;
-}
-
-
-float format_float32(unsigned int index, uint8_t *buffer)
-{
-    float f;
-    
-    // Effectively reverse endianness
-    uint32_t reverse = format_uint32(index, buffer);
-
-    memcpy(&f, &reverse, sizeof(float));
-    return f;
-}
-
-
-double format_double64(unsigned int index, uint8_t *buffer)
-{
-    double d;
-
-    // Effectively reverse endianness
-    uint64_t reverse = format_uint64(index, buffer);
-
-    memcpy(&d, &reverse, sizeof(double));
-    return d;
-}
 
 struct star
 {
     float catalogNumber;
+    float magnitude;
     double rightAscension;
     double declination;
-    float magnitude;
 };
+
 
 void printStar(struct star *star)
 {
