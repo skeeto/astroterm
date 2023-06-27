@@ -5,12 +5,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include <unistd.h>
 
 #include "bin_utils.c"
 #include "ascii_utils.c"
 
-
-struct star
+    struct star
 {
     float catalogNumber;
     float magnitude;
@@ -56,7 +56,7 @@ struct star* readBSC5toMem(const char *filePath, int *returnNumStars)
     FILE *filePointer;
     filePointer = fopen(filePath, "rb");
     
-    uint8_t headerBuffer[28]; // header defined as 28 bytes
+    uint8_t headerBuffer[28];
 
     fread(headerBuffer, sizeof(headerBuffer), 1, filePointer);
 
@@ -207,7 +207,7 @@ void renderMap(struct star stars[], int numStars,
         // treating the positive y-axis as "north" for the former.
         // for the latter, phi is synonymous with the zenith angle
         float rCircle, thetaCircle;
-        projectStereographic(PI/2 - azimuth, PI/2 - altitude,
+        projectStereographic(M_PI/2 - azimuth, M_PI/2 - altitude,
                              &rCircle, &thetaCircle);
 
         int row, col;
@@ -222,10 +222,76 @@ void renderMap(struct star stars[], int numStars,
 
 
 // MAIN
+// https://azrael.digipen.edu/~mmead/www/Courses/CS180/getopt.html
 
-
-int main()
+int main(int argc, char *argv[])
 {
+
+    // defaults
+    float latitude      = 0.0;
+    float longitude     = 0.0;
+    float julianDate    = 0.0; 
+    float fps           = 0.0;
+
+    // flags
+    // TODO: should set flags like this or use bools?
+    int f_unicode;
+    int f_color;
+
+    while (1)
+    {
+        int option_index = 0;
+        static struct option long_options[] =
+        {
+            {"latitude",    required_argument,  NULL,       'a'},
+            {"longitude",   required_argument,  NULL,       'o'},
+            {"julian-date", required_argument,  NULL,       'j'},
+            {"fps",         required_argument,  NULL,       'f'},
+            {"unicode",     no_argument,        &f_unicode,  1},
+            {"color",       no_argument,        &f_color,    1},
+            {NULL,          0,                  NULL,        0}
+        };
+
+        c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
+        if (c == -1)
+            break;
+        
+        switch (c)
+        {
+            case 0:
+                break;
+
+            case 1:   
+                break;
+
+            case 'a':
+                latitude = optarg;
+                break;
+
+            case 'l':
+                longitude = optarg;
+                break;
+
+            case 'j':
+                julianDate = optarg;
+                break;
+
+            case 'f':
+                fps = optarg;
+                break;
+
+            case '?':
+                printf("Unknown option %c\n", optopt);
+                break;
+
+            case ':':
+                printf("Missing option for %c\n", optopt);
+                break;
+
+            default:
+                printf("?? getopt returned character code 0%o ??\n", c);
+        }
+    }
 
     int numStars;
     struct star *stars = readBSC5toMem("BSC5", &numStars);
@@ -241,10 +307,10 @@ int main()
     {
         refresh();
         renderMap(stars, numStars,
-                  float julianDate, float latitude, float longitude,
-                  WINDOW *win);
+                    julianDate, latitude, longitude,
+                    WINDOW * win);
 
-        sleep(0.067); // 15 fps
+        sleep(1 / fps);
     }
 
     endwin();
