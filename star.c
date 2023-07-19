@@ -24,34 +24,26 @@ static volatile bool perform_resize = false;
 
 struct star
 {
-    float catalogNumber;
+    float catalog_number;
     float magnitude;
-    double rightAscension;
+    double right_ascension;
     double declination;
+    double altitude;
+    double azimuth;
 };
 
 
-void printStar(struct star *star)
+struct star entry_to_star(uint8_t *entry)
 {
-    printf("ID#: %f\n", star->catalogNumber);
-    printf("RA: %f\n", star->rightAscension);
-    printf("DC: %f\n", star->declination);
-    printf("Mag: %f\n", star->magnitude);
-    return;
-}
-
-
-struct star entryToStar(uint8_t *entry)
-{
-    struct star starData;
+    struct star star_data;
 
     // BSC5 Entry format
-    starData.catalogNumber  = format_float32(0, entry);
-    starData.rightAscension = format_double64(4, entry);
-    starData.declination    = format_double64(12, entry);
-    starData.magnitude      = (float) format_uint16(22, entry) / 100;
+    star_data.catalog_number  = format_float32(0, entry);
+    star_data.right_ascension = format_double64(4, entry);
+    star_data.declination    = format_double64(12, entry);
+    star_data.magnitude      = (float) format_uint16(22, entry) / 100;
 
-    return starData;
+    return star_data;
 }
 
 
@@ -59,36 +51,36 @@ struct star entryToStar(uint8_t *entry)
  * slightly generalized to read other catalogs in SAOTDC binary format
  * TODO: requires more generalization if we're doing that
  */
-struct star* readBSC5toMem(const char *filePath, int *returnNumStars)
+struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
 {
     // Read header
 
-    FILE *filePointer;
-    filePointer = fopen(filePath, "rb");
+    FILE *file_pointer;
+    file_pointer = fopen(file_path, "rb");
     
-    uint8_t headerBuffer[28];
+    uint8_t header_buffer[28];
 
-    fread(headerBuffer, sizeof(headerBuffer), 1, filePointer);
+    fread(header_buffer, sizeof(header_buffer), 1, file_pointer);
 
     // We know BSC5 uses J2000 cords.
-    uint32_t numStars = abs((int) format_uint32(8, headerBuffer));
-    uint32_t bytesPerEntry = format_uint32(24, headerBuffer);
+    uint32_t num_stars = abs((int) format_uint32(8, header_buffer));
+    uint32_t bytes_per_entry = format_uint32(24, header_buffer);
 
     // Read entries
 
     // Manually allocate variable sized arrays
-    struct star* stars = (struct star *) malloc(numStars * sizeof(struct star));
-    uint8_t *entryBuffer = (uint8_t *)malloc( bytesPerEntry);
+    struct star* stars = (struct star *) malloc(num_stars * sizeof(struct star));
+    uint8_t *entry_buffer = (uint8_t *)malloc( bytes_per_entry);
 
-    for (unsigned int i = 0; i < numStars; i++)
+    for (unsigned int i = 0; i < num_stars; i++)
     {
-        fread(entryBuffer, bytesPerEntry, 1, filePointer);
-        stars[i] = entryToStar(entryBuffer);
+        fread(entry_buffer, bytes_per_entry, 1, file_pointer);
+        stars[i] = entry_to_star(entry_buffer);
     }
 
-    free(entryBuffer);
+    free(entry_buffer);
 
-    *returnNumStars = numStars; // TODO: janky
+    *return_num_stars = num_stars; // TODO: janky
     return stars;
 }
 
@@ -98,7 +90,7 @@ struct star* readBSC5toMem(const char *filePath, int *returnNumStars)
 // https://astrogreg.com/convert_ra_dec_to_alt_az.html
 
 
-double earthRotationAngle(double jd)
+double earth_rotation_angle(double jd)
 {
     double t = jd - 2451545.0;
     int d = jd - floor(jd);
@@ -113,7 +105,7 @@ double earthRotationAngle(double jd)
 }
 
 
-double greenwichMeanSiderealTime(double jd)
+double greenwich_mean_sidereal_time(double jd)
 {
     
     // caluclate Julian centuries after J2000
@@ -121,7 +113,7 @@ double greenwichMeanSiderealTime(double jd)
 
     // "Expressions for IAU 2000 precession quantities,"
     // N.Capitaine, P.T.Wallace, and J.Chapront
-    double gmst = earthRotationAngle(jd) + 0.014506 + 4612.156534 * t +
+    double gmst = earth_rotation_angle(jd) + 0.014506 + 4612.156534 * t +
                     1.3915817 * powf(t, 2) - 0.00000044 * powf(t, 3) -
                     0.000029956 * powf(t, 4) - 0.0000000368 * powf(t, 5);
 
@@ -133,16 +125,16 @@ double greenwichMeanSiderealTime(double jd)
 }
 
 
-void equatorialToHorizontal(double declination, double rightAscension,
+void equatorial_to_horizontal(double declination, double right_ascension,
                             double gmst, double latitude, double longitude,
                             double *altitude, double *azimuth) // modifies
 {
-    double hourAngle = gmst - longitude - rightAscension;
+    double hour_angle = gmst - longitude - right_ascension;
 
     *altitude = asin(sin(latitude) * sin(declination) +
-                      cos(latitude) * cos(declination) * cos(hourAngle));
+                      cos(latitude) * cos(declination) * cos(hour_angle));
 
-    *azimuth = atan2(sin(hourAngle), cos(hourAngle) * sin(latitude) -
+    *azimuth = atan2(sin(hour_angle), cos(hour_angle) * sin(latitude) -
                                 tan(declination) * cos(latitude));
 }
 
@@ -154,31 +146,31 @@ void equatorialToHorizontal(double declination, double rightAscension,
 
 
 /* maps a point on the unit sphere, spherical coordinates:(1, theta, phi),
- * to the unit circle, polar coordinates (rCircle, thetaCircle), which lies on
+ * to the unit circle, polar coordinates (rCircle, theta_polar), which lies on
  * the plane dividing the sphere across the equator. The projected point will
  * only lie on the unit sphere if 0 < phi < PI / 2 since we choose the focus
  * point to be the south pole.
  * Reference:   https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
  *              https://en.wikipedia.org/wiki/Stereographic_projection
  */
-void projectStereographic(double theta, double phi,
-                          double *rCircle, double *thetaCircle)
+void project_stereographic(double theta, double phi,
+                          double *r_polar, double *theta_polar)
 {
     const int sphereRadius = 1;
 
-    *rCircle = tan(phi / 2);
-    *thetaCircle = theta;
+    *r_polar = tan(phi / 2);
+    *theta_polar = theta;
 }
 
 
 /* map a point on the unit circle to screen space coordinates
  */
-void polarToWin(double r, double theta,
-                int winHeight, int winWidth, float cellAspectRatio,
+void polar_to_win(double r, double theta,
+                int win_height, int win_width, float cell_aspect_ratio,
                 int *row, int *col) // modifies
 {
-    *row = (int) round(r * winHeight / 2 * sin(theta)) + winHeight / 2;
-    *col = (int)round(r * winWidth / 2 * cos(theta)) + winWidth / 2;
+    *row = (int) round(r * win_height / 2 * sin(theta)) + win_height / 2;
+    *col = (int) round(r * win_width / 2 * cos(theta)) + win_width / 2;
     return;
 }
 
@@ -189,9 +181,9 @@ void polarToWin(double r, double theta,
 /* attempt to get the cell aspect ratio: cell height to width
  * i.e. "how many columns form the apparent height of a row"
  */
-float getCellAspectRatio()
+float get_cell_aspect_ratio()
 {
-    float defaultHeight = 2.15;
+    float default_height = 2.15;
 
     if (isatty(fileno(stdout)))
     {
@@ -204,19 +196,19 @@ float getCellAspectRatio()
         // in case we can't get pixel size of terminal
         if (ws.ws_ypixel == 0 || ws.ws_xpixel == 0)
         {
-            return defaultHeight;
+            return default_height;
         }
 
-        float cellHeight = (float) ws.ws_ypixel / ws.ws_row;
-        float cellWidth  = (float) ws.ws_xpixel / ws.ws_col;
+        float cell_height = (float) ws.ws_ypixel / ws.ws_row;
+        float cell_width  = (float) ws.ws_xpixel / ws.ws_col;
 
-        return cellHeight / cellWidth;
+        return cell_height / cell_width;
     }
 
-    return defaultHeight;
+    return default_height;
 }
 
-char mapMagASCII(float mag)
+char map_mag_ASCII(float mag)
 {
     if (mag < 1.75)
     {
@@ -236,7 +228,7 @@ char mapMagASCII(float mag)
     }
 }
 
-char* mapMagUnicode(float mag)
+char* map_mag_unicode(float mag)
 {
     if (mag < 1.75)
     {
@@ -256,20 +248,38 @@ char* mapMagUnicode(float mag)
     }
 }
 
-void renderMap(struct star stars[], int numStars,
-                double julianDate, double latitude, double longitude,
-                bool unicode, bool grid, float threshold,
-                WINDOW *win)
+void update_star_positions(struct star stars[], int num_stars,
+                            double julian_date, double latitude, double longitude)
+{
+    double gmst = greenwich_mean_sidereal_time(julian_date);
+    
+    for (int i = 0; i < num_stars; ++i)
+    {
+        struct star *star = &stars[i];
+
+        double altitude, azimuth;
+        equatorial_to_horizontal(star -> declination, star -> right_ascension,
+                               gmst, latitude, longitude,
+                               &altitude, &azimuth);
+
+        star -> altitude = altitude;
+        star -> azimuth = azimuth;
+    }
+
+    return;
+}
+
+void render_stereo(struct star stars[], int num_stars,
+                   bool unicode, bool grid, float threshold,
+                   WINDOW *win)
 {
 
     // get terminal dimensions
-    float cellAspectRatio = getCellAspectRatio();
+    float cell_aspect_ratio = get_cell_aspect_ratio();
 
     // TODO: add constellation rendering
 
-    double gmst = greenwichMeanSiderealTime(julianDate);
-
-    for (int i = 0; i < numStars; ++i)
+    for (int i = 0; i < num_stars; ++i)
     {
         struct star* star = &stars[i];
 
@@ -279,38 +289,40 @@ void renderMap(struct star stars[], int numStars,
             continue;
         }
 
-        double altitude, azimuth;
-        equatorialToHorizontal(star -> declination, star -> rightAscension,
-                               gmst, latitude, longitude,
-                               &altitude, &azimuth);
-
         // note: here we convert azimuth and altitude to
         // theta and phi in general spherical coords by
         // treating the positive y-axis as "north" for the former.
         // for the latter, phi is synonymous with the zenith angle
-        double rCircle, thetaCircle;
-        projectStereographic(M_PI/2 - azimuth, M_PI/2 - altitude,
-                             &rCircle, &thetaCircle);
+        double r_polar, theta_polar;
+        project_stereographic(M_PI/2 - star -> azimuth, M_PI/2 - star -> altitude,
+                             &r_polar, &theta_polar);
 
         // if outside projection, ignore
-        if (rCircle > 1)
+        if (r_polar > 1)
         {
             continue;
         }
 
         int row, col;
-        polarToWin(rCircle, thetaCircle,
-                   win->_maxy, win->_maxx, cellAspectRatio,
+        polar_to_win(r_polar, theta_polar,
+                   win->_maxy, win->_maxx, cell_aspect_ratio,
                    &row, &col);
 
         // draw star
         if (unicode)
         {
-            mvwaddstr(win, row, col, mapMagUnicode(star->magnitude));
+            if (star -> catalog_number == 424) // polaris
+            {
+                mvwaddstr(win, row, col, "\u2726");
+            }
+            else
+            {
+                mvwaddstr(win, row, col, map_mag_unicode(star->magnitude));
+            }
         }
         else
         {
-            mvwaddch(win, row, col, mapMagASCII(star->magnitude));
+            mvwaddch(win, row, col, map_mag_ASCII(star->magnitude));
         }
     }
 
@@ -323,13 +335,6 @@ void renderMap(struct star stars[], int numStars,
 }
 
 
-
-
-void catch_winch(int sig)
-{
-    perform_resize = true;
-}
-
 void term_init()
 {
     initscr();
@@ -337,42 +342,66 @@ void term_init()
     noecho();    // input characters aren't echoed
     cbreak();    // disable line buffering
     curs_set(0); // make cursor inisible
+    timeout(0); // non-blocking read for getch
 }
+
 
 void term_kill()
 {
     endwin();
 }
 
-// square and center window
-void center_win(WINDOW *win)
+
+// Resize window to square with largest possible area
+void win_resize_square(WINDOW *win)
 {
-    float aspect = getCellAspectRatio();
+
+    float aspect = get_cell_aspect_ratio();
+
     if (COLS < LINES * aspect)
     {
         wresize(win, COLS / aspect, COLS);
-        mvwin(win, 0, 0);
     }
     else
     {
         wresize(win, LINES, LINES * aspect);
-        mvwin(win, 0, (COLS - LINES * aspect) / 2);
     }
+
 }
 
-void handle_resize(WINDOW *mainwin)
+
+// Resize window to full screen
+void win_resize_full(WINDOW *win)
+{
+    wresize(win, LINES, COLS);
+}
+
+
+// Center window vertically and horizontally
+void win_position_center(WINDOW *win)
+{
+    mvwin(win, (LINES - win->_maxy) / 2, (COLS - win->_maxx) / 2);
+}
+
+
+void catch_winch(int sig)
+{
+    perform_resize = true;
+}
+
+
+void handle_resize(WINDOW *win)
 {
     // reinitilize ncurses
     term_kill();
     term_init();
 
-    erase();
-    wclear(mainwin);
-    refresh();
+    wclear(win);
+    wrefresh(win);
 
-    center_win(mainwin);
-    box(mainwin, 0, 0);
-    
+    win_resize_square(win);
+    win_position_center(win);
+
     perform_resize = false;
 }
 
@@ -384,17 +413,16 @@ int main(int argc, char *argv[])
     // defaults
     double latitude     = 0.73934145516; // Boston, MA
     double longitude    = 5.04300525197;
-    double julianDate   = 2451544.50000; // Jan 1, 2000
+    double julian_date  = 2451544.50000; // Jan 1, 2000
     float threshold     = 3.0f;
     int fps             = 24;
 
-    // flags
-    // TODO: should set flags like this or use bools?
     static int f_unicode;
     static int f_color;
     static int f_grid;
 
     int c;
+    bool input_error = false;
 
     while (1)
     {
@@ -433,7 +461,7 @@ int main(int argc, char *argv[])
                 break;
 
             case 'j':
-                julianDate = atof(optarg);
+                julian_date = atof(optarg);
                 break;
 
             case 't':
@@ -445,45 +473,64 @@ int main(int argc, char *argv[])
                 break;
 
             case '?':
-                printf("Unknown option %c\n", optopt);
+                printf("Unrecognized option '%c'\n", optopt);
+                input_error = true;
                 break;
 
             case ':':
-                printf("Missing option for %c\n", optopt);
+                printf("Missing option for '%c'\n", optopt);
+                input_error = true;
                 break;
 
             default:
                 printf("?? getopt returned character code 0%o ??\n", c);
+                input_error = true;
+                break;
         }
     }
 
-    int numStars;
-    struct star *stars = readBSC5toMem("BSC5", &numStars);
+    if (input_error)
+    {
+        return 1;
+    }
 
-    setlocale(LC_ALL, ""); // needed for unicode rendering
-    
+    int num_stars;
+    struct star *stars = read_BSC5_to_mem("data/BSC5", &num_stars);
+
+    setlocale(LC_ALL, "");         // required for unicode rendering
+
+    signal(SIGWINCH, catch_winch); // Capture window resizes
+
     term_init();
 
-    // Capture window resizes
-    signal(SIGWINCH, catch_winch);
-
-    // now that ncurses is initilized, calc proper size and position of win
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0); // non-blocking read for wgetch
-    center_win(win);
+    win_resize_square(win);
+    win_position_center(win);
 
-    // wait until ESC is pressed
-    while (c = wgetch(win) != 27)
+    while (true)
     {
+        
+        // wait until ESC is pressed
+        if ((c = wgetch(win)) == 27)
+        {
+            break;
+        }
+
         if (perform_resize)
         {
             handle_resize(win);
         }
-        renderMap(stars, numStars, julianDate, latitude, longitude,
-                    f_unicode, f_grid, threshold, win);
-        wrefresh(win);
+
+        // ncruses erase should occur before rendering?
+        // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
         werase(win);
-        julianDate += 0.01;
+
+        update_star_positions(stars, num_stars, julian_date, latitude, longitude);
+        render_stereo(stars, num_stars, f_unicode, f_grid, threshold, win);
+
+        julian_date += 0.1;
+
         usleep(1.0 / fps * 1000000);
     }
     
