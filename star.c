@@ -22,6 +22,13 @@
 // flag for signal handler
 static volatile bool perform_resize = false;
 
+// star magnitude mapping
+static const char *mag_map_unicode_round[10]    = {"⬤", "⚫︎", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅"};
+static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
+static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+static const char mag_map_round_ASCII[10]       = {'O', 'o', '.', '.', '.', '.', '.', '.', '.', '.'};
+
 struct star
 {
     float catalog_number;
@@ -208,44 +215,16 @@ float get_cell_aspect_ratio()
     return default_height;
 }
 
-char map_mag_ASCII(float mag)
+char map_mag_ASCII(const char map[10], float mag)
 {
-    if (mag < 1.75)
-    {
-        return '*';
-    }
-    else if (mag < 3.5)
-    {
-        return 'O';
-    }
-    else if (mag < 5.25)
-    {
-        return 'o';
-    }
-    else
-    {
-        return '.';
-    }
+    int index = round(mag) + 2;
+    return map[index];
 }
 
-char* map_mag_unicode(float mag)
+char *map_mag_unicode(const char *map[10], float mag)
 {
-    if (mag < 1.75)
-    {
-        return "\u2B24";
-    }
-    else if (mag < 3.5)
-    {
-        return "\u25CF";
-    }
-    else if (mag < 5.25)
-    {
-        return "\u2022";
-    }
-    else
-    {
-        return "\u2981";
-    }
+    int index = round(mag) + 2;
+    return (char *) map[index];
 }
 
 void update_star_positions(struct star stars[], int num_stars,
@@ -317,12 +296,12 @@ void render_stereo(struct star stars[], int num_stars,
             }
             else
             {
-                mvwaddstr(win, row, col, map_mag_unicode(star->magnitude));
+                mvwaddstr(win, row, col, map_mag_unicode(mag_map_unicode_filled, star->magnitude));
             }
         }
         else
         {
-            mvwaddch(win, row, col, map_mag_ASCII(star->magnitude));
+            mvwaddch(win, row, col, map_mag_ASCII(mag_map_round_ASCII, star->magnitude));
         }
     }
 
