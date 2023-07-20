@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <time.h>
 #include <locale.h>
+#include <termios.h>
 
 #include "bit_utils.c"
 // #include "drawing.c"
@@ -48,7 +49,7 @@ struct star entry_to_star(uint8_t *entry)
     star_data.catalog_number  = format_float32(0, entry);
     star_data.right_ascension = format_double64(4, entry);
     star_data.declination    = format_double64(12, entry);
-    star_data.magnitude      = (float) format_uint16(22, entry) / 100;
+    star_data.magnitude      = (float) format_int16(22, entry) / 100.0;
 
     return star_data;
 }
@@ -217,13 +218,17 @@ float get_cell_aspect_ratio()
 
 char map_mag_ASCII(const char map[10], float mag)
 {
-    int index = round(mag) + 2;
+    // apparent magnitudes in BSC5 range from -1.46 to 7.96
+    // this way we map all possible rounded values between 0 and 9 inclusive
+    int index = floor(mag) + 2;
     return map[index];
 }
 
 char *map_mag_unicode(const char *map[10], float mag)
 {
-    int index = round(mag) + 2;
+    // apparent magnitudes in BSC5 range from -1.46 to 7.96
+    // this way we map all possible rounded values between 0 and 9 inclusive
+    int index = floor(mag) + 2;
     return (char *) map[index];
 }
 
@@ -249,7 +254,7 @@ void update_star_positions(struct star stars[], int num_stars,
 }
 
 void render_stereo(struct star stars[], int num_stars,
-                   bool unicode, bool grid, float threshold,
+                   bool no_unicode, float threshold,
                    WINDOW *win)
 {
 
@@ -257,7 +262,7 @@ void render_stereo(struct star stars[], int num_stars,
     float cell_aspect_ratio = get_cell_aspect_ratio();
 
     // TODO: add constellation rendering
-
+    float lowest_mag = -10;
     for (int i = 0; i < num_stars; ++i)
     {
         struct star* star = &stars[i];
@@ -288,31 +293,30 @@ void render_stereo(struct star stars[], int num_stars,
                    &row, &col);
 
         // draw star
-        if (unicode)
-        {
-            if (star -> catalog_number == 424) // polaris
-            {
-                mvwaddstr(win, row, col, "\u2726");
-            }
-            else
-            {
-                mvwaddstr(win, row, col, map_mag_unicode(mag_map_unicode_filled, star->magnitude));
-            }
-        }
-        else
+        if (no_unicode)
         {
             mvwaddch(win, row, col, map_mag_ASCII(mag_map_round_ASCII, star->magnitude));
         }
-    }
-
-    if (grid)
-    {
-        mvwaddch(win, win->_maxy / 2, win->_maxx / 2, '+');
+        else
+        {
+            mvwaddstr(win, row, col, map_mag_unicode(mag_map_unicode_round, star->magnitude));
+        }
     }
 
     return;
 }
 
+void render_azimuthal_grid(WINDOW *win, bool no_unicode)
+{
+    if (no_unicode)
+    {
+        mvwaddch(win, win->_maxy / 2, win->_maxx / 2, '+');
+    }
+    else
+    {
+        mvwaddstr(win, win->_maxy / 2, win->_maxx / 2, "＋");
+    }
+}
 
 void term_init()
 {
@@ -396,9 +400,9 @@ int main(int argc, char *argv[])
     float threshold     = 3.0f;
     int fps             = 24;
 
-    static int f_unicode;
-    static int f_color;
-    static int f_grid;
+    static int no_unicode;
+    static int color;
+    static int grid;
 
     int c;
     bool input_error = false;
@@ -413,10 +417,10 @@ int main(int argc, char *argv[])
             {"julian-date", required_argument,  NULL,       'j'},
             {"threshold",   required_argument,  NULL,       't'},
             {"fps",         required_argument,  NULL,       'f'},
-            {"unicode",     no_argument,        &f_unicode,  1},
-            {"color",       no_argument,        &f_color,    1},
-            {"grid",        no_argument,        &f_grid,     1},
-            {NULL,          0,                  NULL,        0}
+            {"no-unicode",  no_argument,        &no_unicode,  1},
+            {"color",       no_argument,        &color,       1},
+            {"grid",        no_argument,        &grid,        1},
+            {NULL,          0,                  NULL,         0}
         };
 
         c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
@@ -473,10 +477,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    int num_stars;
-    struct star *stars = read_BSC5_to_mem("data/BSC5", &num_stars);
+    int total_stars;
+    struct star *stars = read_BSC5_to_mem("data/BSC5", &total_stars);
 
-    setlocale(LC_ALL, "");         // required for unicode rendering
+    setlocale(LC_ALL, ""); // required for unicode rendering
 
     signal(SIGWINCH, catch_winch); // Capture window resizes
 
@@ -505,8 +509,12 @@ int main(int argc, char *argv[])
         // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
         werase(win);
 
-        update_star_positions(stars, num_stars, julian_date, latitude, longitude);
-        render_stereo(stars, num_stars, f_unicode, f_grid, threshold, win);
+        update_star_positions(stars, total_stars, julian_date, latitude, longitude);
+        render_stereo(stars, total_stars, no_unicode, threshold, win);
+        if (grid)
+        {
+            render_azimuthal_grid(win, no_unicode);
+        }
 
         julian_date += 0.1;
 

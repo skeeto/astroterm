@@ -3,9 +3,43 @@
 // note: all functions accept bytes in little-endian order and store
 //       the resulting primitive in likewise order
 
+// Signed formats
+
+int16_t format_int16(unsigned int index, uint8_t *buffer)
+{
+    int16_t result = 0x0;
+    for (int i = 0; i < sizeof(int16_t); ++i)
+    {
+        result = result | (int16_t)buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+int32_t format_int32(unsigned int index, uint8_t *buffer)
+{
+    uint32_t result = 0x0;
+    for (int i = 0; i < sizeof(int32_t); ++i)
+    {
+        result = result | (int32_t)buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+int64_t format_int64(unsigned int index, uint8_t *buffer)
+{
+    uint64_t result = 0x0;
+    for (int i = 0; i < sizeof(int64_t); ++i)
+    {
+        result = result | (int64_t)buffer[index + i] << (8 * i);
+    }
+    return result;
+}
+
+// Unsigned formats
+
 uint16_t format_uint16(unsigned int index, uint8_t *buffer)
 {
-    uint16_t result = 0x0000;
+    uint16_t result = 0x0;
     for (int i = 0; i < sizeof(uint16_t); ++i)
     {
         result = result | (uint16_t)buffer[index + i] << (8 * i);
@@ -15,7 +49,7 @@ uint16_t format_uint16(unsigned int index, uint8_t *buffer)
 
 uint32_t format_uint32(unsigned int index, uint8_t *buffer)
 {
-    uint32_t result = 0x00000000;
+    uint32_t result = 0x0;
     for (int i = 0; i < sizeof(uint32_t); ++i)
     {
         result = result | (uint32_t)buffer[index + i] << (8 * i);
@@ -25,13 +59,15 @@ uint32_t format_uint32(unsigned int index, uint8_t *buffer)
 
 uint64_t format_uint64(unsigned int index, uint8_t *buffer)
 {
-    uint64_t result = 0x0000000000000000;
+    uint64_t result = 0x0;
     for (int i = 0; i < sizeof(uint64_t); ++i)
     {
         result = result | (uint64_t)buffer[index + i] << (8 * i);
     }
     return result;
 }
+
+// Floating point formats
 
 float format_float32(unsigned int index, uint8_t *buffer)
 {
