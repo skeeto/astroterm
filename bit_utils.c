@@ -1,11 +1,8 @@
 #include <stdint.h>
 
-// note: all functions accept bytes in little-endian order and store
-//       the resulting primitive in likewise order
-
 // Signed formats
 
-int16_t format_int16(unsigned int index, uint8_t *buffer)
+int16_t bytes_to_int16_LE(unsigned int index, uint8_t *buffer)
 {
     int16_t result = 0x0;
     for (int i = 0; i < sizeof(int16_t); ++i)
@@ -15,7 +12,7 @@ int16_t format_int16(unsigned int index, uint8_t *buffer)
     return result;
 }
 
-int32_t format_int32(unsigned int index, uint8_t *buffer)
+int32_t bytes_to_int32_LE(unsigned int index, uint8_t *buffer)
 {
     uint32_t result = 0x0;
     for (int i = 0; i < sizeof(int32_t); ++i)
@@ -25,7 +22,7 @@ int32_t format_int32(unsigned int index, uint8_t *buffer)
     return result;
 }
 
-int64_t format_int64(unsigned int index, uint8_t *buffer)
+int64_t bytes_to_int64_LE(unsigned int index, uint8_t *buffer)
 {
     uint64_t result = 0x0;
     for (int i = 0; i < sizeof(int64_t); ++i)
@@ -37,7 +34,7 @@ int64_t format_int64(unsigned int index, uint8_t *buffer)
 
 // Unsigned formats
 
-uint16_t format_uint16(unsigned int index, uint8_t *buffer)
+uint16_t bytes_to_uint16_LE(unsigned int index, uint8_t *buffer)
 {
     uint16_t result = 0x0;
     for (int i = 0; i < sizeof(uint16_t); ++i)
@@ -47,7 +44,7 @@ uint16_t format_uint16(unsigned int index, uint8_t *buffer)
     return result;
 }
 
-uint32_t format_uint32(unsigned int index, uint8_t *buffer)
+uint32_t bytes_to_uint32_LE(unsigned int index, uint8_t *buffer)
 {
     uint32_t result = 0x0;
     for (int i = 0; i < sizeof(uint32_t); ++i)
@@ -57,7 +54,7 @@ uint32_t format_uint32(unsigned int index, uint8_t *buffer)
     return result;
 }
 
-uint64_t format_uint64(unsigned int index, uint8_t *buffer)
+uint64_t bytes_to_uint64_LE(unsigned int index, uint8_t *buffer)
 {
     uint64_t result = 0x0;
     for (int i = 0; i < sizeof(uint64_t); ++i)
@@ -69,10 +66,10 @@ uint64_t format_uint64(unsigned int index, uint8_t *buffer)
 
 // Floating point formats
 
-float format_float32(unsigned int index, uint8_t *buffer)
+float bytes_to_float32_LE(unsigned int index, uint8_t *buffer)
 {
     float f;
-    uint32_t tempInt = format_uint32(index, buffer);
+    uint32_t tempInt = bytes_to_uint32_LE(index, buffer);
 
     // TODO: since C89+ enforces char to be a minimum of 8 bits
     // we are guaranteed that float stores >= 4 * 8 bits?
@@ -80,11 +77,11 @@ float format_float32(unsigned int index, uint8_t *buffer)
     return f;
 }
 
-double format_double64(unsigned int index, uint8_t *buffer)
+double bytes_to_double64_LE(unsigned int index, uint8_t *buffer)
 {
     double d;
 
-    uint64_t tempInt = format_uint64(index, buffer);
+    uint64_t tempInt = bytes_to_uint64_LE(index, buffer);
 
     memcpy(&d, &tempInt, sizeof(double));
     return d;

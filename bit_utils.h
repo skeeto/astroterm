@@ -3,15 +3,17 @@
 #ifndef BIT_UTILS_H
 #define BIT_UTILS_H
 
-int16_t format_int16(unsigned int index, uint8_t *buffer);
-int32_t format_int32(unsigned int index, uint8_t *buffer);
-int64_t format_int64(unsigned int index, uint8_t *buffer);
+// Convert little-endian sequence of bytes to specified types
 
-uint16_t format_uint16(unsigned int index, uint8_t *buffer);
-uint32_t format_uint32(unsigned int index, uint8_t *buffer);
-uint64_t format_uint64(unsigned int index, uint8_t *buffer);
+int16_t bytes_to_int16_LE(unsigned int index, uint8_t *buffer);
+int32_t bytes_to_int32_LE(unsigned int index, uint8_t *buffer);
+int64_t bytes_to_int64_LE(unsigned int index, uint8_t *buffer);
 
-float format_float32(unsigned int index, uint8_t *buffer);
-double format_double64(unsigned int index, uint8_t *buffer);
+uint16_t bytes_to_uint16_LE(unsigned int index, uint8_t *buffer);
+uint32_t bytes_to_uint32_LE(unsigned int index, uint8_t *buffer);
+uint64_t bytes_to_uint64_LE(unsigned int index, uint8_t *buffer);
+
+float bytes_to_float32_LE(unsigned int index, uint8_t *buffer);
+double bytes_to_double64_LE(unsigned int index, uint8_t *buffer);
 
 #endif

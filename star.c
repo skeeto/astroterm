@@ -46,10 +46,10 @@ struct star entry_to_star(uint8_t *entry)
     struct star star_data;
 
     // BSC5 Entry format
-    star_data.catalog_number  = format_float32(0, entry);
-    star_data.right_ascension = format_double64(4, entry);
-    star_data.declination    = format_double64(12, entry);
-    star_data.magnitude      = (float) format_int16(22, entry) / 100.0;
+    star_data.catalog_number    = bytes_to_float32_LE(0, entry);
+    star_data.right_ascension   = bytes_to_double64_LE(4, entry);
+    star_data.declination       = bytes_to_double64_LE(12, entry);
+    star_data.magnitude         = (float) bytes_to_int16_LE(22, entry) / 100.0;
 
     return star_data;
 }
@@ -71,8 +71,8 @@ struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
     fread(header_buffer, sizeof(header_buffer), 1, file_pointer);
 
     // We know BSC5 uses J2000 cords.
-    uint32_t num_stars = abs((int) format_uint32(8, header_buffer));
-    uint32_t bytes_per_entry = format_uint32(24, header_buffer);
+    uint32_t num_stars = abs((int) bytes_to_uint32_LE(8, header_buffer));
+    uint32_t bytes_per_entry = bytes_to_uint32_LE(24, header_buffer);
 
     // Read entries
 
