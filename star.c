@@ -13,7 +13,8 @@
 #include <locale.h>
 #include <termios.h>
 
-#include "bit_utils.c"
+#include "bit_utils.h"
+#include "term_utils.h"
 // #include "drawing.c"
 
 #ifndef M_PI
@@ -318,53 +319,6 @@ void render_azimuthal_grid(WINDOW *win, bool no_unicode)
     }
 }
 
-void term_init()
-{
-    initscr();
-    clear();
-    noecho();    // input characters aren't echoed
-    cbreak();    // disable line buffering
-    curs_set(0); // make cursor inisible
-    timeout(0); // non-blocking read for getch
-}
-
-
-void term_kill()
-{
-    endwin();
-}
-
-
-// Resize window to square with largest possible area
-void win_resize_square(WINDOW *win)
-{
-
-    float aspect = get_cell_aspect_ratio();
-
-    if (COLS < LINES * aspect)
-    {
-        wresize(win, COLS / aspect, COLS);
-    }
-    else
-    {
-        wresize(win, LINES, LINES * aspect);
-    }
-
-}
-
-
-// Resize window to full screen
-void win_resize_full(WINDOW *win)
-{
-    wresize(win, LINES, COLS);
-}
-
-
-// Center window vertically and horizontally
-void win_position_center(WINDOW *win)
-{
-    mvwin(win, (LINES - win->_maxy) / 2, (COLS - win->_maxx) / 2);
-}
 
 
 void catch_winch(int sig)
@@ -372,17 +326,23 @@ void catch_winch(int sig)
     perform_resize = true;
 }
 
-
 void handle_resize(WINDOW *win)
 {
-    // reinitilize ncurses
-    term_kill();
-    term_init();
+    // resize ncurses internal terminal
+    int y;
+    int x;
+    term_size(&y, &x);
+    resizeterm(y, x);
 
+    // ???
     wclear(win);
     wrefresh(win);
 
-    win_resize_square(win);
+    // check cell ratio
+    float aspect = get_cell_aspect_ratio();
+
+    // resize/position application window
+    win_resize_square(win, aspect);
     win_position_center(win);
 
     perform_resize = false;
@@ -488,7 +448,7 @@ int main(int argc, char *argv[])
 
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0); // non-blocking read for wgetch
-    win_resize_square(win);
+    win_resize_square(win, get_cell_aspect_ratio());
     win_position_center(win);
 
     while (true)
