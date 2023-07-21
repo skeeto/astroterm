@@ -1,3 +1,6 @@
+/* Byte formatting utilities.
+ */
+
 #include <stdint.h>
 
 #ifndef BIT_UTILS_H

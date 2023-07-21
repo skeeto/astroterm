@@ -13,15 +13,18 @@
 #include <locale.h>
 #include <termios.h>
 
-#include "bit_utils.h"
-#include "term_utils.h"
+#include "astro.h"
+#include "bit.h"
+#include "coord.h"
 // #include "drawing.c"
+#include "misc.h"
+#include "term.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
 
-// flag for signal handler
+// flag for resize signal handler
 static volatile bool perform_resize = false;
 
 // star magnitude mapping
@@ -41,7 +44,6 @@ struct star
     double azimuth;
 };
 
-
 struct star entry_to_star(uint8_t *entry)
 {
     struct star star_data;
@@ -55,13 +57,13 @@ struct star entry_to_star(uint8_t *entry)
     return star_data;
 }
 
-
-/* read BSC5 into memory for efficient access
- * slightly generalized to read other catalogs in SAOTDC binary format
- * TODO: requires more generalization if we're doing that
- */
 struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
 {
+    /* read BSC5 into memory for efficient access
+     * slightly generalized to read other catalogs in SAOTDC binary format
+     * TODO: requires more generalization if we're doing that
+     */
+
     // Read header
 
     FILE *file_pointer;
@@ -89,154 +91,14 @@ struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
 
     free(entry_buffer);
 
-    *return_num_stars = num_stars; // TODO: janky
+    *return_num_stars = num_stars;
     return stars;
-}
-
-
-// COORDINATE UTILS
-// https://jonvoisey.net/blog/2018/07/data-converting-alt-az-to-ra-dec-derivation/
-// https://astrogreg.com/convert_ra_dec_to_alt_az.html
-
-
-double earth_rotation_angle(double jd)
-{
-    double t = jd - 2451545.0;
-    int d = jd - floor(jd);
-
-    // IERS Technical Note No. 32: 5.4.4 eq. (14);
-    double theta = 2 * M_PI * (d + 0.7790572732640 + 0.00273781191135448 * t);
-    
-    remainder(theta, 2 * M_PI);
-    theta += theta < 0 ? 2 * M_PI : 0;
-
-    return theta;
-}
-
-
-double greenwich_mean_sidereal_time(double jd)
-{
-    
-    // caluclate Julian centuries after J2000
-    double t = ((jd - 2451545.0f)) / 36525.0f;
-
-    // "Expressions for IAU 2000 precession quantities,"
-    // N.Capitaine, P.T.Wallace, and J.Chapront
-    double gmst = earth_rotation_angle(jd) + 0.014506 + 4612.156534 * t +
-                    1.3915817 * powf(t, 2) - 0.00000044 * powf(t, 3) -
-                    0.000029956 * powf(t, 4) - 0.0000000368 * powf(t, 5);
-
-    // normalize
-    remainder(gmst, 2 * M_PI);
-    gmst += gmst < 0 ? 2 * M_PI : 0;
-
-    return gmst;
-}
-
-
-void equatorial_to_horizontal(double declination, double right_ascension,
-                            double gmst, double latitude, double longitude,
-                            double *altitude, double *azimuth) // modifies
-{
-    double hour_angle = gmst - longitude - right_ascension;
-
-    *altitude = asin(sin(latitude) * sin(declination) +
-                      cos(latitude) * cos(declination) * cos(hour_angle));
-
-    *azimuth = atan2(sin(hour_angle), cos(hour_angle) * sin(latitude) -
-                                tan(declination) * cos(latitude));
-}
-
-// TODO: azimuth and altitude aren't the same as phi and theta in spherical
-// coords
-// phi = PI / 2 - altitude
-// theta = PI / 2 - azimuth
-// Flip hemisphere: add PI to phi
-
-
-/* maps a point on the unit sphere, spherical coordinates:(1, theta, phi),
- * to the unit circle, polar coordinates (rCircle, theta_polar), which lies on
- * the plane dividing the sphere across the equator. The projected point will
- * only lie on the unit sphere if 0 < phi < PI / 2 since we choose the focus
- * point to be the south pole.
- * Reference:   https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
- *              https://en.wikipedia.org/wiki/Stereographic_projection
- */
-void project_stereographic(double theta, double phi,
-                          double *r_polar, double *theta_polar)
-{
-    const int sphereRadius = 1;
-
-    *r_polar = tan(phi / 2);
-    *theta_polar = theta;
-}
-
-
-/* map a point on the unit circle to screen space coordinates
- */
-void polar_to_win(double r, double theta,
-                int win_height, int win_width, float cell_aspect_ratio,
-                int *row, int *col) // modifies
-{
-    *row = (int) round(r * win_height / 2 * sin(theta)) + win_height / 2;
-    *col = (int) round(r * win_width / 2 * cos(theta)) + win_width / 2;
-    return;
-}
-
-
-// RENDERING
-
-
-/* attempt to get the cell aspect ratio: cell height to width
- * i.e. "how many columns form the apparent height of a row"
- */
-float get_cell_aspect_ratio()
-{
-    float default_height = 2.15;
-
-    if (isatty(fileno(stdout)))
-    {
-        // Stdout is outputting to a terminal
-
-        struct winsize ws;
-
-        ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-
-        // in case we can't get pixel size of terminal
-        if (ws.ws_ypixel == 0 || ws.ws_xpixel == 0)
-        {
-            return default_height;
-        }
-
-        float cell_height = (float) ws.ws_ypixel / ws.ws_row;
-        float cell_width  = (float) ws.ws_xpixel / ws.ws_col;
-
-        return cell_height / cell_width;
-    }
-
-    return default_height;
-}
-
-char map_mag_ASCII(const char map[10], float mag)
-{
-    // apparent magnitudes in BSC5 range from -1.46 to 7.96
-    // this way we map all possible rounded values between 0 and 9 inclusive
-    int index = floor(mag) + 2;
-    return map[index];
-}
-
-char *map_mag_unicode(const char *map[10], float mag)
-{
-    // apparent magnitudes in BSC5 range from -1.46 to 7.96
-    // this way we map all possible rounded values between 0 and 9 inclusive
-    int index = floor(mag) + 2;
-    return (char *) map[index];
 }
 
 void update_star_positions(struct star stars[], int num_stars,
                             double julian_date, double latitude, double longitude)
 {
-    double gmst = greenwich_mean_sidereal_time(julian_date);
+    double gmst = greenwich_mean_sidereal_time_rad(julian_date);
     
     for (int i = 0; i < num_stars; ++i)
     {
@@ -259,9 +121,6 @@ void render_stereo(struct star stars[], int num_stars,
                    WINDOW *win)
 {
 
-    // get terminal dimensions
-    float cell_aspect_ratio = get_cell_aspect_ratio();
-
     // TODO: add constellation rendering
     float lowest_mag = -10;
     for (int i = 0; i < num_stars; ++i)
@@ -279,7 +138,7 @@ void render_stereo(struct star stars[], int num_stars,
         // treating the positive y-axis as "north" for the former.
         // for the latter, phi is synonymous with the zenith angle
         double r_polar, theta_polar;
-        project_stereographic(M_PI/2 - star -> azimuth, M_PI/2 - star -> altitude,
+        project_stereographic_south(1.0, M_PI/2 - star -> azimuth, M_PI/2 - star -> altitude,
                              &r_polar, &theta_polar);
 
         // if outside projection, ignore
@@ -290,17 +149,35 @@ void render_stereo(struct star stars[], int num_stars,
 
         int row, col;
         polar_to_win(r_polar, theta_polar,
-                   win->_maxy, win->_maxx, cell_aspect_ratio,
+                   win->_maxy, win->_maxx,
                    &row, &col);
 
+        // apparent magnitudes in BSC5 range from -1.46 to 7.96
+        int map_index = map_float_to_int_range(-1.46, 7.96, 0, 9, star->magnitude);
         // draw star
         if (no_unicode)
         {
-            mvwaddch(win, row, col, map_mag_ASCII(mag_map_round_ASCII, star->magnitude));
+            mvwaddch(win, row, col, mag_map_round_ASCII[map_index]);
         }
         else
         {
-            mvwaddstr(win, row, col, map_mag_unicode(mag_map_unicode_round, star->magnitude));
+            mvwaddstr(win, row, col, mag_map_unicode_round[map_index]);
+        }
+
+        // special stars used for debugging
+        if (star -> catalog_number == 424)
+        {
+            mvwaddstr(win, row, col, "P"); // Polaris
+        }
+
+        if (star->catalog_number == 4301)
+        {
+            mvwaddstr(win, row, col, "D"); // Dubhe
+        }
+
+        if (star->catalog_number == 2061)
+        {
+            mvwaddstr(win, row, col, "B"); // Betelgeuse
         }
     }
 
@@ -318,8 +195,6 @@ void render_azimuthal_grid(WINDOW *win, bool no_unicode)
         mvwaddstr(win, win->_maxy / 2, win->_maxx / 2, "＋");
     }
 }
-
-
 
 void catch_winch(int sig)
 {
@@ -348,9 +223,6 @@ void handle_resize(WINDOW *win)
     perform_resize = false;
 }
 
-// MAIN
-// https://azrael.digipen.edu/~mmead/www/Courses/CS180/getopt.html
-
 int main(int argc, char *argv[])
 {
     // defaults
@@ -363,7 +235,8 @@ int main(int argc, char *argv[])
     static int no_unicode;
     static int color;
     static int grid;
-
+    
+    // https://azrael.digipen.edu/~mmead/www/Courses/CS180/getopt.html
     int c;
     bool input_error = false;
 
@@ -465,7 +338,7 @@ int main(int argc, char *argv[])
             handle_resize(win);
         }
 
-        // ncruses erase should occur before rendering?
+        // ncurses erase should occur before rendering?
         // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
         werase(win);
 
@@ -476,7 +349,7 @@ int main(int argc, char *argv[])
             render_azimuthal_grid(win, no_unicode);
         }
 
-        julian_date += 0.1;
+        julian_date += 1.0;
 
         usleep(1.0 / fps * 1000000);
     }
