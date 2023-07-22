@@ -11,38 +11,56 @@ void equatorial_to_horizontal(double declination, double right_ascension,
                               double *altitude, double *azimuth)
 {
     // TODO: do these angles need to be normalized?
+
+    // compute the approximate hour angle (*not* corrected for nutation)
     double hour_angle = gmst - longitude - right_ascension;
 
     *altitude = asin(sin(latitude) * sin(declination) +
                      cos(latitude) * cos(declination) * cos(hour_angle));
 
     *azimuth = atan2(sin(hour_angle), cos(hour_angle) * sin(latitude) -
-                                          tan(declination) * cos(latitude));
+                     tan(declination) * cos(latitude));
+
+    return;
 }
 
 void horizontal_to_spherical(double azimuth, double altitude,
-                             double *theta_sphere, double *phi_sphere)
+                             double *point_theta, double *point_phi)
 {
-    *theta_sphere = M_PI / 2 - azimuth;
-    *phi_sphere = M_PI / 2 - altitude;
+    *point_theta = M_PI / 2 - azimuth;
+    *point_phi = M_PI / 2 - altitude;
 }
 
 // MAP PROJECTIONS
 
-void project_stereographic_south(double radius_sphere, double theta_sphere, double phi_sphere,
-                           double *r_polar, double *theta_polar)
+void project_stereographic(double sphere_radius, double point_theta, double point_phi,
+                           double center_theta, double center_phi,
+                           double *radius_polar, double *theta_polar)
 {
+    // TODO: check this math
+
     // Map Projections - A Working Manual By JOHN P.SNYDER
-    *r_polar = radius_sphere * tan(phi_sphere / 2); // eq (21 - 1) modified
-    *theta_polar = theta_sphere;                    // eq (20 - 2) modified
+    double c = fabs(center_phi - point_phi);    // angular separation between center & point
+    *radius_polar = sphere_radius * tan(c / 2); // eq (21 - 1) - dividing by 2 gives projection onto plane containing equator
+    *theta_polar = point_theta - center_theta;  // eq (20 - 2) - Snyder uses different polar coords... what else?
 }
 
-void project_stereographic_north(double radius_sphere, double theta_sphere, double phi_sphere,
-                                 double *r_polar, double *theta_polar)
+void project_stereographic_north(double sphere_radius, double theta_point, double point_phi,
+                                 double *radius_polar, double *theta_polar)
 {
     // Map Projections - A Working Manual By JOHN P.SNYDER
-    *r_polar = radius_sphere * tan(M_PI / 2 - phi_sphere / 2);  // eq (21 - 1) modified
-    *theta_polar = theta_sphere;                                // eq (20 - 2) modified
+    double c = fabs(0.0 - point_phi);           // angular separation between center (Φ_north_pole = 0) & point
+    *radius_polar = sphere_radius * tan(c / 2); // eq (21 - 1) - dividing by 2 gives projection onto plane containing equator
+    *theta_polar = theta_point;                 // eq (20 - 2) - Snyder uses different polar coords
+}
+
+void project_stereographic_south(double sphere_radius, double point_theta, double point_phi,
+                                 double *radius_polar, double *theta_polar)
+{
+    // Map Projections - A Working Manual By JOHN P.SNYDER
+    double c = fabs(M_PI - point_phi);          // angular separation between center (Φ_south_pole = π) & point
+    *radius_polar = sphere_radius * tan(c / 2); // eq (21 - 1) - dividing by 2 gives projection onto plane containing equator
+    *theta_polar = point_theta;                 // eq (20 - 2) - Snyder uses different polar coords
 }
 
 // SCREEN SPACE MAPPING

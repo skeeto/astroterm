@@ -49,36 +49,41 @@ void horizontal_to_spherical(double azimuth, double altitude,
 
 // MAP PROJECTIONS
 
-/* Stereographic projection centered on the south pole
+/* Generalized stereographic projection centered on a generic focus point
  *
  * (R, θ, Φ) -> (r, θ)
  *
- * Maps a point  on a sphere with radius R to the plane containing the equator
- * of the sphere. Since the focus point is the south pole the point will only
- * lie within the "equatorial orthodrome" (circle with radius R) if
- * -π/2 < Φ < π/2. As such, this projects the "northern" hemisphere to the
- * "equatorial orthodrome."
- * 
+ * Maps a point on a sphere with radius R to the plane containing the center of
+ * the sphere and orthogonal to the radius to the center point.
+ *
  * Reference:   https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
  *              https://en.wikipedia.org/wiki/Stereographic_projection
  *              https://pubs.usgs.gov/pp/1395/report.pdf
  */
+void project_stereographic(double sphere_radius, double point_theta, double point_phi,
+                           double center_theta, double center_phi,
+                           double *radius_polar, double *theta_polar);
+
+/* Stereographic projection centered on the south pole
+ *
+ * (R, θ, Φ) -> (r, θ)
+ *
+ * Maps a point on a sphere with radius R to the plane containing the equator
+ * of the sphere. Since the focus point is the north pole the point will only
+ * lie within the "equatorial orthodrome" (circle with radius R) if
+ * π/2 < Φ < 3π/2.
+ */
 void project_stereographic_south(double radius_sphere, double theta_sphere, double phi_sphere,
-                           double *r_polar, double *theta_polar);
+                                 double *r_polar, double *theta_polar);
 
 /* Stereographic projection centered on the north pole
  *
  * (R, θ, Φ) -> (r, θ)
  *
  * Maps a point  on a sphere with radius R to the plane containing the equator
- * of the sphere. Since the focus point is the north pole the point will only
+ * of the sphere. Since the focus point is the south pole the point will only
  * lie within the "equatorial orthodrome" (circle with radius R) if
- * π/2 < Φ < 3π/2. As such, this projects the "southern" hemisphere to the
- * "equatorial orthodrome."
- * 
- * Reference:   https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
- *              https://en.wikipedia.org/wiki/Stereographic_projection
- *              https://pubs.usgs.gov/pp/1395/report.pdf
+ * -π/2 < Φ < π/2.
  */
 void project_stereographic_north(double radius_sphere, double theta_sphere, double phi_sphere,
                                  double *r_polar, double *theta_polar);
@@ -99,4 +104,5 @@ void perspective_to_win(double aov_phi, double aov_theta,
                         double object_phi, double object_theta,
                         int win_height, int win_width,
                         int *row, int *col);
+
 #endif

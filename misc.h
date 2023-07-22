@@ -10,4 +10,8 @@
 int map_float_to_int_range(double min_float, double max_float,
                        int min_int, int max_int, double input);
 
+/* Normalize a radian angle to [0, 2π]
+ */
+double norm_rad(double rad);
+
 #endif

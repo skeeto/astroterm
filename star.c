@@ -1,17 +1,9 @@
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <ncurses.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <math.h>
 #include <signal.h>
-#include <time.h>
 #include <locale.h>
-#include <termios.h>
 
 #include "astro.h"
 #include "bit.h"
@@ -32,7 +24,10 @@ static const char *mag_map_unicode_round[10]    = {"⬤", "⚫︎", "●", "⦁"
 static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
 static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
 static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
-static const char mag_map_round_ASCII[10]       = {'O', 'o', '.', '.', '.', '.', '.', '.', '.', '.'};
+static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o', '.', '.', '.', '.'};
+
+static const float min_magnitude = -1.46;
+static const float max_magnitude = 7.96;
 
 struct star
 {
@@ -96,7 +91,7 @@ struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
 }
 
 void update_star_positions(struct star stars[], int num_stars,
-                            double julian_date, double latitude, double longitude)
+                           double julian_date, double latitude, double longitude)
 {
     double gmst = greenwich_mean_sidereal_time_rad(julian_date);
     
@@ -106,8 +101,8 @@ void update_star_positions(struct star stars[], int num_stars,
 
         double altitude, azimuth;
         equatorial_to_horizontal(star -> declination, star -> right_ascension,
-                               gmst, latitude, longitude,
-                               &altitude, &azimuth);
+                                 gmst, latitude, longitude,
+                                 &altitude, &azimuth);
 
         star -> altitude = altitude;
         star -> azimuth = azimuth;
@@ -121,8 +116,6 @@ void render_stereo(struct star stars[], int num_stars,
                    WINDOW *win)
 {
 
-    // TODO: add constellation rendering
-    float lowest_mag = -10;
     for (int i = 0; i < num_stars; ++i)
     {
         struct star* star = &stars[i];
@@ -133,27 +126,27 @@ void render_stereo(struct star stars[], int num_stars,
             continue;
         }
 
-        // note: here we convert azimuth and altitude to
-        // theta and phi in general spherical coords by
-        // treating the positive y-axis as "north" for the former.
-        // for the latter, phi is synonymous with the zenith angle
-        double r_polar, theta_polar;
-        project_stereographic_south(1.0, M_PI/2 - star -> azimuth, M_PI/2 - star -> altitude,
-                             &r_polar, &theta_polar);
+        double theta_sphere, phi_sphere;
+        horizontal_to_spherical(star -> azimuth, star -> altitude,
+                                &theta_sphere, &phi_sphere);
+
+        double radius_polar, theta_polar;
+        project_stereographic_north(1.0, theta_sphere, phi_sphere,
+                                    &radius_polar, &theta_polar);
 
         // if outside projection, ignore
-        if (r_polar > 1)
+        if (fabs(radius_polar) > 1)
         {
             continue;
         }
 
         int row, col;
-        polar_to_win(r_polar, theta_polar,
+        polar_to_win(radius_polar, theta_polar,
                    win->_maxy, win->_maxx,
                    &row, &col);
 
-        // apparent magnitudes in BSC5 range from -1.46 to 7.96
-        int map_index = map_float_to_int_range(-1.46, 7.96, 0, 9, star->magnitude);
+        int map_index = map_float_to_int_range(min_magnitude, max_magnitude, 0, 9, star->magnitude);
+
         // draw star
         if (no_unicode)
         {
@@ -228,7 +221,7 @@ int main(int argc, char *argv[])
     // defaults
     double latitude     = 0.73934145516; // Boston, MA
     double longitude    = 5.04300525197;
-    double julian_date  = 2451544.50000; // Jan 1, 2000
+    double julian_date  = 2451544.50000; // Jan 1, 2000 00:00:00.0
     float threshold     = 3.0f;
     int fps             = 24;
 
@@ -317,7 +310,7 @@ int main(int argc, char *argv[])
 
     signal(SIGWINCH, catch_winch); // Capture window resizes
 
-    term_init();
+    ncurses_init();
 
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0); // non-blocking read for wgetch
@@ -340,7 +333,12 @@ int main(int argc, char *argv[])
 
         // ncurses erase should occur before rendering?
         // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
+
+        // TODO: rendered frames only show up starting on second frame
         werase(win);
+
+        // TODO: positions appear to disagree with https://stellarium-web.org/
+        // by ~17:00:00.00.0
 
         update_star_positions(stars, total_stars, julian_date, latitude, longitude);
         render_stereo(stars, total_stars, no_unicode, threshold, win);
@@ -354,7 +352,7 @@ int main(int argc, char *argv[])
         usleep(1.0 / fps * 1000000);
     }
     
-    term_kill();
+    ncurses_kill();
 
     free(stars);
 

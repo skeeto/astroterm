@@ -8,11 +8,11 @@
 
 /* Initialize ncurses
  */
-void term_init();
+void ncurses_init();
 
 /* Kill ncurses
  */
-void term_kill();
+void ncurses_kill();
 
 
 /* Resize window to square with largest possible area
