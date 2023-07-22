@@ -4,6 +4,7 @@
 #include <math.h>
 #include <signal.h>
 #include <locale.h>
+#include <time.h>
 
 #include "astro.h"
 #include "bit.h"
@@ -238,6 +239,12 @@ void handle_resize(WINDOW *win)
 
 int main(int argc, char *argv[])
 {
+    // get current time
+    time_t t = time(NULL);
+    struct tm lt = *localtime(&t);
+    double current_jd = datetime_to_julian_date(lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday,
+                                                lt.tm_hour, lt.tm_min, lt.tm_sec);
+
     // defaults
     double latitude     = 0.73934145516; // Boston, MA
     double longitude    = 5.04300525197;
@@ -375,7 +382,7 @@ int main(int argc, char *argv[])
             render_azimuthal_grid(win, no_unicode);
         }
 
-        julian_date += 1.0;
+        julian_date += 1.0 / 24;
 
         usleep(1.0 / fps * 1000000);
     }

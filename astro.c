@@ -1,5 +1,7 @@
 #include <math.h>
 
+#include "misc.h"
+
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
@@ -37,4 +39,21 @@ double greenwich_mean_sidereal_time_rad(double jd)
     double gmst = earth_rotation_angle_rad(jd) - acc_precession_rad; // eq 42
 
     return gmst;
+}
+
+double datetime_to_julian_date(int year, int month, int day,
+                               int hour, int minute, int second)
+{
+    // https://sorbital-mechanics.space/reference/julian-date.html
+    int a = (month - 14) / 12;          // eq 436
+    int b = 1461 * (year + 4800 + a);   // eq 436
+    int c = 367 * (month - 2 - 12 * a); // eq 436
+    int e = (year + 4900 + a) / 100;    // eq 436
+
+    int julian_day_num = b / 4 + c / 12 - (3 * e) / 4 + day - 32075; // eq 437
+
+    // determine fraction of seconds that have passed in one day
+    double julian_day_frac = (hour - 12) / 24.0 + minute / 1440.0 + second / 86400.0;
+
+    return julian_day_num + julian_day_frac;
 }

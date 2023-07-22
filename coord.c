@@ -10,7 +10,7 @@ void equatorial_to_horizontal(double declination, double right_ascension,
                               double gmst, double latitude, double longitude,
                               double *altitude, double *azimuth)
 {
-    // TODO: do these angles need to be normalized?
+    // FIXME: angles move way too slow--something wrong
 
     // compute the approximate hour angle (*not* corrected for nutation)
     double hour_angle = gmst - longitude - right_ascension;

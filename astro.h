@@ -18,4 +18,9 @@ double earth_rotation_angle_rad(double jd);
  */
 double greenwich_mean_sidereal_time_rad(double jd);
 
+/* Get the julian date from a given datetime
+ */
+double datetime_to_julian_date(int year, int month, int day,
+                               int hour, int minute, int second);
+
 #endif
