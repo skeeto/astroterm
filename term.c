@@ -71,7 +71,7 @@ bool stdout_directed_to_console()
 
 float get_cell_aspect_ratio()
 {
-    float default_height = 2.15;
+    float default_height = 2;
 
     // attempt to get aspect ratio only if stdout writing to console
     if (stdout_directed_to_console())

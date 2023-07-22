@@ -39,6 +39,20 @@ struct star
     double azimuth;
 };
 
+int star_magnitude_comparator(const void *v1, const void *v2)
+{
+    const struct star *p1 = (struct star *) v1;
+    const struct star *p2 = (struct star *) v2;
+
+    // remember that lower magnitudes are brighter
+    if (p1->magnitude < p2->magnitude)
+        return +1;
+    else if (p1->magnitude > p2->magnitude)
+        return -1;
+    else
+        return 0;
+}
+
 struct star entry_to_star(uint8_t *entry)
 {
     struct star star_data;
@@ -111,7 +125,23 @@ void update_star_positions(struct star stars[], int num_stars,
     return;
 }
 
+void populate_special_chars(const char *special_chars[], int num_chars)
+{
+    // TODO: is there a better way to do this?
+
+    // initialize all strings pointers to NULL
+    for (int i = 0; i < num_chars; ++i)
+    {
+        special_chars[i] = NULL;
+    }
+    special_chars[424]  = "✦"; // Polaris
+    special_chars[4301] = "D"; // Dubhe
+    special_chars[2061] = "B"; // Betelgeuse
+    return;
+}
+
 void render_stereo(struct star stars[], int num_stars,
+                   const char *special_chars[],
                    bool no_unicode, float threshold,
                    WINDOW *win)
 {
@@ -154,23 +184,13 @@ void render_stereo(struct star stars[], int num_stars,
         }
         else
         {
-            mvwaddstr(win, row, col, mag_map_unicode_round[map_index]);
+            mvwaddstr(win, row, col, mag_map_unicode_diamond[map_index]);
         }
 
         // special stars used for debugging
-        if (star -> catalog_number == 424)
+        if (special_chars[(int) star->catalog_number] != NULL)
         {
-            mvwaddstr(win, row, col, "P"); // Polaris
-        }
-
-        if (star->catalog_number == 4301)
-        {
-            mvwaddstr(win, row, col, "D"); // Dubhe
-        }
-
-        if (star->catalog_number == 2061)
-        {
-            mvwaddstr(win, row, col, "B"); // Betelgeuse
+            mvwaddstr(win, row, col, special_chars[(int)star->catalog_number]);
         }
     }
 
@@ -306,6 +326,14 @@ int main(int argc, char *argv[])
     int total_stars;
     struct star *stars = read_BSC5_to_mem("data/BSC5", &total_stars);
 
+    // sort stars by magnitude so "larger" stars are always rendered on top
+    // reduces "flickering" when rendering many stars
+    qsort(stars, total_stars, sizeof(struct star), star_magnitude_comparator);
+
+    // initialize special character map for debugging stars
+    const char  *special_chars[total_stars];
+    populate_special_chars(special_chars, total_stars);
+
     setlocale(LC_ALL, ""); // required for unicode rendering
 
     signal(SIGWINCH, catch_winch); // Capture window resizes
@@ -334,14 +362,14 @@ int main(int argc, char *argv[])
         // ncurses erase should occur before rendering?
         // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
 
-        // TODO: rendered frames only show up starting on second frame
+        // FIXME: rendered frames only show up starting on second frame
         werase(win);
 
-        // TODO: positions appear to disagree with https://stellarium-web.org/
+        // FIXME: positions appear to disagree with https://stellarium-web.org/
         // by ~17:00:00.00.0
 
         update_star_positions(stars, total_stars, julian_date, latitude, longitude);
-        render_stereo(stars, total_stars, no_unicode, threshold, win);
+        render_stereo(stars, total_stars, special_chars, no_unicode, threshold, win);
         if (grid)
         {
             render_azimuthal_grid(win, no_unicode);
