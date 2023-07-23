@@ -5,33 +5,15 @@
 #include <signal.h>
 #include <locale.h>
 #include <time.h>
+#include <stdbool.h>
 
 #include "astro.h"
-#include "bit.h"
 #include "coord.h"
 // #include "drawing.c"
 #include "misc.h"
 #include "term.h"
-
-/* Generic celestial body
- */
-struct body
-{
-    double altitude;
-    double azimuth;
-};
-
-/* Stars contain more information than just a body
- */
-struct star
-{
-    float catalog_number;
-    float magnitude;
-    double right_ascension;
-    double declination;
-    double altitude;
-    double azimuth;
-};
+#include "celestial_bodies.h"
+#include "parse_BSC5.h"
 
 // flag for resize signal handler
 static volatile bool perform_resize = false;
@@ -45,73 +27,6 @@ static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o',
 
 static const float min_magnitude = -1.46;
 static const float max_magnitude = 7.96;
-
-int star_magnitude_comparator(const void *v1, const void *v2)
-{
-    const struct star *p1 = (struct star *) v1;
-    const struct star *p2 = (struct star *) v2;
-
-    // remember that lower magnitudes are brighter
-    if (p1->magnitude < p2->magnitude)
-        return +1;
-    else if (p1->magnitude > p2->magnitude)
-        return -1;
-    else
-        return 0;
-}
-
-struct star entry_to_star(uint8_t *entry)
-{
-    // TODO: should this return pointers to arrays?
-
-    struct star star_data;
-
-    // BSC5 Entry format
-    star_data.catalog_number    = bytes_to_float32_LE(0, entry);
-    star_data.right_ascension   = bytes_to_double64_LE(4, entry);
-    star_data.declination       = bytes_to_double64_LE(12, entry);
-    star_data.magnitude         = (float) bytes_to_int16_LE(22, entry) / 100.0;
-
-    return star_data;
-}
-
-struct star* read_BSC5_to_mem(const char *file_path, int *return_num_stars)
-{
-    /* read BSC5 into memory for efficient access
-     * slightly generalized to read other catalogs in SAOTDC binary format
-     * TODO: requires more generalization if we're doing that
-     */
-
-    // Read header
-
-    FILE *file_pointer;
-    file_pointer = fopen(file_path, "rb");
-    
-    uint8_t header_buffer[28];
-
-    fread(header_buffer, sizeof(header_buffer), 1, file_pointer);
-
-    // We know BSC5 uses J2000 cords.
-    uint32_t num_stars = abs((int) bytes_to_uint32_LE(8, header_buffer));
-    uint32_t bytes_per_entry = bytes_to_uint32_LE(24, header_buffer);
-
-    // Read entries
-
-    // Manually allocate variable sized arrays
-    struct star* stars = (struct star *) malloc(num_stars * sizeof(struct star));
-    uint8_t *entry_buffer = (uint8_t *)malloc( bytes_per_entry);
-
-    for (unsigned int i = 0; i < num_stars; i++)
-    {
-        fread(entry_buffer, bytes_per_entry, 1, file_pointer);
-        stars[i] = entry_to_star(entry_buffer);
-    }
-
-    free(entry_buffer);
-
-    *return_num_stars = num_stars;
-    return stars;
-}
 
 void update_star_positions(struct star stars[], int num_stars,
                            double julian_date, double latitude, double longitude)
@@ -260,7 +175,7 @@ bool parse_options(int argc, char *argv[],
                    int *color,
                    int *grid);
 
-    int main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     // get current time
     time_t t = time(NULL);
@@ -296,7 +211,7 @@ bool parse_options(int argc, char *argv[],
     }
 
     int total_stars;
-    struct star *stars = read_BSC5_to_mem("data/BSC5", &total_stars);
+    struct star *stars = parse_stars("data/BSC5", &total_stars);
 
     // sort stars by magnitude so "larger" stars are always rendered on top
     // reduces "flickering" when rendering many stars
