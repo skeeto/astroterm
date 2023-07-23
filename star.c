@@ -13,9 +13,25 @@
 #include "misc.h"
 #include "term.h"
 
-#ifndef M_PI
-    #define M_PI 3.14159265358979323846
-#endif
+/* Generic celestial body
+ */
+struct body
+{
+    double altitude;
+    double azimuth;
+};
+
+/* Stars contain more information than just a body
+ */
+struct star
+{
+    float catalog_number;
+    float magnitude;
+    double right_ascension;
+    double declination;
+    double altitude;
+    double azimuth;
+};
 
 // flag for resize signal handler
 static volatile bool perform_resize = false;
@@ -29,16 +45,6 @@ static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o',
 
 static const float min_magnitude = -1.46;
 static const float max_magnitude = 7.96;
-
-struct star
-{
-    float catalog_number;
-    float magnitude;
-    double right_ascension;
-    double declination;
-    double altitude;
-    double azimuth;
-};
 
 int star_magnitude_comparator(const void *v1, const void *v2)
 {
@@ -56,6 +62,8 @@ int star_magnitude_comparator(const void *v1, const void *v2)
 
 struct star entry_to_star(uint8_t *entry)
 {
+    // TODO: should this return pointers to arrays?
+
     struct star star_data;
 
     // BSC5 Entry format
@@ -126,24 +134,25 @@ void update_star_positions(struct star stars[], int num_stars,
     return;
 }
 
-void populate_special_chars(const char *special_chars[], int num_chars)
+void populate_special_chars(const char *special_symbols[], int num_stars)
 {
     // TODO: is there a better way to do this?
 
-    // initialize all strings pointers to NULL
-    for (int i = 0; i < num_chars; ++i)
+    // Initialize all strings pointers to NULL
+    // Add 1 since catalog_num = array_index + 1
+    for (int i = 0; i < num_stars + 1; ++i)
     {
-        special_chars[i] = NULL;
+        special_symbols[i] = NULL;
     }
-    special_chars[424]  = "✦"; // Polaris
-    special_chars[4301] = "D"; // Dubhe
-    special_chars[2061] = "B"; // Betelgeuse
-    special_chars[7001] = "V"; // Vega
+    special_symbols[424]  = "✦"; // Polaris
+    special_symbols[4301] = "D"; // Dubhe
+    special_symbols[2061] = "B"; // Betelgeuse
+    special_symbols[7001] = "V"; // Vega
     return;
 }
 
 void render_stereo(struct star stars[], int num_stars,
-                   const char *special_chars[],
+                   const char *special_symbols[],
                    bool no_unicode, float threshold,
                    WINDOW *win)
 {
@@ -157,6 +166,8 @@ void render_stereo(struct star stars[], int num_stars,
         {
             continue;
         }
+
+        // map stars using stereographic projection
 
         double theta_sphere, phi_sphere;
         horizontal_to_spherical(star -> azimuth, star -> altitude,
@@ -177,22 +188,22 @@ void render_stereo(struct star stars[], int num_stars,
                    win->_maxy, win->_maxx,
                    &row, &col);
 
-        int map_index = map_float_to_int_range(min_magnitude, max_magnitude, 0, 9, star->magnitude);
+        int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude, 0, 9, star->magnitude);
 
         // draw star
         if (no_unicode)
         {
-            mvwaddch(win, row, col, mag_map_round_ASCII[map_index]);
+            mvwaddch(win, row, col, mag_map_round_ASCII[symbol_index]);
         }
         else
         {
-            mvwaddstr(win, row, col, mag_map_unicode_diamond[map_index]);
+            mvwaddstr(win, row, col, mag_map_unicode_diamond[symbol_index]);
         }
 
         // special stars used for debugging
-        if (special_chars[(int) star->catalog_number] != NULL)
+        if (special_symbols[(int) star->catalog_number] != NULL)
         {
-            mvwaddstr(win, row, col, special_chars[(int)star->catalog_number]);
+            mvwaddstr(win, row, col, special_symbols[(int)star->catalog_number]);
         }
     }
 
@@ -238,93 +249,46 @@ void handle_resize(WINDOW *win)
     perform_resize = false;
 }
 
-int main(int argc, char *argv[])
+bool parse_options(int argc, char *argv[],
+                   double *latitude,
+                   double *longitude,
+                   double *julian_date,
+                   float *threshold,
+                   int *fps,
+                   float *animation_mult,
+                   int *no_unicode,
+                   int *color,
+                   int *grid);
+
+    int main(int argc, char *argv[])
 {
     // get current time
     time_t t = time(NULL);
     struct tm lt = *localtime(&t);
-    double current_jd = datetime_to_julian_date(lt.tm_year + 1900, lt.tm_mon + 1, lt.tm_mday,
-                                                lt.tm_hour, lt.tm_min, lt.tm_sec);
+    double current_jd = datetime_to_julian_date(&lt);
 
     // defaults
-    double latitude     = 0.73934145516; // Boston, MA
-    double longitude    = 5.04300525197;
-    double julian_date  = current_jd; // Jan 1, 2000 00:00:00.0
-    float threshold     = 3.0f;
-    int fps             = 24;
+    double latitude         = 0.73934145516;    // Boston, MA
+    double longitude        = 5.04300525197;    // Boston, MA
+    double julian_date      = current_jd;       // Jan 1, 2000 00:00:00.0
+    float threshold         = 3.0f;
+    int fps                 = 24;
+    float animation_mult    = 1.0f;             // real time animation speed mult (e.g. 2 is 2x real time)
 
-    static int no_unicode;
-    static int color;
-    static int grid;
-    
-    // https://azrael.digipen.edu/~mmead/www/Courses/CS180/getopt.html
-    int c;
-    bool input_error = false;
+    int no_unicode;
+    int color;
+    int grid;
 
-    while (1)
-    {
-        int option_index = 0;
-        static struct option long_options[] =
-        {
-            {"latitude",    required_argument,  NULL,       'a'},
-            {"longitude",   required_argument,  NULL,       'o'},
-            {"julian-date", required_argument,  NULL,       'j'},
-            {"threshold",   required_argument,  NULL,       't'},
-            {"fps",         required_argument,  NULL,       'f'},
-            {"no-unicode",  no_argument,        &no_unicode,  1},
-            {"color",       no_argument,        &color,       1},
-            {"grid",        no_argument,        &grid,        1},
-            {NULL,          0,                  NULL,         0}
-        };
-
-        c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
-        if (c == -1)
-            break;
-        
-        switch (c)
-        {
-            case 0:
-                break;
-
-            case 1:   
-                break;
-
-            case 'a':
-                latitude = atof(optarg);
-                break;
-
-            case 'l':
-                longitude = atof(optarg);
-                break;
-
-            case 'j':
-                julian_date = atof(optarg);
-                break;
-
-            case 't':
-                threshold = atof(optarg);
-                break;
-
-            case 'f':
-                fps = atoi(optarg);
-                break;
-
-            case '?':
-                printf("Unrecognized option '%c'\n", optopt);
-                input_error = true;
-                break;
-
-            case ':':
-                printf("Missing option for '%c'\n", optopt);
-                input_error = true;
-                break;
-
-            default:
-                printf("?? getopt returned character code 0%o ??\n", c);
-                input_error = true;
-                break;
-        }
-    }
+    bool input_error = parse_options(argc, argv,
+                                    &latitude,
+                                    &longitude,
+                                    &julian_date,
+                                    &threshold,
+                                    &fps,
+                                    &animation_mult,
+                                    &no_unicode,
+                                    &color,
+                                    &grid);
 
     if (input_error)
     {
@@ -339,8 +303,8 @@ int main(int argc, char *argv[])
     qsort(stars, total_stars, sizeof(struct star), star_magnitude_comparator);
 
     // initialize special character map for debugging stars
-    const char  *special_chars[total_stars];
-    populate_special_chars(special_chars, total_stars);
+    const char  *special_symbols[total_stars];
+    populate_special_chars(special_symbols, total_stars);
 
     setlocale(LC_ALL, ""); // required for unicode rendering
 
@@ -353,6 +317,7 @@ int main(int argc, char *argv[])
     win_resize_square(win, get_cell_aspect_ratio());
     win_position_center(win);
 
+    int c;
     while (true)
     {
         
@@ -373,17 +338,14 @@ int main(int argc, char *argv[])
         // FIXME: rendered frames only show up starting on second frame
         werase(win);
 
-        // FIXME: positions appear to disagree with https://stellarium-web.org/
-        // by ~17:00:00.00.0
-
         update_star_positions(stars, total_stars, julian_date, latitude, longitude);
-        render_stereo(stars, total_stars, special_chars, no_unicode, threshold, win);
+        render_stereo(stars, total_stars, special_symbols, no_unicode, threshold, win);
         if (grid)
         {
             render_azimuthal_grid(win, no_unicode);
         }
 
-        julian_date += (1.0 / fps) / (24 * 60 * 60);
+        julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
 
         usleep(1.0 / fps * 1000000);
     }
@@ -393,4 +355,109 @@ int main(int argc, char *argv[])
     free(stars);
 
     return 0;
+}
+
+bool parse_options(int argc, char *argv[],
+                   double   *latitude,
+                   double   *longitude,
+                   double   *julian_date,
+                   float    *threshold,
+                   int      *fps,
+                   float    *animation_mult,
+                   int      *no_unicode,
+                   int      *color,
+                   int      *grid)
+{
+    // flags (TODO: this is weird way around needing const flags in struct?)
+    static int no_unicode_flag;
+    static int color_flag;
+    static int grid_flag;
+
+    // https://azrael.digipen.edu/~mmead/www/mg/getopt/index.html
+    int c;
+    bool input_error = false;
+
+    while (1)
+    {
+        int option_index = 0;
+        static struct option long_options[] =
+        {
+            {"latitude",        required_argument,  NULL,               'a'},
+            {"longitude",       required_argument,  NULL,               'o'},
+            {"julian-date",     required_argument,  NULL,               'j'},
+            {"threshold",       required_argument,  NULL,               't'},
+            {"fps",             required_argument,  NULL,               'f'},
+            {"animation-mult",  required_argument,  NULL,               'm'},
+            {"no-unicode",      no_argument,        &no_unicode_flag,   1},
+            {"color",           no_argument,        &color_flag,        1},
+            {"grid",            no_argument,        &grid_flag,         1},
+            {NULL,              0,                  NULL,               0}
+        };
+
+        c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
+        if (c == -1)
+            break;
+
+        switch (c)
+        {
+        case 0:
+            break;
+
+        case 1:
+            break;
+
+        case 'a':
+            *latitude = atof(optarg);
+            break;
+
+        case 'l':
+            *longitude = atof(optarg);
+            break;
+
+        case 'j':
+            *julian_date = atof(optarg);
+            break;
+
+        case 't':
+            *threshold = atof(optarg);
+            break;
+
+        case 'f':
+            *fps = atoi(optarg);
+            break;
+
+        case 'm':
+            *animation_mult = atof(optarg);
+            break;
+
+        case '?':
+            if (optopt == 0)
+            {
+                printf("Unrecognized long option\n");
+            }
+            else
+            {
+                printf("Unrecognized option '%c'\n", optopt);
+            }
+            input_error = true;
+            break;
+
+        case ':':
+            printf("Missing option for '%c'\n", optopt);
+            input_error = true;
+            break;
+
+        default:
+            printf("?? getopt returned character code 0%o ??\n", c);
+            input_error = true;
+            break;
+        }
+    }
+
+    // TODO: weird stuff
+    *no_unicode = no_unicode_flag;
+    *color = color_flag;
+    *grid = grid_flag;
+
+    return input_error;
 }

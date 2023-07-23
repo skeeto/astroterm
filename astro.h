@@ -20,7 +20,22 @@ double greenwich_mean_sidereal_time_rad(double jd);
 
 /* Get the julian date from a given datetime
  */
-double datetime_to_julian_date(int year, int month, int day,
-                               int hour, int minute, int second);
+double datetime_to_julian_date(struct tm *time);
+
+/* Get the julian date from a given datetime
+ */
+struct tm* julian_date_to_datetime(double julian_date);
+
+/* Orbital elements:
+ *
+ * a: semi-major axis (mean distance from sun)
+ * e: eccentricity
+ * i: inclination to the ecliptic
+ * l: longitude of ascending node
+ * w: argument of perihelion
+ * m: mean anomaly
+ */
+void planetary_positions(double a, double e, double i,
+                         double l, double w, double m);
 
 #endif
