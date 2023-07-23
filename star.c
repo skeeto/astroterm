@@ -138,6 +138,7 @@ void populate_special_chars(const char *special_chars[], int num_chars)
     special_chars[424]  = "✦"; // Polaris
     special_chars[4301] = "D"; // Dubhe
     special_chars[2061] = "B"; // Betelgeuse
+    special_chars[7001] = "V"; // Vega
     return;
 }
 
@@ -248,7 +249,7 @@ int main(int argc, char *argv[])
     // defaults
     double latitude     = 0.73934145516; // Boston, MA
     double longitude    = 5.04300525197;
-    double julian_date  = 2451544.50000; // Jan 1, 2000 00:00:00.0
+    double julian_date  = current_jd; // Jan 1, 2000 00:00:00.0
     float threshold     = 3.0f;
     int fps             = 24;
 
@@ -382,7 +383,7 @@ int main(int argc, char *argv[])
             render_azimuthal_grid(win, no_unicode);
         }
 
-        julian_date += 1.0 / 24;
+        julian_date += (1.0 / fps) / (24 * 60 * 60);
 
         usleep(1.0 / fps * 1000000);
     }

@@ -9,7 +9,7 @@
 double earth_rotation_angle_rad(double jd)
 {
     double t = jd - 2451545.0;
-    int d = jd - floor(jd);
+    double d = jd - floor(jd);
 
     // IERS Technical Note No. 32: 5.4.4 eq. (14);
     double theta = 2 * M_PI * (d + 0.7790572732640 + 0.00273781191135448 * t);
