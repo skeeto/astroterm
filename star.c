@@ -19,6 +19,7 @@ static double latitude      = 0.73934145516;    // Boston, MA
 static double longitude     = 5.04300525197;    // Boston, MA
 static double julian_date   = 2451544.50000;    // Jan 1, 2000 00:00:00.0
 static float threshold      = 3.0f;             // stars brighter than this will be rendered
+static float label_thresh   = 0.5f;             // stars brighter than this will have labels
 static int fps              = 24;               // frames per second
 static float animation_mult = 1.0f;             // real time animation speed mult (e.g. 2 is 2x real time)
 
@@ -59,6 +60,9 @@ int main(int argc, char *argv[])
     // reduces "flickering" when rendering many stars
     int total_stars;
     struct star *stars = parse_stars("data/BSC5", &total_stars);
+    char **star_names = parse_BSC5_names("data/BSC5_names", total_stars);
+    set_star_labels(stars, star_names, total_stars, label_thresh);
+
     qsort(stars, total_stars, sizeof(struct star), star_magnitude_comparator);
 
     setlocale(LC_ALL, ""); // required for unicode rendering
@@ -105,7 +109,13 @@ int main(int argc, char *argv[])
     
     ncurses_kill();
 
+    // free memory
     free(stars);
+    for (int i = 1; i < total_stars + 1; ++i) // recall name initialization
+    {
+        free(star_names[i]);
+    }
+    free(star_names);
 
     return 0;
 }
@@ -125,6 +135,7 @@ bool parse_options(int argc, char *argv[])
             {"latitude",        required_argument,  NULL,               'a'},
             {"longitude",       required_argument,  NULL,               'o'},
             {"julian-date",     required_argument,  NULL,               'j'},
+            {"label-thresh",    required_argument,  NULL,               'l'},
             {"threshold",       required_argument,  NULL,               't'},
             {"fps",             required_argument,  NULL,               'f'},
             {"animation-mult",  required_argument,  NULL,               'm'},
@@ -150,7 +161,7 @@ bool parse_options(int argc, char *argv[])
             latitude = atof(optarg);
             break;
 
-        case 'l':
+        case 'o':
             longitude = atof(optarg);
             break;
 
@@ -160,6 +171,10 @@ bool parse_options(int argc, char *argv[])
 
         case 't':
             threshold = atof(optarg);
+            break;
+
+        case 'l':
+            label_thresh = atof(optarg);
             break;
 
         case 'f':
@@ -230,6 +245,7 @@ void render_object_stereo(struct object_base *object, WINDOW *win,
     }
 
     // draw label
+    // FIXME: labels wrap around side, cause flickering
     if (object->label != NULL)
     {
         mvwaddstr(win, row - 1, col + 1, object->label);

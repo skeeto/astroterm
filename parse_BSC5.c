@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "astro.h"
 #include "misc.h"
@@ -95,7 +96,7 @@ struct entry *parse_entries(const char *file_path, int *num_entries_return)
 // Project specific functions used to convert entries to a more practical format
 
 // star magnitude mapping
-static const char *mag_map_unicode_round[10]    = {"⬤", "⚫︎", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅"};
+static const char *mag_map_unicode_round[10]    = {"⬤", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅", "⋅"};
 static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
 static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
 static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
@@ -118,26 +119,12 @@ struct star entry_to_star(struct entry *entry_data)
     int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude,
                                               0, 9, star_data.magnitude);
 
-    star_data.base.symbol_ASCII     = (char)    mag_map_round_ASCII[symbol_index];
-    star_data.base.symbol_unicode   = (char*)   mag_map_unicode_diamond[symbol_index];
+    // this is necessary to avoid printing garbage data as labels. Rendering 
+    // functions check if NULL
+    star_data.base.label            = NULL; 
 
-    // TODO: use name data from file
-    star_data.base.label = NULL;
-    switch (star_data.catalog_number)
-    {
-    case 424:
-        star_data.base.label = "Polaris";
-        break;
-    case 4301:
-        star_data.base.label = "Dubhe";
-        break;
-    case 2061:
-        star_data.base.label = "Betelgeuse";
-        break;
-    case 7001:
-        star_data.base.label = "Vega";
-        break;
-    }
+    star_data.base.symbol_ASCII     = (char)    mag_map_round_ASCII[symbol_index];
+    star_data.base.symbol_unicode   = (char *)  mag_map_unicode_round[symbol_index];
 
     return star_data;
 }
@@ -155,7 +142,52 @@ struct star *parse_stars(const char *file_path, int *num_stars_return)
     }
 
     free(entries);
-    
+
     *num_stars_return = num_entries;
     return stars;
+}
+
+char **parse_BSC5_names(const char *file_path, int num_stars)
+{
+    // add one because index 0 is not used to store anything
+    char **star_names = malloc((num_stars + 1) * sizeof(char *));
+
+    FILE *file_pointer;
+    file_pointer = fopen(file_path, "r");
+
+    // 1234,name...
+    const unsigned MAX_DIGITS = 4;
+    const unsigned MAX_NAME_LENGTH = 32;
+    const unsigned MAX_LENGTH = MAX_DIGITS + 1 + MAX_NAME_LENGTH;
+
+    char buffer[MAX_LENGTH];
+
+    while (fgets(buffer, MAX_LENGTH, file_pointer))
+    {
+        // split by delimiter
+        int number = atoi(strtok(buffer, ","));
+        char *name = strtok(NULL, ",\n");
+
+        // +1 accounts for terminating null character of strcpy
+        star_names[number] = malloc(MAX_NAME_LENGTH * sizeof(char) + 1);
+        strcpy(star_names[number], name);
+    }
+
+    fclose(file_pointer);
+
+    return star_names;
+}
+
+void set_star_labels(struct star *stars, char **star_names, int num_stars,
+                     float label_thresh)
+{
+    for (int i = 0; i < num_stars; ++i)
+    {
+        if (stars[i].magnitude > label_thresh)
+        {
+            continue;
+        }
+
+        stars[i].base.label = star_names[stars[i].catalog_number];
+    }
 }
