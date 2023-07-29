@@ -1,8 +1,11 @@
+#include "astro.h"
+
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
 
 #include "misc.h"
+#include "coord.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -11,6 +14,42 @@
 #ifndef AU
     #define AU 149597870.691
 #endif
+
+int star_magnitude_comparator(const void *v1, const void *v2)
+{
+    const struct star *p1 = (struct star *)v1;
+    const struct star *p2 = (struct star *)v2;
+
+    // lower magnitudes are brighter
+    if (p1->magnitude < p2->magnitude)
+        return +1;
+    else if (p1->magnitude > p2->magnitude)
+        return -1;
+    else
+        return 0;
+}
+
+void calc_star_position(struct star *star, double julian_date, double gmst,
+                        double latitude, double longitude,
+                        double *azimuth, double *altitude)
+{
+    // correct for parallax
+
+    double J200 = 2451545.0;         // J2000 epoch in julian days
+    double days_per_year = 365.2425; // average number of days per year
+    double years_from_epoch = (julian_date - J200) / days_per_year;
+
+    double curr_declination = star->declination +
+                              star->dec_motion * years_from_epoch;
+    double curr_right_ascension = star->right_ascension +
+                                  star->ra_motion * years_from_epoch;
+
+    // convert to horizontal coordinates
+
+    equatorial_to_horizontal(curr_declination, curr_right_ascension,
+                             gmst, latitude, longitude,
+                             azimuth, altitude);
+}
 
 double earth_rotation_angle_rad(double jd)
 {
@@ -114,13 +153,13 @@ struct tm* julian_date_to_datetime(double julian_date)
 void sun_position(double a, double e, double i,
                   double l, double w, double m,
                   double julian_date,
-                  double *declination, double *right_ascension)
+                  double *right_ascension, double *declination)
 {
     // These formulas use days after 2000 Jan 0.0 UT as a timescale
     double d = julian_date - 2451545.0;
 
     // Compute obliquity of the ecliptic
-    double ecl = 23.4393 - 3.563E-7 * d;
+    double ecl = (23.4393 - 3.563E-7 * d) * 180.0 / M_PI;
 
     // Compute the eccentric anomaly
     double E = m + e * sin(m) * (1.0 + e * cos(m));
@@ -151,8 +190,8 @@ void sun_position(double a, double e, double i,
 }
 
 void planetary_positions(double a, double e, double i,
-                             double l, double w, double m,
-                             double julian_date)
+                         double l, double w, double m,
+                         double julian_date)
 {
     // https://stjarnhimlen.se/comp/ppcomp.html
 
@@ -205,4 +244,11 @@ void planetary_positions(double a, double e, double i,
     // xs = rs * cos(lonsun)
     // ys = rs * sin(lonsun)
     return;
+}
+
+void solve_orbit(double a, double e, double i,
+                 double l, double w, double L,
+                 double julian_date)
+{
+
 }

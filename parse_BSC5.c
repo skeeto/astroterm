@@ -3,7 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "celestial_bodies.h"
+#include "astro.h"
+#include "misc.h"
 #include "bit.h"
 
 static const int header_bytes = 28;
@@ -93,14 +94,50 @@ struct entry *parse_entries(const char *file_path, int *num_entries_return)
 
 // Project specific functions used to convert entries to a more practical format
 
+// star magnitude mapping
+static const char *mag_map_unicode_round[10]    = {"⬤", "⚫︎", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅"};
+static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
+static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o', '.', '.', '.', '.'};
+
+static const float min_magnitude = -1.46f;
+static const float max_magnitude = 7.96f;
+
 struct star entry_to_star(struct entry *entry_data)
 {
     struct star star_data;
 
-    star_data.catalog_number    = (int) entry_data->XNO;
-    star_data.right_ascension   =       entry_data->SRA0;
-    star_data.declination       =       entry_data->SDEC0;
-    star_data.magnitude         =       entry_data->MAG / 100.0f;
+    star_data.catalog_number    = (int)     entry_data->XNO;
+    star_data.right_ascension   =           entry_data->SRA0;
+    star_data.declination       =           entry_data->SDEC0;
+    star_data.ra_motion         = (double)  entry_data->XRPM;
+    star_data.ra_motion         = (double)  entry_data->XDPM;
+    star_data.magnitude         =           entry_data->MAG / 100.0f;
+
+    int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude,
+                                              0, 9, star_data.magnitude);
+
+    star_data.base.symbol_ASCII     = (char)    mag_map_round_ASCII[symbol_index];
+    star_data.base.symbol_unicode   = (char*)   mag_map_unicode_diamond[symbol_index];
+
+    // TODO: use name data from file
+    star_data.base.label = NULL;
+    switch (star_data.catalog_number)
+    {
+    case 424:
+        star_data.base.label = "Polaris";
+        break;
+    case 4301:
+        star_data.base.label = "Dubhe";
+        break;
+    case 2061:
+        star_data.base.label = "Betelgeuse";
+        break;
+    case 7001:
+        star_data.base.label = "Vega";
+        break;
+    }
 
     return star_data;
 }

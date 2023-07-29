@@ -39,13 +39,13 @@
  *              https://astrogreg.com/convert_ra_dec_to_alt_az.html
  */
 void equatorial_to_horizontal(double declination, double right_ascension,
-                                double gmst, double latitude, double longitude,
-                                double *altitude, double *azimuth);
+                              double gmst, double latitude, double longitude,
+                              double *azimuth, double *altitude);
 
 /* Converts horizontal coordinates to spherical coordinates
  */
 void horizontal_to_spherical(double azimuth, double altitude, 
-                                double *theta_sphere, double *phi_sphere);
+                             double *theta_sphere, double *phi_sphere);
 
 // MAP PROJECTIONS
 

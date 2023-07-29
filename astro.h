@@ -5,8 +5,41 @@
  *              https://observablehq.com/@danleesmith/meeus-solar-position-calculations
  */
 
+#include <time.h>
+
 #ifndef ASTRO_H
 #define ASTRO_H
+
+// All information pertinent to rendering a celestial body
+struct object_base
+{
+    double azimuth;
+    double altitude;
+    char symbol_ASCII;
+    char *symbol_unicode;
+    char *label;
+};
+
+struct star
+{
+    struct object_base base;
+    int catalog_number;
+    float magnitude;
+    double right_ascension;
+    double declination;
+    double ra_motion;
+    double dec_motion;
+};
+
+/* Comparator for star structs
+ */
+int star_magnitude_comparator(const void *v1, const void *v2);
+
+/* Calculate the relative position of a star
+ */
+void calc_star_position(struct star *star, double julian_date, double gmst,
+                        double latitude, double longitude,
+                        double *azimuth, double *altitude);
 
 /* Calculate the earth rotation angle in radians given a julian date.
  * TODO: some angles may need normalizing
@@ -36,6 +69,7 @@ struct tm* julian_date_to_datetime(double julian_date);
  * m: mean anomaly
  */
 void planetary_positions(double a, double e, double i,
-                         double l, double w, double m);
+                         double l, double w, double m,
+                         double julian_date);
 
 #endif

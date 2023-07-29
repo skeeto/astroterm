@@ -8,7 +8,7 @@
 
 void equatorial_to_horizontal(double declination, double right_ascension,
                               double gmst, double latitude, double longitude,
-                              double *altitude, double *azimuth)
+                              double *azimuth, double *altitude)
 {
     // FIXME: angles move way too slow--something wrong
 
