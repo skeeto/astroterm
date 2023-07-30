@@ -20,7 +20,7 @@ int star_magnitude_comparator(const void *v1, const void *v2)
     const struct star *p1 = (struct star *)v1;
     const struct star *p2 = (struct star *)v2;
 
-    // lower magnitudes are brighter
+    // Lower magnitudes are brighter
     if (p1->magnitude < p2->magnitude)
         return +1;
     else if (p1->magnitude > p2->magnitude)
@@ -33,10 +33,10 @@ void calc_star_position(struct star *star, double julian_date, double gmst,
                         double latitude, double longitude,
                         double *azimuth, double *altitude)
 {
-    // correct for parallax
+    // Correct for parallax
 
     double J200 = 2451545.0;         // J2000 epoch in julian days
-    double days_per_year = 365.2425; // average number of days per year
+    double days_per_year = 365.2425; // Average number of days per year
     double years_from_epoch = (julian_date - J200) / days_per_year;
 
     double curr_declination = star->declination +
@@ -44,7 +44,7 @@ void calc_star_position(struct star *star, double julian_date, double gmst,
     double curr_right_ascension = star->right_ascension +
                                   star->ra_motion * years_from_epoch;
 
-    // convert to horizontal coordinates
+    // Convert to horizontal coordinates
 
     equatorial_to_horizontal(curr_declination, curr_right_ascension,
                              gmst, latitude, longitude,
@@ -104,7 +104,7 @@ double datetime_to_julian_date(struct tm *time)
 
     int julian_day_num = b / 4 + c / 12 - (3 * e) / 4 + day - 32075; // eq 437
 
-    // determine fraction of seconds that have passed in one day
+    // Determine fraction of seconds that have passed in one day
     double julian_day_frac = (hour - 12) / 24.0 +
                              minute / (24.0 * 60.0) +
                              second / (24.0 * 60.0 * 60.0);

@@ -10,9 +10,7 @@ void equatorial_to_horizontal(double declination, double right_ascension,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude)
 {
-    // FIXME: angles move way too slow--something wrong
-
-    // compute the approximate hour angle (*not* corrected for nutation)
+    // Compute the approximate hour angle (*not* corrected for nutation)
     double hour_angle = gmst - longitude - right_ascension;
 
     *altitude = asin(sin(latitude) * sin(declination) +
@@ -67,7 +65,7 @@ void project_stereographic_south(double sphere_radius, double point_theta, doubl
 
 void polar_to_win(double r, double theta,
                   int win_height, int win_width,
-                  int *row, int *col) // modifies
+                  int *row, int *col)
 {
     *row = (int)round(r * win_height / 2 * sin(theta)) + win_height / 2;
     *col = (int)round(r * win_width / 2 * cos(theta)) + win_width / 2;
@@ -80,8 +78,8 @@ void perspective_to_win(double aov_phi, double aov_theta,
                         int win_height, int win_width,
                         int *row, int *col)
 {
-    // treat the view window as a "partial" frustum of a sphere
-    // map object coordinates as a "percentage" of this frustum
+    // Treat the view window as a "partial" frustum of a sphere
+    // Map object coordinates as a "percentage" of this frustum
 
     double start_phi = perspective_phi - aov_phi / 2;
     double start_theta = perspective_theta - aov_theta / 2;

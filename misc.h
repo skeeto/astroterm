@@ -14,4 +14,8 @@ int map_float_to_int_range(double min_float, double max_float,
  */
 double norm_rad(double rad);
 
+/* Free an array of pointers of a given size
+ */
+void free_array(void **arr, int size);
+
 #endif

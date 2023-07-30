@@ -13,8 +13,14 @@
 // All information pertinent to rendering a celestial body
 struct object_base
 {
+    // Cache of last draw coordinates
+    // FIXME: using ints breaks things...
+    long y;
+    long x;
+
     double azimuth;
     double altitude;
+
     char symbol_ASCII;
     char *symbol_unicode;
     char *label;

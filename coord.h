@@ -1,14 +1,18 @@
 /* Coordinate system utilities.
  *
  * Coordinate systems definitons
- *  - all angles in radians unless otherwise noted
- *  - using common mathmatical conventions as opposed to physics
+ *  - All angles in radians unless otherwise noted
+ *  - Using common mathmatical conventions as opposed to physics
  *
- * GEOGRAPHIC
+ * DIRECTIONS
  * - North: corresponds with positive y-axis on cartesian grid          N
- * - East:  corresponds with positive x-axis on cartesian grid      W       E 
+ * - East:  corresponds with positive x-axis on cartesian grid      W       E
  * - South: corresponds with negative y-axis on cartesian grid          S
  * - West:  corresponds with negative x-axis on cartesian grid
+ *
+ * GEOGRAPHIC (longitude, latitude)
+ * - Longitude      : measured East of the Prime Meridian   [0, 2π]
+ * - Latitude       : measured North of the Equator         [0, 2π]
  *
  * POLAR (r, θ)
  *  - Radius    (r)
@@ -24,8 +28,9 @@
  * - Altitude       : measured from equator to the zenith (complement of spherical phi)
  *
  * EQUATORIAL (right ascension, declination)
- * - Right ascension    : ?
- * - Declination        : ?
+ * - Right ascension    : measured East of the Vernal Equinox along the Celestial Equator
+ * - Declination        : measured North of the Celestial Equator, along the hour circle
+ *                        passing through the point in question
  */
 
 #ifndef COORD_H
