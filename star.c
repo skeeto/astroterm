@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
 
         // Render
         if (grid_flag)          { render_azimuthal_grid(win, no_unicode_flag); }
+        render_stars(win, star_table, num_stars, num_by_mag, no_unicode_flag);
         if (constellation_flag) { render_constellations(win, constellation_table, num_const, star_table, no_unicode_flag); }
-                                  render_stars(win, star_table, num_stars, num_by_mag, no_unicode_flag);
 
         // TODO: implement variable time step
         julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
@@ -140,10 +140,11 @@ bool parse_options(int argc, char *argv[])
             {"threshold",       required_argument,  NULL,               't'},
             {"fps",             required_argument,  NULL,               'f'},
             {"animation-mult",  required_argument,  NULL,               'm'},
-            {"no-unicode",      no_argument,        &no_unicode_flag,   1},
-            {"color",           no_argument,        &color_flag,        1},
-            {"grid",            no_argument,        &grid_flag,         1},
-            {NULL,              0,                  NULL,               0}
+            {"constellations",  no_argument,        &constellation_flag,  1},
+            {"no-unicode",      no_argument,        &no_unicode_flag,     1},
+            {"color",           no_argument,        &color_flag,          1},
+            {"grid",            no_argument,        &grid_flag,           1},
+            {NULL,              0,                  NULL,                 0}
         };
 
         c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
@@ -303,24 +304,24 @@ void render_constellations(WINDOW *win, int **constellation_table, int num_const
         for (int j = 1; j < num_segments * 2; j += 2)
         {
 
-            int catalog_num_A = constellation[j];
-            int catalog_num_B = constellation[j + 1];
+            int catalog_num_a = constellation[j];
+            int catalog_num_b = constellation[j + 1];
 
-            int table_index_A = catalog_num_A - 1;
-            int table_index_B = catalog_num_B - 1;
+            int table_index_a = catalog_num_a - 1;
+            int table_index_b = catalog_num_b - 1;
 
-            int yA = (int) star_table[table_index_A].base.y;
-            int xA = (int) star_table[table_index_A].base.x;
-            int yB = (int) star_table[table_index_B].base.y;
-            int xB = (int) star_table[table_index_B].base.x;
+            int ya = (int) star_table[table_index_a].base.y;
+            int xa = (int) star_table[table_index_a].base.x;
+            int yb = (int) star_table[table_index_b].base.y;
+            int xb = (int) star_table[table_index_b].base.x;
 
             // Draw line if reasonable length (avoid printing crazy long lines)
             // TODO: is there a cleaner way to do this (perhaps if checking if
             // one of the stars is in the window?)
-            double line_length = sqrt(pow(yA - yB, 2) + pow(xA - xB, 2));
+            double line_length = sqrt(pow(ya - yb, 2) + pow(xa - xb, 2));
             if (line_length < 1000)
             {
-               drawLineTest(win, yA, xA, yB, xB, no_unicode_flag);
+               draw_line_smooth(win, ya, xa, yb, xb);
             }
 
         }
@@ -335,10 +336,10 @@ void render_azimuthal_grid(WINDOW *win, bool no_unicode)
     int win_height = win->_maxy;
     int win_width = win->_maxx;
 
-    drawLineTest(win, 0, 0, win_height, win_width, no_unicode_flag);
-    drawLineTest(win, win_height, 0, 0, win_width, no_unicode_flag);
-    drawLineTest(win, 0, win_width / 2, win_height, win_width / 2, no_unicode_flag);
-    drawLineTest(win, win_height / 2, 0, win_height / 2, win_width, no_unicode_flag);
+    draw_line_smooth(win, win_height, win_width, 0, 0);
+    draw_line_smooth(win, 0, win_width, win_height, 0);
+    draw_line_smooth(win, 0, win_width / 2, win_height, win_width / 2);
+    draw_line_smooth(win, win_height / 2, 0, win_height / 2, win_width);
 
     // DrawEllipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
 

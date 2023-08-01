@@ -26,16 +26,15 @@
 #ifndef DRAWING_H
 #define DRAWING_H
 
-/* Draw a line from point A to point B. If pointA == pointB, a random
- * "line character" will be placed at that coordinate, i.e. don't do this
+/* Draw a smooth unicode line segment from (xa, ya) and (xb, yb) where y and x 
+ * are synonymous with row and column, respectively
  */
-void drawLine(WINDOW *win, int colA, int rowA, int colB, int rowB, bool no_unicode);
-void drawLineTest(WINDOW *win, int colA, int rowA, int colB, int rowB, bool no_unicode);
+void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb);
 
 /* Draw an ellipse. By taking advantage of knowing the cell aspect ratio,
  * this function can generate an "apparent" circle.
  */
-void drawEllipse(WINDOW *win, int centerRow, int centerCol,
-                 int radiusY, int radiusX, bool no_unicode);
+void draw_ellipse(WINDOW *win, int centerRow, int centerCol,
+                  int radiusY, int radiusX, bool no_unicode);
 
 #endif

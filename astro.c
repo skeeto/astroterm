@@ -3,6 +3,7 @@
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
+// #include <stdlib.h>
 
 #include "misc.h"
 #include "coord.h"
@@ -251,4 +252,173 @@ void solve_orbit(double a, double e, double i,
                  double julian_date)
 {
 
+}
+
+enum solar_objects
+{
+    SUN = 0,
+    MERCURY,
+    VENUS,
+    EARTH,
+    MOON,
+    MARS,
+    JUPITER,
+    SATURN,
+    URANUS,
+    NEPTUNE,
+    NUM_SOLAR
+};
+
+struct kep_elems
+{
+    // Keplerian elements
+    double a;   // semi-major axis                  (au)
+    double e;   // eccentricity
+    double I;   // inclination                      (deg)
+    double L;   // mean longitude                   (deg)
+    double w;   // longitude of perihelion          (deg)
+    double O;   // longitude of the ascending node  (deg)
+};
+
+struct kep_rates
+{
+    // Keplerian rates
+    double da; // (au/century)
+    double de;
+    double dI; // (deg/century)
+    double dL; // (deg/century)
+    double dw; // (deg/century)
+    double dO; // (deg/century)
+};
+
+struct extra_elems
+{
+    double b;
+    double c;
+    double s;
+    double f;
+};
+
+static const struct kep_elems keplerian_elements[NUM_SOLAR] =
+{
+    [MERCURY]   = {0.38709843,      0.20563661,     7.00559432,     252.25166724,   77.45771895,    48.33961819     },
+    [VENUS]     = {0.72332102,      0.00676399,     3.39777545,     181.97970850,   131.76755713,   76.67261496     },
+    [EARTH]     = {1.00000018,      0.01673163,     -0.00054346,    100.46691572,   102.93005885,   -5.11260389     },
+    [MARS]      = {1.52371243,      0.09336511,     1.85181869,     -4.56813164,    -23.91744784,   49.71320984     },
+    [JUPITER]   = {5.20248019,      0.04853590,     1.29861416,     34.33479152,    14.27495244,    100.29282654    },
+    [SATURN]    = {9.54149883,      0.05550825,     2.49424102,     50.07571329,    92.86136063,    113.63998702    },
+    [URANUS]    = {19.18797948,     0.04685740,     0.77298127,     314.20276625,   172.43404441,   73.96250215     },
+    [NEPTUNE]   = {30.06952752,     0.00895439,     1.77005520,     304.22289287,   46.68158724,    131.78635853    }
+};
+
+static const struct kep_rates keplerian_rates[NUM_SOLAR] =
+{
+    [MERCURY]   = {0.00000000,      0.00002123,     -0.00590158,    149472.67486623,    0.15940013,     -0.12214182 },
+    [VENUS]     = {-0.00000026,     -0.00005107,    0.00043494,     58517.81560260,     0.05679648,     -0.27274174 },
+    [EARTH]     = {-0.00000003,     -0.00003661,    -0.01337178,    35999.37306329,     0.31795260,     -0.24123856 },
+    [MARS]      = {0.00000097,      0.00009149,     -0.00724757,    19140.29934243,     0.45223625,     -0.26852431 },
+    [JUPITER]   = {-0.00002864,     0.00018026,     -0.00322699,    3034.90371757,      0.18199196,     0.13024619  },
+    [SATURN]    = {-0.00003065,     -0.00032044,    0.00451969,     1222.11494724,      0.54179478,     -0.25015002 },
+    [URANUS]    = {-0.00020455,     -0.00001550,    -0.00180155,    428.49512595,       0.09266985,     0.05739699  },
+    [NEPTUNE]   = {0.00006447,      0.00000818,     0.00022400,     218.46515314,       0.01009938,     -0.00606302 }
+};
+
+static const struct extra_elems keplerian_extras[NUM_SOLAR] =
+{
+    [JUPITER]   = {-0.00012452,     0.06064060,     -0.35635438,    38.35125000 },
+    [SATURN]    = {0.00025899,      -0.13434469,    0.87320147,     38.35125000 },
+    [URANUS]    = {0.00058331,      -0.97731848,    0.17689245,     7.67025000  },
+    [NEPTUNE]   = {-0.00041348,     0.68346318,     -0.10162547,    7.67025000  }
+};
+
+double solve_kepler(double M, double e, double E)
+{
+    const double rad = M_PI / 180.0;
+
+    double dM = M - (E - e / rad * sin(E * rad));
+    double dE = dM / (1.0 - e * cos(E * rad));
+
+    return dE;
+}
+
+/* Return the heliocentric position of a planet in equatorial coordinates
+ */
+void calc_planet_position(int planet, double julian_date)
+{
+    struct kep_elems elements   = keplerian_elements[planet];
+    struct kep_rates rates      = keplerian_rates[planet];
+    struct extra_elems extras   = keplerian_extras[planet];
+
+    // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
+
+    const double rad = M_PI / 180.0;
+
+    // 1.
+
+    // Calculate number of centuries past J2000
+    double t = (julian_date - 2451545.0) / 36525;
+
+    double a = elements.a + rates.da * t;
+    double e = elements.e + rates.de * t;
+    double I = elements.I + rates.dI * t;
+    double L = elements.L + rates.dL * t;
+    double w = elements.w + rates.dw * t;
+    double O = elements.O + rates.dO * t;
+
+    // 2.
+
+    double ww = w - O;
+    double M = L - w;
+    if (JUPITER <= planet && planet <= NEPTUNE)
+    {
+        double b = extras.b;
+        double c = extras.c;
+        double s = extras.s;
+        double f = extras.f;
+        M = L - w + b * t * t + c * cos(f * t * rad) + s * sin(f * t * rad);
+    }
+
+    // 3.
+
+    while (M > 180.0)
+    {
+        M -= 360.0;
+    }
+
+    double e_star = 180.0 / M_PI * e;
+    double E = M + e_star * sin(M * rad);
+
+    double dE = 1.0;
+    int n = 0;
+    while (fabs(dE) > 1E-6 && n < 10)
+    {
+        dE = solve_kepler(M, e, E);
+        E += dE;
+        n++;
+    }
+
+    // 4.
+
+    const double xp = a * (cos(E * rad) - e);
+    const double yp = a * sqrt(1 - e * e) * sin(E * rad);
+    const double zp = 0;
+
+    // 5.
+
+    a *= rad; e *= rad; I *= rad; L *= rad; ww *= rad; O *= rad;
+    const double xecl = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
+    const double yecl = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
+    const double zecl = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
+
+    // 6.
+
+    const double eps = 23.43928 * rad;  // TODO: need to find obliquity of the ecliptic for any julian date (use earth rotation angle somehow?)
+
+    const double x = xecl;
+    const double y = cos(eps) * yecl - sin(eps) * zecl;
+    const double z = sin(eps) * yecl + cos(eps) * zecl;
+
+    // Convert to equatorial coordinates
+    double right_ascension = atan2 (y , x);
+    double declination = atan2(z, sqrt( x * x + y * y));
 }

@@ -2,271 +2,29 @@
 #include <math.h>
 #include <stdlib.h>
 
-enum fillType
+void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 {
-    HORIZONTAL,
-    VERTICAL,
-    CORNER,
-};
+    // The logic here is not particularly elegant or efficient
 
-//-------------------------------Line Drawing---------------------------------//
-
-// void printCharsLineASCII(int y, int x, fillType fill, WINDOW *win)
-// {
-    
-// }
-
-// void lineError(int y, int x, int yA, int xA, int yB, int xB)
-// {
-//     (x - xA) * (yB - yA) - (y - yA) * (xB - xA);
-// }
-
-// void drawLineASCII(int colA, int rowA, int colB, int rowB, WINDOW *win)
-// {
-//     int rows = abs(rowB - rowA);
-//     int cols = abs(colB - colA);
-
-//     int y = 0, x = 0;
-//     int yNext, xNext;
-
-//     int directionY = (rowA > rowB) ? -1 : 1;
-//     int directionX = (colA > colB) ? -1 : 1;
-
-//     char primaryChar = (rows > cols) ? '|' : '-';
-//     char cornerChar = ((rowB - rowA) ^ (colB - colA) > 0) ?  '/' : '\\';
-//     // Use bitwise XOR to efficiently determine sign of slope
-
-//     if (rows > cols)
-//     {
-//         // |slope| > 1
-//         while (abs(y) <= rows / 2 + 1) // Ensure we hit the midpoint
-//         {
-//             yNext = y + directionY;
-//             xNext = (lineError(y, x, 0, 0, yEnd, xEnd < 0)) ? x + directionX : x;
-
-//             bool corner = (xNext != x);
-
-//             if (corner)
-//             {
-//                 mvwaddch(win, rowA + y, colA + x, cornerChar);
-//                 mvwaddch(win, rowB - y, colB - x, cornerChar);
-//             }
-//             else
-//             {
-//                 mvwaddch(win, rowA + y, colA + x, primaryChar);
-//                 mvwaddch(win, rowB - y, colB - x, primaryChar);
-//             }
-
-//             y = yNext;
-//             x = xNext;
-//         }
-//     }
-//     else
-//     {
-//         // |slope| <= 1
-//         while (abs(x) < cols / 2 + 1) // Ensure we hit the midpoint
-//         {
-//             yNext = (lineError(y, x, 0, 0, yEnd, xEnd < 0)) ? y + directionY : y;
-//             xNext = x + xDirection;
-
-//             bool corner = (yNext != y);
-
-//             if (corner)
-//             {
-//                 mvwaddch(win, rowA + y, colA + x, cornerChar);
-//                 mvwaddch(win, rowB - y, colB - x, cornerChar);
-//             }
-//             else
-//             {
-//                 mvwaddch(win, rowA + y, colA + x, primaryChar);
-//                 mvwaddch(win, rowB - y, colB - x, primaryChar);
-//             }
-
-//             y = yNext;
-//             x = xNext;
-//         }
-//     }
-// }
-
-void drawLineBasic(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
-{
     int dy = yb - ya;
     int dx = xb - xa;
 
-    // Determine slope of line
-    char cornerChar = (dy ^ dx) > 0 ? '\\' : '/';
-
-    char *cornerStringA = (dy ^ dx) > 0 ? "╮" : "╭";
-    char *cornerStringB = (dy ^ dx) > 0 ? "╰" : "╯";
+    // "Joint"/junction characters
+    char *joint_a;
+    char *joint_b;
 
     if (abs(dy) > abs(dx))
     {
-        int y = 0;
-        double x = 0;
-
-        // Step size
-        int sy = (dy > 0) ? 1 : -1;
-        double sx = (double)dx / abs(dy);
-
-        double nextX;
-
-        // Rounding ensures symmetry
-        while (y != dy)
+        // No intelligence... just choose based on case
+        if (dx > 0)
         {
-            nextX = x + sx;
-
-            if (no_unicode)
-            {
-                mvwaddch(win, ya + y, round(xa + x), round(nextX) != round(x) ? cornerChar : '|');
-            }
-            else
-            {
-                mvwaddstr(win, ya + y, round(xa + x), round(nextX) != round(x) ? cornerStringA : "│");
-            }
-
-            x = nextX;
-            y += sy;
-        }
-    }
-    else 
-    {
-        double y = 0;
-        int x = 0;
-
-        // Step size
-        int sx = (dx > 0) ? 1 : -1;
-        double sy = (double)dy / abs(dx);
-
-        // Round (dx / 2) away from 0
-        int midX = dx + (dx > 0 ? 1 : 0) >> 1;
-        double nextY;
-
-        // Rounding ensures symmetry
-        while (x != dx)
-        {
-            nextY = y + sy;
-
-            if (no_unicode)
-            {
-                mvwaddch(win, round(ya + y), xa + x, round(nextY) != round(y) ? cornerChar : '-');
-            }
-            else
-            {
-                mvwaddstr(win, round(ya + y), xa + x, round(nextY) != round(y) ? cornerStringA : "─");
-                mvwaddstr(win, round(ya + y + sy), xa + x, round(nextY) != round(y) ? cornerStringB : "─");
-            }
-
-            y = nextY;
-            x += sx;
-        }
-    }
-}
-
-void drawLine(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
-{
-    int dy = yb - ya;
-    int dx = xb - xa;
-
-    // Determine slope of line
-    char cornerChar = (dy ^ dx) > 0 ? '\\' : '/';
-
-    char *cornerStringA = (dy ^ dx) > 0 ? "╮" : "╭";
-    char *cornerStringB = (dy ^ dx) > 0 ? "╰" : "╯";
-
-    if (abs(dy) > abs(dx))
-    {
-
-        int y = 0;
-        double x = 0;
-
-        // Step size
-        int sy = (dy > 0) ? 1 : -1;
-        double sx = (double) dx / abs(dy);
-
-        // Round (dy / 2) away from 0
-        int midY = dy + (dy > 0 ? 1 : 0) >> 1;
-        double nextX;
-
-        // Rounding ensures symmetry
-        while (y != midY + sy)
-        {
-            nextX = x + sx;
-
-            if (no_unicode)
-            {
-                mvwaddch(win, ya + y, round(xa + x), round(nextX) != round(x) ? cornerChar : '|');
-                mvwaddch(win, yb - y, round(xb - x), round(nextX) != round(x) ? cornerChar : '|');
-            }
-            else 
-            {
-                mvwaddstr(win, ya + y, round(xa + x), round(nextX) != round(x) ? cornerStringA : "│");
-                mvwaddstr(win, yb - y, round(xb - x), round(nextX) != round(x) ? cornerStringA : "│");
-            }
-            
-            x = nextX; 
-            y += sy;
-        }
-    }
-    else
-    {
-
-        double y = 0;
-        int x = 0;
-
-        // Step size
-        int sx = (dx > 0) ? 1 : -1;
-        double sy = (double) dy / abs(dx);
-
-        // Round (dx / 2) away from 0
-        int midX = dx + (dx > 0 ? 1 : 0) >> 1;
-        double nextY;
-
-        // Rounding ensures symmetry
-        while (x != midX)
-        {
-            nextY = y + sy;
-
-            if (no_unicode)
-            {
-                mvwaddch(win, round(ya + y), xa + x, round(nextY) != round(y) ? cornerChar : '-');
-                mvwaddch(win, round(yb - y), xb - x, round(nextY) != round(y) ? cornerChar : '-');
-            }
-            else
-            {
-                mvwaddstr(win, round(ya + y), xa + x, round(nextY) != round(y) ? cornerStringB : "─");
-                mvwaddstr(win, round(yb - y), xb - x, round(nextY) != round(y) ? cornerStringA : "─");
-
-                mvwaddstr(win, round(ya + y + sy), xa + x, round(nextY) != round(y) ? cornerStringA : "─");
-                mvwaddstr(win, round(yb - y - sy), xb - x, round(nextY) != round(y) ? cornerStringB : "─");
-            }
-
-            y = nextY;
-            x += sx;
-        }
-    }
-    
-    return;
-}
-
-void drawLineTest(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
-{
-    int dy = yb - ya;
-    int dx = xb - xa;
-
-    char *cornerStringA;
-    char *cornerStringB;
-
-    if (abs(dy) > abs(dx))
-    {
-        if (dy ^ dx > 0)
-        {
-            cornerStringA = dy > 0 ? "╰" : "╮";
-            cornerStringB = dy > 0 ? "╮" : "╰";
+            joint_a = dy > 0 ? "╰" : "╭";
+            joint_b = dy > 0 ? "╮" : "╯";
         }
         else
         {
-            cornerStringA = dy > 0 ? "╯" : "╭";
-            cornerStringB = dy > 0 ? "╭" : "╯";
+            joint_a = dy > 0 ? "╯" : "╮";
+            joint_b = dy > 0 ? "╭" : "╰";
         }
 
         int y = 0;
@@ -277,17 +35,15 @@ void drawLineTest(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
         int sy = (dy > 0) ? 1 : -1;
         double sx = (double) dx / abs(dy);
 
-        while (abs(y) <= abs(dy))
+        while (abs(y) < abs(dy))
         {
-            mvwaddstr(win, ya + y, xa + round(x), "│");
+            mvwaddstr(win, ya + y, xa + (int) x, "│");
 
-            if (round(x + sx) != round(x))
+            // Draw joint if we jump a column && we're not on the last cell 
+            if ((int) (x + sx) != (int) x && xa + (int) x != xb)
             {
-                // Draw joint
-                mvwaddstr(win, ya + y + sy, xa + round(x), cornerStringA);
-                y += sy;
-                x += sx;
-                mvwaddstr(win, ya + y, xa + round(x), cornerStringB);
+                mvwaddstr(win, ya + y, xa + (int) x, joint_a);
+                mvwaddstr(win, ya + y, xa + (int)(x + sx), joint_b);
             }
 
             y += sy;
@@ -296,15 +52,16 @@ void drawLineTest(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
     }
     else
     {
-        if (dy ^ dx > 0)
+        // No intelligence... just choose based on case
+        if (dy > 0)
         {
-            cornerStringA = dx > 0 ? "╯" : "╭";
-            cornerStringB = dx > 0 ? "╭" : "╯";
+            joint_a = dx > 0 ? "╮" : "╭";
+            joint_b = dx > 0 ? "╰" : "╯";
         }
         else
         {
-            cornerStringA = dx > 0 ? "╮" : "╰";
-            cornerStringB = dx > 0 ? "╰" : "╮";
+            joint_b = dx > 0 ? "╭" : "╮";
+            joint_a = dx > 0 ? "╯" : "╰";
         }
 
         double y = 0.0;
@@ -317,88 +74,95 @@ void drawLineTest(WINDOW *win, int ya, int xa, int yb, int xb, bool no_unicode)
 
         while (abs(x) <= abs(dx))
         {
-            mvwaddstr(win, ya + round(y), xa + x, "─");
+            mvwaddstr(win, ya + (int) y, xa + x, "─");
 
-            if (round(y + sy) != round(y))
+            // Draw joint if we jump a row && we're not on the last cell
+            if ((int) (y + sy) != (int) y && ya + (int) y != yb)
             {
-                // Draw joint
-                mvwaddstr(win, ya + round(y), xa + x + sx, cornerStringA);
-                y += sy;
-                x += sx;
-                mvwaddstr(win, ya + round(y), xa + x, cornerStringB);
+                mvwaddstr(win, ya + (int) y, xa + x, joint_a);
+                mvwaddstr(win, ya + (int) (y + sy), xa + x, joint_b);
             }
 
             y += sy;
             x += sx;
         }
     }
+
+    // Add circles at beginning and end of segment to "prettify"
+    mvwaddstr(win, ya, xa, "◯");
+    mvwaddstr(win, yb, xb, "◯");
 }
 
-//------------------------------Ellipse Drawing-------------------------------//
+enum fillType
+{
+    HORIZONTAL,
+    VERTICAL,
+    CORNER,
+};
 
 // Reference: https://dai.fmph.uniba.sk/upload/0/01/Ellipse.pdf
 
-void printCharsEllipseASCII(WINDOW *win, int centerRow, int centerCol,
-                            int y, int x, int fill)
+void print_chars_ellipse_ASCII(WINDOW *win, int center_y, int center_x,
+                               int y, int x, int fill)
 {
     switch (fill)
     {
         case CORNER:
-            mvwaddch(win, centerRow - y, centerCol + x, '\\'); // Quad I
-            mvwaddch(win, centerRow - y, centerCol - x, '/');  // Quad II
-            mvwaddch(win, centerRow + y, centerCol - x, '\\'); // Quad III
-            mvwaddch(win, centerRow + y, centerCol + x, '/');  // Quad IV
+            mvwaddch(win, center_y - y, center_x + x, '\\'); // Quad I
+            mvwaddch(win, center_y - y, center_x - x, '/');  // Quad II
+            mvwaddch(win, center_y + y, center_x - x, '\\'); // Quad III
+            mvwaddch(win, center_y + y, center_x + x, '/');  // Quad IV
             break;
 
         case VERTICAL:
-            mvwaddch(win, centerRow - y, centerCol + x, '|');
-            mvwaddch(win, centerRow - y, centerCol - x, '|');
-            mvwaddch(win, centerRow + y, centerCol - x, '|');
-            mvwaddch(win, centerRow + y, centerCol + x, '|');
+            mvwaddch(win, center_y - y, center_x + x, '|');
+            mvwaddch(win, center_y - y, center_x - x, '|');
+            mvwaddch(win, center_y + y, center_x - x, '|');
+            mvwaddch(win, center_y + y, center_x + x, '|');
             break;
 
         case HORIZONTAL:
-            mvwaddch(win, centerRow - y, centerCol + x, '-');
-            mvwaddch(win, centerRow - y, centerCol - x, '-');
-            mvwaddch(win, centerRow + y, centerCol - x, '-');
-            mvwaddch(win, centerRow + y, centerCol + x, '-');
+            mvwaddch(win, center_y - y, center_x + x, '-');
+            mvwaddch(win, center_y - y, center_x - x, '-');
+            mvwaddch(win, center_y + y, center_x - x, '-');
+            mvwaddch(win, center_y + y, center_x + x, '-');
             break;
     }
 }
 
-void printCharsEllipseUnicode(WINDOW *win, int centerRow, int centerCol,
-                              int y, int x, int fill)
+void print_chars_ellipse_unicode(WINDOW *win, int center_y, int center_x,
+                                 int y, int x, int fill)
 {
     // TODO: def not correct
     switch (fill)
     {
         case CORNER:
             // Quad I
-            mvwaddstr(win, centerRow - y - 1, centerCol + x,    "╮");
-            mvwaddstr(win, centerRow - y, centerCol + x,        "╰");
+            mvwaddstr(win, center_y - y - 1, center_x + x,    "╮");
+            mvwaddstr(win, center_y - y, center_x + x,        "╰");
             // Quad II
-            mvwaddstr(win, centerRow - y - 1, centerCol - x,    "╭");
-            mvwaddstr(win, centerRow - y, centerCol - x,        "╯");
+            mvwaddstr(win, center_y - y - 1, center_x - x,    "╭");
+            mvwaddstr(win, center_y - y, center_x - x,        "╯");
             // Quad III
-            mvwaddstr(win, centerRow + y - 1, centerCol - x,    "╮");
-            mvwaddstr(win, centerRow + y, centerCol - x,        "╰");
+            mvwaddstr(win, center_y + y - 1, center_x - x,    "╮");
+            mvwaddstr(win, center_y + y, center_x - x,        "╰");
             // Quad IV
-            mvwaddstr(win, centerRow + y - 1, centerCol + x,    "╭");
-            mvwaddstr(win, centerRow + y, centerCol + x,        "╯");
+            mvwaddstr(win, center_y + y - 1, center_x + x,    "╭");
+            mvwaddstr(win, center_y + y, center_x + x,        "╯");
             break;
 
         case VERTICAL:
-            mvwaddstr(win, centerRow - y, centerCol + x, "│");
-            mvwaddstr(win, centerRow - y, centerCol - x, "│");
-            mvwaddstr(win, centerRow + y, centerCol - x, "│");
-            mvwaddstr(win, centerRow + y, centerCol + x, "│");
+            mvwaddstr(win, center_y - y, center_x + x, "│");
+            mvwaddstr(win, center_y - y, center_x - x, "│");
+            mvwaddstr(win, center_y + y, center_x - x, "│");
+            mvwaddstr(win, center_y + y, center_x + x, "│");
             break;
 
         case HORIZONTAL:
-            mvwaddstr(win, centerRow - y, centerCol + x, "─");
-            mvwaddstr(win, centerRow - y, centerCol - x, "─"); 
-            mvwaddstr(win, centerRow + y, centerCol - x, "─");
-            mvwaddstr(win, centerRow + y, centerCol + x, "─");
+            mvwaddstr(win, center_y - y, center_x + x, "─");
+            mvwaddstr(win, center_y - y, center_x - x, "─"); 
+            mvwaddstr(win, center_y + y, center_x - x, "─");
+            mvwaddstr(win, center_y + y, center_x + x, "─");
             break;
     }
 
@@ -406,23 +170,23 @@ void printCharsEllipseUnicode(WINDOW *win, int centerRow, int centerCol,
 }
 
 
-int ellipseError(int y, int x, int yRad, int xRad)
+int ellipse_error(int y, int x, int rad_y, int rad_x)
 {
-    (xRad * xRad + x * x) + (yRad * yRad + y * y) - (xRad * xRad * yRad * yRad);
+    (rad_x * rad_x + x * x) + (rad_y * rad_y + y * y) - (rad_x * rad_x * rad_y * rad_y);
 }
 
-void drawEllipse(WINDOW *win, int centerRow, int centerCol,
-                 int yRad, int xRad,
+void draw_ellipse(WINDOW *win, int center_y, int center_x,
+                 int rad_y, int rad_x,
                  bool no_unicode)
 {
 
     int y = 0;
-    int x = xRad;
+    int x = rad_x;
 
     int yNext, xNext;
 
     // Point where slope = -1
-    int magicY = sqrt(pow(yRad, 4) / (xRad * xRad + yRad * yRad));
+    int magicY = sqrt(pow(rad_y, 4) / (rad_x * rad_x + rad_y * rad_y));
 
     // Print first part of first quadrant: slope is > -1
     while (yNext > magicY)
@@ -430,7 +194,7 @@ void drawEllipse(WINDOW *win, int centerRow, int centerCol,
 
         // If outside ellipse, move inward
         yNext = y + 1;
-        xNext = (ellipseError(yNext, xNext, yRad, xRad) > 0) ? x - 1 : x;
+        xNext = (ellipse_error(yNext, xNext, rad_y, rad_x) > 0) ? x - 1 : x;
 
         bool corner = yNext > y && xNext < x;
         bool vertical = yNext > y && xNext == x;
@@ -441,11 +205,11 @@ void drawEllipse(WINDOW *win, int centerRow, int centerCol,
 
         if (no_unicode)
         {
-            printCharsEllipseASCII(win, centerRow, centerCol, y, x, fill);
+            print_chars_ellipse_ASCII(win, center_y, center_x, y, x, fill);
         }
         else
         {
-            printCharsEllipseUnicode(win, centerRow, centerCol, y, x, fill);
+            print_chars_ellipse_unicode(win, center_y, center_x, y, x, fill);
         }
 
         y = yNext;
@@ -457,7 +221,7 @@ void drawEllipse(WINDOW *win, int centerRow, int centerCol,
     {
 
         // If inside ellipse, move outward
-        yNext = (ellipseError(yNext, xNext, yRad, xRad) < 0) ? y + 1 : y;
+        yNext = (ellipse_error(yNext, xNext, rad_y, rad_x) < 0) ? y + 1 : y;
         xNext = x - 1;
 
         bool corner = yNext > y && xNext < x;
@@ -469,11 +233,11 @@ void drawEllipse(WINDOW *win, int centerRow, int centerCol,
 
         if (no_unicode)
         {
-            printCharsEllipseASCII(win, centerRow, centerCol, y, x, fill);
+            print_chars_ellipse_ASCII(win, center_y, center_x, y, x, fill);
         }
         else
         {
-            printCharsEllipseUnicode(win, centerRow, centerCol, y, x, fill);
+            print_chars_ellipse_unicode(win, center_y, center_x, y, x, fill);
         }
 
         y = yNext;
