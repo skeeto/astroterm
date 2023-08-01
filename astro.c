@@ -1,12 +1,10 @@
 #include "astro.h"
 
+#include "coord.h"
+
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
-// #include <stdlib.h>
-
-#include "misc.h"
-#include "coord.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -15,6 +13,15 @@
 #ifndef AU
     #define AU 149597870.691
 #endif
+
+/* Normalize a radian angle to [0, 2π]
+ */
+double norm_rad(double rad)
+{
+    double rem = remainder(rad, 2 * M_PI);
+    rem += rem < 0 ? 2 * M_PI : 0;
+    return rem;
+}
 
 int star_magnitude_comparator(const void *v1, const void *v2)
 {

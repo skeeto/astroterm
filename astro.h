@@ -5,10 +5,10 @@
  *              https://observablehq.com/@danleesmith/meeus-solar-position-calculations
  */
 
-#include <time.h>
-
 #ifndef ASTRO_H
 #define ASTRO_H
+
+#include <time.h>
 
 // All information pertinent to rendering a celestial body
 struct object_base
@@ -78,4 +78,4 @@ void planetary_positions(double a, double e, double i,
                          double l, double w, double m,
                          double julian_date);
 
-#endif
+#endif  // ASTRO_H

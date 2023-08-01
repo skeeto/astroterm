@@ -17,6 +17,7 @@ View stars in your terminal!
 | **`--animation-mult, -m mult`**   | Real time animation speed multiplier                                      | 1.0                   |
 | **`--no-unicode`**                | Only use ASCII characters                                                 |                       |
 | **`--grid`**                      | Draw an azimuthal grid                                                    |                       |
+| **`--constellations`**            | Draw constellations                                                       |                       |
 
 > ⓘ Use a tool like https://www.aavso.org/jd-calculator to convert Gregorian Calendar  Dates to Julian Dates \
 > Use a tool like https://www.latlong.net/ to get your latitude and longitude (remember to convert to radians!)
@@ -27,7 +28,7 @@ View stars in your terminal!
 
 Compile with gcc:
 ```
-gcc star.c bit.c term.c coord.c astro.c misc.c parse_BSC5.c -lm -lncursesw
+gcc main.c bit.c term.c coord.c astro.c parse_BSC5.c cstar.c -lm -lncursesw
 ```
 _You only need to link `-lncurses` if not using unicode_
 

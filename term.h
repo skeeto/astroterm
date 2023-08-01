@@ -1,10 +1,10 @@
 /* Terminal and ncurses common functions and utilities.
  */
 
-#include <ncurses.h>
-
 #ifndef TERM_H
 #define TERM_H
+
+#include <ncurses.h>
 
 /* Initialize ncurses
  */
@@ -38,4 +38,4 @@ void term_size(int *y, int *x);
  */
 float get_cell_aspect_ratio();
 
-#endif
+#endif  // TERM_H

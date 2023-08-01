@@ -1,11 +1,11 @@
 /* Byte formatting utilities.
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-
 #ifndef BIT_UTILS_H
 #define BIT_UTILS_H
+
+#include <stdint.h>
+#include <stdbool.h>
 
 // Convert little-endian sequence of bytes to specified types
 
@@ -24,4 +24,4 @@ double bytes_to_double64_LE(uint8_t *buffer);
 
 bool bytes_to_bool32_LE(uint8_t *buffer);
 
-#endif
+#endif  // BIT_UTILS_H

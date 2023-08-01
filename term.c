@@ -1,3 +1,5 @@
+#include "term.h"
+
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <ncurses.h>
@@ -7,10 +9,10 @@ void ncurses_init()
 {
     initscr();
     clear();
-    noecho();    // input characters aren't echoed
-    cbreak();    // disable line buffering
-    curs_set(0); // make cursor invisible
-    timeout(0);  // non-blocking read for getch
+    noecho();    // Input characters aren't echoed
+    cbreak();    // Disable line buffering
+    curs_set(0); // Make cursor invisible
+    timeout(0);  // Non-blocking read for getch
 }
 
 void ncurses_kill()
@@ -52,28 +54,28 @@ void term_size(int *y, int *x)
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
     *y = ws.ws_row;
     *x = ws.ws_col;
-#endif
+#endif  // WINDOWS
 }
 
 
 bool stdout_directed_to_console()
 {
 #ifdef WINDOWS
-    // hacky way to check if stdout is directed to a console
+    // Hacky way to check if stdout is directed to a console
     // https://stackoverflow.com/questions/2087775/how-do-i-detect-when-output-is-being-redirected
     fpost_t pos;
     fgetpos(stdout, &pos);
     return (pos == -1);
 #else
     return isatty(fileno(stdout));
-#endif
+#endif  // WINDOWS
 }
 
 float get_cell_aspect_ratio()
 {
     float default_height = 2;
 
-    // attempt to get aspect ratio only if stdout writing to console
+    // Attempt to get aspect ratio only if stdout writing to console
     if (stdout_directed_to_console())
     {
 #ifdef WINDOWS
@@ -88,7 +90,7 @@ float get_cell_aspect_ratio()
         struct winsize ws;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
 
-        // in case we can't get pixel size of terminal (inconsistent support)
+        // In case we can't get pixel size of terminal (inconsistent support)
         if (ws.ws_ypixel == 0 || ws.ws_xpixel == 0)
         {
             return default_height;
@@ -98,7 +100,7 @@ float get_cell_aspect_ratio()
         float cell_width = (float) ws.ws_xpixel / ws.ws_col;
 
         return cell_height / cell_width;
-#endif
+#endif  // WINDOWS
     }
 
     return default_height;

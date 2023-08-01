@@ -20,11 +20,11 @@
  *              (postpositive adjectives)
  */
 
-#include <ncurses.h>
-#include <stdbool.h>
-
 #ifndef DRAWING_H
 #define DRAWING_H
+
+#include <ncurses.h>
+#include <stdbool.h>
 
 /* Draw a smooth unicode line segment from (xa, ya) and (xb, yb) where y and x 
  * are synonymous with row and column, respectively
@@ -37,4 +37,4 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb);
 void draw_ellipse(WINDOW *win, int centerRow, int centerCol,
                   int radiusY, int radiusX, bool no_unicode);
 
-#endif
+#endif  // DRAWING_H

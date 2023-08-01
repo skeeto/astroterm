@@ -110,4 +110,4 @@ void perspective_to_win(double aov_phi, double aov_theta,
                         int win_height, int win_width,
                         int *row, int *col);
 
-#endif
+#endif  // COORD_H

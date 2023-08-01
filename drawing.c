@@ -1,3 +1,5 @@
+#include "drawing.h"
+
 #include <ncurses.h>
 #include <math.h>
 #include <stdlib.h>
@@ -183,21 +185,21 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
     int y = 0;
     int x = rad_x;
 
-    int yNext, xNext;
+    int y_next, x_next;
 
     // Point where slope = -1
     int magicY = sqrt(pow(rad_y, 4) / (rad_x * rad_x + rad_y * rad_y));
 
     // Print first part of first quadrant: slope is > -1
-    while (yNext > magicY)
+    while (y_next > magicY)
     {
 
         // If outside ellipse, move inward
-        yNext = y + 1;
-        xNext = (ellipse_error(yNext, xNext, rad_y, rad_x) > 0) ? x - 1 : x;
+        y_next = y + 1;
+        x_next = (ellipse_error(y_next, x_next, rad_y, rad_x) > 0) ? x - 1 : x;
 
-        bool corner = yNext > y && xNext < x;
-        bool vertical = yNext > y && xNext == x;
+        bool corner = y_next > y && x_next < x;
+        bool vertical = y_next > y && x_next == x;
 
         char fill = corner ? CORNER : 
                     vertical ? VERTICAL :
@@ -212,20 +214,20 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
             print_chars_ellipse_unicode(win, center_y, center_x, y, x, fill);
         }
 
-        y = yNext;
-        x = xNext;
+        y = y_next;
+        x = x_next;
     }
 
     // Print second part of first quadrant: slope is < -1
-    while (xNext > 0)
+    while (x_next > 0)
     {
 
         // If inside ellipse, move outward
-        yNext = (ellipse_error(yNext, xNext, rad_y, rad_x) < 0) ? y + 1 : y;
-        xNext = x - 1;
+        y_next = (ellipse_error(y_next, x_next, rad_y, rad_x) < 0) ? y + 1 : y;
+        x_next = x - 1;
 
-        bool corner = yNext > y && xNext < x;
-        bool vertical = yNext > y && xNext == x;
+        bool corner = y_next > y && x_next < x;
+        bool vertical = y_next > y && x_next == x;
 
         char fill = corner ? CORNER : 
                     vertical ? VERTICAL :
@@ -240,8 +242,8 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
             print_chars_ellipse_unicode(win, center_y, center_x, y, x, fill);
         }
 
-        y = yNext;
-        x = xNext;
+        y = y_next;
+        x = x_next;
     }
 
     return;

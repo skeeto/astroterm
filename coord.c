@@ -1,3 +1,5 @@
+#include "coord.h"
+
 #include <math.h>
 
 #ifndef M_PI

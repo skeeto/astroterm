@@ -1,18 +1,14 @@
+#include "astro.h"
+#include "term.h"
+#include "cstar.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <math.h>
 #include <signal.h>
 #include <locale.h>
 #include <time.h>
 #include <stdbool.h>
-
-#include "astro.h"
-#include "coord.h"
-#include "drawing.h"
-#include "misc.h"
-#include "term.h"
-#include "parse_BSC5.h"
 
 // Options
 static double latitude      = 0.73934145516;    // Boston, MA
@@ -27,21 +23,12 @@ static float animation_mult = 1.0f;             // Real time animation speed mul
 static int no_unicode_flag;                     // Only use ASCII characters
 static int color_flag;                          // Use color--not implemented yet
 static int grid_flag;                           // Draw an azimuthal grid
-static int constellation_flag;                  // Draw constellation figures
+static int constell_flag;                  // Draw constellation figures
 
-// Flag for resize signal handler
 static volatile bool perform_resize = false;
-
-void update_star_positions(struct star *star_table, int num_stars,
-                           double julian_date, double latitude, double longitude);
-
-void render_azimuthal_grid(WINDOW *win, bool no_unicode);
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, bool no_unicode);
-void render_constellations(WINDOW *win, int **constellation_table, int num_const, struct star *star_table, bool no_unicode);
 
 void catch_winch(int sig);
 void handle_resize(WINDOW *win);
-
 bool parse_options(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
@@ -61,13 +48,13 @@ int main(int argc, char *argv[])
     // Data tables
 
     int num_stars;
-    struct star *star_table = parse_stars("data/BSC5", &num_stars);
+    struct star *star_table = generate_star_table("data/BSC5", &num_stars);
 
-    char **name_table = parse_BSC5_names("data/BSC5_names", num_stars);
+    char **name_table = generate_name_table("data/BSC5_names", num_stars);
     set_star_labels(star_table, name_table, num_stars, label_thresh);
 
     int num_const;
-    int **constellation_table = parse_BSC5_constellations("data/BSC5_constellations", &num_const);
+    int **constell_table = generate_constell_table("data/BSC5_constellations", &num_const);
 
     // Sort stars by magnitude so brighter stars are always rendered on top
     int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
@@ -104,8 +91,8 @@ int main(int argc, char *argv[])
 
         // Render
         if (grid_flag)          { render_azimuthal_grid(win, no_unicode_flag); }
-        render_stars(win, star_table, num_stars, num_by_mag, no_unicode_flag);
-        if (constellation_flag) { render_constellations(win, constellation_table, num_const, star_table, no_unicode_flag); }
+        render_stars(win, star_table, num_stars, num_by_mag, threshold, no_unicode_flag);
+        if (constell_flag) { render_constells(win, constell_table, num_const, star_table, no_unicode_flag); }
 
         // TODO: implement variable time step
         julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
@@ -115,7 +102,7 @@ int main(int argc, char *argv[])
     ncurses_kill();
 
     // Free memory
-    free_constellations(constellation_table, num_const);
+    free_constells(constell_table, num_const);
     free_star_names(name_table, num_stars);
     free_stars(star_table, num_stars);
 
@@ -140,14 +127,15 @@ bool parse_options(int argc, char *argv[])
             {"threshold",       required_argument,  NULL,               't'},
             {"fps",             required_argument,  NULL,               'f'},
             {"animation-mult",  required_argument,  NULL,               'm'},
-            {"constellations",  no_argument,        &constellation_flag,  1},
+            {"constellations",  no_argument,        &constell_flag,       1},
             {"no-unicode",      no_argument,        &no_unicode_flag,     1},
             {"color",           no_argument,        &color_flag,          1},
             {"grid",            no_argument,        &grid_flag,           1},
             {NULL,              0,                  NULL,                 0}
         };
 
-        c = getopt_long(argc, argv, ":a:l:j:f:", long_options, &option_index);
+        // TODO: reorder optstring
+        c = getopt_long(argc, argv, ":a:l:j:f:o:t:m:", long_options, &option_index);
         if (c == -1)
             break;
 
@@ -212,145 +200,6 @@ bool parse_options(int argc, char *argv[])
     }
 
     return parse_error;
-}
-
-void update_star_positions(struct star *star_table, int num_stars,
-                           double julian_date, double latitude, double longitude)
-{
-    double gmst = greenwich_mean_sidereal_time_rad(julian_date);
-
-    for (int i = 0; i < num_stars; ++i)
-    {
-        struct star *star = &star_table[i];
-        calc_star_position(star, julian_date, gmst, latitude, longitude,
-                           &star->base.azimuth, &star->base.altitude);
-        // FIXME: setting the azimuth and altitude this way is probably what is
-        // causing the issue in astro.h... how to fix?
-    }
-
-    return;
-}
-
-void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unicode)
-{
-    double theta_sphere, phi_sphere;
-    horizontal_to_spherical(object->azimuth, object->altitude,
-                            &theta_sphere, &phi_sphere);
-
-    double radius_polar, theta_polar;
-    project_stereographic_north(1.0, theta_sphere, phi_sphere,
-                                &radius_polar, &theta_polar);
-
-    int y, x;
-    polar_to_win(radius_polar, theta_polar,
-                 win->_maxy, win->_maxx,
-                 &y, &x);
-
-    // Cache object coordinates
-    object->y = y;
-    object->x = x;
-
-    // If outside projection, ignore
-    if (fabs(radius_polar) > 1)
-    {
-        return;
-    }
-
-    // Draw object
-    if (no_unicode)
-    {
-        mvwaddch(win, y, x, object->symbol_ASCII);
-    }
-    else
-    {
-        mvwaddstr(win, y, x, object->symbol_unicode);
-    }
-
-    // Draw label
-    // FIXME: labels wrap around side, cause flickering
-    if (object->label != NULL)
-    {
-        mvwaddstr(win, y - 1, x + 1, object->label);
-    }
-}
-
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, bool no_unicode)
-{
-    for (int i = 0; i < num_stars; ++i)
-    {
-        int catalog_num = num_by_mag[i];
-        int table_index = catalog_num - 1;
-
-        struct star *star = &star_table[table_index];
-
-        if (star->magnitude > threshold)
-        {
-            continue;
-        }
-
-        render_object_stereo(win, &star->base, no_unicode);
-    }
-
-    return;
-}
-
-void render_constellations(WINDOW *win, int **constellation_table, int num_const, struct star *star_table, bool no_unicode)
-{
-    for (int i = 0; i < num_const; ++i)
-    {
-        int *constellation = constellation_table[i];
-        int num_segments = constellation[0];
-
-        for (int j = 1; j < num_segments * 2; j += 2)
-        {
-
-            int catalog_num_a = constellation[j];
-            int catalog_num_b = constellation[j + 1];
-
-            int table_index_a = catalog_num_a - 1;
-            int table_index_b = catalog_num_b - 1;
-
-            int ya = (int) star_table[table_index_a].base.y;
-            int xa = (int) star_table[table_index_a].base.x;
-            int yb = (int) star_table[table_index_b].base.y;
-            int xb = (int) star_table[table_index_b].base.x;
-
-            // Draw line if reasonable length (avoid printing crazy long lines)
-            // TODO: is there a cleaner way to do this (perhaps if checking if
-            // one of the stars is in the window?)
-            double line_length = sqrt(pow(ya - yb, 2) + pow(xa - xb, 2));
-            if (line_length < 1000)
-            {
-               draw_line_smooth(win, ya, xa, yb, xb);
-            }
-
-        }
-
-    }
-}
-
-void render_azimuthal_grid(WINDOW *win, bool no_unicode)
-{
-    // TODO: fix this
-
-    int win_height = win->_maxy;
-    int win_width = win->_maxx;
-
-    draw_line_smooth(win, win_height, win_width, 0, 0);
-    draw_line_smooth(win, 0, win_width, win_height, 0);
-    draw_line_smooth(win, 0, win_width / 2, win_height, win_width / 2);
-    draw_line_smooth(win, win_height / 2, 0, win_height / 2, win_width);
-
-    // DrawEllipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
-
-    // if (no_unicode)
-    // {
-    //     mvwaddch(win, round(win->_maxy / 2.0), round(win->_maxx / 2.0), '+');
-    // }
-    // else
-    // {
-    //     mvwaddstr(win, round(win->_maxy / 2.0), round(win->_maxx / 2.0), "+");
-    // }
 }
 
 void catch_winch(int sig)
