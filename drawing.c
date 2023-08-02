@@ -4,6 +4,120 @@
 #include <math.h>
 #include <stdlib.h>
 
+// The difference in logic between drawing an ASCII and unicode line differs
+// enough that having two different functions is warranted
+
+void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb)
+{
+    // The logic here is not particularly elegant or efficient
+
+    int dy = yb - ya;
+    int dx = xb - xa;
+
+    // "Joint"/junction character
+    char slope;
+
+    // No intelligence... just choose based on case
+    if (dx > 0)
+    {
+        slope = dy > 0 ? '\\' : '/';
+    }
+    else
+    {
+        slope = dy > 0 ? '/' : '\\';
+    }
+
+    if (abs(dy) >= abs(dx))
+    {
+        int y = 0;
+        double x = 0.0;
+
+        // Step size
+        int sy = (dy > 0) ? 1 : -1;
+        double sx = (double)dx / abs(dy);
+
+        while (abs(y) <= abs(dy))
+        {
+            int curr_y = ya + y;
+            int curr_x = xa + round(x);
+
+            int next_y = ya + y + sy;
+            int next_x = xa + round(x + sx);
+
+            mvwaddch(win, curr_y, curr_x, '|');
+
+            // Draw slope if we jump a column
+            if (next_x != curr_x)
+            {
+                mvwaddch(win, curr_y, curr_x, slope);
+            }
+
+            y += sy;
+            x += sx;
+        }
+    }
+    else
+    {
+        double y = 0.0;
+        int x = 0;
+
+        // Step size
+        double sy = (double)dy / abs(dx);
+        int sx = (dx > 0) ? 1 : -1;
+
+        while (abs(x) <= abs(dx))
+        {
+            int curr_y = ya + round(y);
+            int curr_x = xa + x;
+
+            int next_y = ya + round(y + sy);
+            int next_x = xa + x + sx;
+
+            // Edge case where we draw a horizontal line
+            char horizontal = ya == yb ? '-' : '_';
+
+            mvwaddch(win, curr_y, curr_x, horizontal);
+
+            // This bit requires a little more logic: drawing '-' characters
+            // isn't as smooth as '_' characters. Thus, to draw a good lookin'
+            // line, the slope characters must be drawn in a particular way...
+            // (remember we're in screen space coordinates and the y-axis is
+            // "flipped")
+
+            // Draw slope if we jump a row
+            if (next_y != curr_y)
+            {
+                if (dy > 0)
+                {
+                    // We're moving "down": add the slope to the next position
+                    // Make sure we're not on the last cell first
+                    if (curr_y != yb)
+                    {
+                        mvwaddch(win, next_y, next_x, slope);
+
+                        // Skip drawing the next position the next iteration
+                        y += sy;
+                        x += sx;
+                    }
+                }
+                else
+                {
+                    // We're moving "up": just add the slope to the current cell
+                    mvwaddch(win, curr_y, curr_x, slope);
+                }
+            }
+
+            y += sy;
+            x += sx;
+        }
+    }
+
+    // Add asterisks at beginning and end of segment to "prettify"
+
+    mvwaddch(win, ya, xa, '*');
+    mvwaddch(win, yb, xb, '*');
+}
+
 void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 {
     // The logic here is not particularly elegant or efficient
@@ -31,21 +145,26 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 
         int y = 0;
         double x = 0.0;
-        double nextX;
 
         // Step size
         int sy = (dy > 0) ? 1 : -1;
         double sx = (double) dx / abs(dy);
 
-        while (abs(y) < abs(dy))
+        while (abs(y) <= abs(dy))
         {
-            mvwaddstr(win, ya + y, xa + (int) x, "│");
+            int curr_y = ya + y;
+            int curr_x = xa + round(x);
 
-            // Draw joint if we jump a column && we're not on the last cell 
-            if ((int) (x + sx) != (int) x && xa + (int) x != xb)
+            int next_y = ya + y + sy;
+            int next_x = xa + round(x + sx);
+
+            mvwaddstr(win, curr_y, curr_x, "│");
+
+            // Draw joint if we jump a column && we're not on the last cell
+            if (curr_x != next_x && curr_x != xb)
             {
-                mvwaddstr(win, ya + y, xa + (int) x, joint_a);
-                mvwaddstr(win, ya + y, xa + (int)(x + sx), joint_b);
+                mvwaddstr(win, curr_y, curr_x, joint_a);
+                mvwaddstr(win, curr_y, next_x, joint_b);
             }
 
             y += sy;
@@ -68,7 +187,6 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 
         double y = 0.0;
         int x = 0;
-        double nextY;
 
         // Step size
         double sy = (double) dy / abs(dx);
@@ -76,13 +194,19 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 
         while (abs(x) <= abs(dx))
         {
-            mvwaddstr(win, ya + (int) y, xa + x, "─");
+            int curr_y = ya + round(y);
+            int curr_x = xa + x;
+
+            int next_y = ya + round(y + sy);
+            int next_x = xa + x + sx;
+
+            mvwaddstr(win, curr_y, curr_x, "─");
 
             // Draw joint if we jump a row && we're not on the last cell
-            if ((int) (y + sy) != (int) y && ya + (int) y != yb)
+            if (curr_y != next_y && curr_y != yb)
             {
-                mvwaddstr(win, ya + (int) y, xa + x, joint_a);
-                mvwaddstr(win, ya + (int) (y + sy), xa + x, joint_b);
+                mvwaddstr(win, curr_y, curr_x, joint_a);
+                mvwaddstr(win, next_y, curr_x, joint_b);
             }
 
             y += sy;
@@ -93,6 +217,57 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
     // Add circles at beginning and end of segment to "prettify"
     mvwaddstr(win, ya, xa, "◯");
     mvwaddstr(win, yb, xb, "◯");
+}
+
+void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)
+{
+    // The logic here is not particularly elegant or efficient
+
+    int dy = yb - ya;
+    int dx = xb - xa;
+
+    char *fill = "•";
+
+    if (abs(dy) >= abs(dx))
+    {
+        int y = 0;
+        double x = 0.0;
+
+        // Step size
+        int sy = (dy > 0) ? 1 : -1;
+        double sx = (double)dx / abs(dy);
+
+        while (abs(y) <= abs(dy))
+        {
+            int curr_y = ya + y;
+            int curr_x = xa + round(x);
+
+            mvwaddstr(win, curr_y, curr_x, fill);
+
+            y += sy;
+            x += sx;
+        }
+    }
+    else
+    {
+        double y = 0.0;
+        int x = 0;
+
+        // Step size
+        double sy = (double) dy / abs(dx);
+        int sx = (dx > 0) ? 1 : -1;
+
+        while (abs(x) <= abs(dx))
+        {
+            int curr_y = ya + round(y);
+            int curr_x = xa + x;
+
+            mvwaddstr(win, curr_y, curr_x, fill);
+
+            y += sy;
+            x += sx;
+        }
+    }
 }
 
 enum fillType

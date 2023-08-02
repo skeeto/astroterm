@@ -26,10 +26,20 @@
 #include <ncurses.h>
 #include <stdbool.h>
 
+/* Draw an ASCII line segment from (xa, ya) and (xb, yb) where y and x
+ * are synonymous with row and column, respectively.
+ */
+void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb);
+
 /* Draw a smooth unicode line segment from (xa, ya) and (xb, yb) where y and x 
  * are synonymous with row and column, respectively
  */
 void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb);
+
+/* Draw an dotted line segment from (xa, ya) and (xb, yb) where y and x
+ * are synonymous with row and column, respectively.
+ */
+void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb);
 
 /* Draw an ellipse. By taking advantage of knowing the cell aspect ratio,
  * this function can generate an "apparent" circle.

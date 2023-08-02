@@ -345,10 +345,23 @@ void render_azimuthal_grid(WINDOW *win, bool no_unicode)
     int win_height = win->_maxy;
     int win_width = win->_maxx;
 
-    draw_line_smooth(win, win_height, win_width, 0, 0);
+    int half_height = round(win_height / 2.0);
+    int half_width = round(win_width / 2.0);
+
+    int quarter_height = round(win_height / 4.0);
+    int quarter_width = round(win_width / 4.0);
+    //printf("%d\n", win_width);
+
+    draw_line_smooth(win, 0, quarter_width, win_height, half_width + quarter_width);
+    draw_line_smooth(win, 0, half_width + quarter_width, win_height, quarter_width);
+    draw_line_smooth(win, quarter_height, 0, half_height + quarter_height, win_width);
+    draw_line_smooth(win, half_height + quarter_height, 0, quarter_height, win_width);
+
+    draw_line_smooth(win, 0, 0, win_height, win_width);
     draw_line_smooth(win, 0, win_width, win_height, 0);
-    draw_line_smooth(win, 0, win_width / 2, win_height, win_width / 2);
-    draw_line_smooth(win, win_height / 2, 0, win_height / 2, win_width);
+
+    draw_line_smooth(win, 0, half_width, win_height, half_width);
+    draw_line_smooth(win, half_height, 0, half_height, win_width);
 
     // DrawEllipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
 

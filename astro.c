@@ -59,6 +59,10 @@ void calc_star_position(struct star *star, double julian_date, double gmst,
                              azimuth, altitude);
 }
 
+/* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
+ * from the celestial intermediate origin to the terrestrial intermediate origin
+ * and is a replacement for Greenwich sidereal time
+ */
 double earth_rotation_angle_rad(double jd)
 {
     double t = jd - 2451545.0;
@@ -348,9 +352,11 @@ double solve_kepler(double M, double e, double E)
     return dE;
 }
 
-/* Return the heliocentric position of a planet in equatorial coordinates
+/* Return the heliocentric position of a planet in rectangular ecliptic 
+ * coordinates within the J2000 frame (J2000 Mean Coordinates)
  */
-void calc_planet_position(int planet, double julian_date)
+void calc_planet_helio_J2000(int planet, double julian_date,
+                             double *xh, double *yh, double *zh)
 {
     struct kep_elems elements   = keplerian_elements[planet];
     struct kep_rates rates      = keplerian_rates[planet];
@@ -413,19 +419,50 @@ void calc_planet_position(int planet, double julian_date)
     // 5.
 
     a *= rad; e *= rad; I *= rad; L *= rad; ww *= rad; O *= rad;
-    const double xecl = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
-    const double yecl = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
-    const double zecl = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
+    *xh = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
+    *yh = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
+    *zh = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
 
-    // 6.
+    return;
+}
 
-    const double eps = 23.43928 * rad;  // TODO: need to find obliquity of the ecliptic for any julian date (use earth rotation angle somehow?)
+/* Correct rectangular J2000 ecliptic coordinates for precession (and maybe 
+ * nutation?)
+ *
+ * According to ASCOM, *true* apparent coordinates would also correct for other
+ * elements but those are beyond the scope of this project
+ * https://ascom-standards.org/Help/Developer/html/72A95B28-BBE2-4C7D-BC03-2D6AB324B6F7.htm
+ */
+void J2000_to_apparent(double *x, double *y, double *z)
+{
+    // TODO: find a good source and implement
+    *x = *x;
+    *y = *y;
+    *z = *z;
 
-    const double x = xecl;
-    const double y = cos(eps) * yecl - sin(eps) * zecl;
-    const double z = sin(eps) * yecl + cos(eps) * zecl;
+    // 1. Convert to spherical eclectic coords
+    // 2. Correct for precession and other factors
+    // 3. Convert BACK to rectangular coords
+}
 
-    // Convert to equatorial coordinates
-    double right_ascension = atan2 (y , x);
-    double declination = atan2(z, sqrt( x * x + y * y));
+/* Return the geocentric  position of a planet in rectangular ecliptic
+ * coordinates within the J2000 frame (J2000 Mean Coordinates)
+ */
+void calc_planet_geo_J2000(int planet, double julian_date,
+                      double *xg, double *yg, double *zg)
+{
+    // Coordinates of desired planet
+    double xh, yh, zh;
+    calc_planet_helio_J2000(planet, julian_date, &xh, &yh, &zh);
+
+    // Coordinates of the Earth (Earth/Moon Barycenter)
+    double xe, ye, ze;
+    calc_planet_helio_J2000(EARTH, julian_date, &xe, &ye, &ze);
+
+    // Get geocentric coordinates of desired planet
+    *xg = xh - xe;
+    *yg = yh - ye;
+    *zg = zh;
+
+    return;
 }
