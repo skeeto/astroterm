@@ -23,40 +23,18 @@ double norm_rad(double rad)
     return rem;
 }
 
-int star_magnitude_comparator(const void *v1, const void *v2)
-{
-    const struct star *p1 = (struct star *)v1;
-    const struct star *p2 = (struct star *)v2;
-
-    // Lower magnitudes are brighter
-    if (p1->magnitude < p2->magnitude)
-        return +1;
-    else if (p1->magnitude > p2->magnitude)
-        return -1;
-    else
-        return 0;
-}
-
-void calc_star_position(struct star *star, double julian_date, double gmst,
+void calc_star_position(double right_ascension, double ra_motion,
+                        double declination, double dec_motion,
+                        double julian_date, double gmst,
                         double latitude, double longitude,
-                        double *azimuth, double *altitude)
+                        double *ITRF_right_ascension, double *ITRF_declination)
 {
-    // Correct for parallax
-
     double J200 = 2451545.0;         // J2000 epoch in julian days
     double days_per_year = 365.2425; // Average number of days per year
     double years_from_epoch = (julian_date - J200) / days_per_year;
 
-    double curr_declination = star->declination +
-                              star->dec_motion * years_from_epoch;
-    double curr_right_ascension = star->right_ascension +
-                                  star->ra_motion * years_from_epoch;
-
-    // Convert to horizontal coordinates
-
-    equatorial_to_horizontal(curr_declination, curr_right_ascension,
-                             gmst, latitude, longitude,
-                             azimuth, altitude);
+    *ITRF_right_ascension = right_ascension + ra_motion * years_from_epoch;
+    *ITRF_declination = declination + dec_motion * years_from_epoch;
 }
 
 /* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
@@ -265,83 +243,6 @@ void solve_orbit(double a, double e, double i,
 
 }
 
-enum solar_objects
-{
-    SUN = 0,
-    MERCURY,
-    VENUS,
-    EARTH,
-    MOON,
-    MARS,
-    JUPITER,
-    SATURN,
-    URANUS,
-    NEPTUNE,
-    NUM_SOLAR
-};
-
-struct kep_elems
-{
-    // Keplerian elements
-    double a;   // semi-major axis                  (au)
-    double e;   // eccentricity
-    double I;   // inclination                      (deg)
-    double L;   // mean longitude                   (deg)
-    double w;   // longitude of perihelion          (deg)
-    double O;   // longitude of the ascending node  (deg)
-};
-
-struct kep_rates
-{
-    // Keplerian rates
-    double da; // (au/century)
-    double de;
-    double dI; // (deg/century)
-    double dL; // (deg/century)
-    double dw; // (deg/century)
-    double dO; // (deg/century)
-};
-
-struct extra_elems
-{
-    double b;
-    double c;
-    double s;
-    double f;
-};
-
-static const struct kep_elems keplerian_elements[NUM_SOLAR] =
-{
-    [MERCURY]   = {0.38709843,      0.20563661,     7.00559432,     252.25166724,   77.45771895,    48.33961819     },
-    [VENUS]     = {0.72332102,      0.00676399,     3.39777545,     181.97970850,   131.76755713,   76.67261496     },
-    [EARTH]     = {1.00000018,      0.01673163,     -0.00054346,    100.46691572,   102.93005885,   -5.11260389     },
-    [MARS]      = {1.52371243,      0.09336511,     1.85181869,     -4.56813164,    -23.91744784,   49.71320984     },
-    [JUPITER]   = {5.20248019,      0.04853590,     1.29861416,     34.33479152,    14.27495244,    100.29282654    },
-    [SATURN]    = {9.54149883,      0.05550825,     2.49424102,     50.07571329,    92.86136063,    113.63998702    },
-    [URANUS]    = {19.18797948,     0.04685740,     0.77298127,     314.20276625,   172.43404441,   73.96250215     },
-    [NEPTUNE]   = {30.06952752,     0.00895439,     1.77005520,     304.22289287,   46.68158724,    131.78635853    }
-};
-
-static const struct kep_rates keplerian_rates[NUM_SOLAR] =
-{
-    [MERCURY]   = {0.00000000,      0.00002123,     -0.00590158,    149472.67486623,    0.15940013,     -0.12214182 },
-    [VENUS]     = {-0.00000026,     -0.00005107,    0.00043494,     58517.81560260,     0.05679648,     -0.27274174 },
-    [EARTH]     = {-0.00000003,     -0.00003661,    -0.01337178,    35999.37306329,     0.31795260,     -0.24123856 },
-    [MARS]      = {0.00000097,      0.00009149,     -0.00724757,    19140.29934243,     0.45223625,     -0.26852431 },
-    [JUPITER]   = {-0.00002864,     0.00018026,     -0.00322699,    3034.90371757,      0.18199196,     0.13024619  },
-    [SATURN]    = {-0.00003065,     -0.00032044,    0.00451969,     1222.11494724,      0.54179478,     -0.25015002 },
-    [URANUS]    = {-0.00020455,     -0.00001550,    -0.00180155,    428.49512595,       0.09266985,     0.05739699  },
-    [NEPTUNE]   = {0.00006447,      0.00000818,     0.00022400,     218.46515314,       0.01009938,     -0.00606302 }
-};
-
-static const struct extra_elems keplerian_extras[NUM_SOLAR] =
-{
-    [JUPITER]   = {-0.00012452,     0.06064060,     -0.35635438,    38.35125000 },
-    [SATURN]    = {0.00025899,      -0.13434469,    0.87320147,     38.35125000 },
-    [URANUS]    = {0.00058331,      -0.97731848,    0.17689245,     7.67025000  },
-    [NEPTUNE]   = {-0.00041348,     0.68346318,     -0.10162547,    7.67025000  }
-};
-
 double solve_kepler(double M, double e, double E)
 {
     const double rad = M_PI / 180.0;
@@ -352,16 +253,13 @@ double solve_kepler(double M, double e, double E)
     return dE;
 }
 
-/* Return the heliocentric position of a planet in rectangular ecliptic 
- * coordinates within the J2000 frame (J2000 Mean Coordinates)
+/* Calculate the heliocentric ICRF position of a planet in rectangular
+ * equatorial coordinates
  */
-void calc_planet_helio_J2000(int planet, double julian_date,
-                             double *xh, double *yh, double *zh)
+void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates,
+                            const struct kep_extra *extras, double julian_date,
+                            double *xh, double *yh, double *zh)
 {
-    struct kep_elems elements   = keplerian_elements[planet];
-    struct kep_rates rates      = keplerian_rates[planet];
-    struct extra_elems extras   = keplerian_extras[planet];
-
     // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
 
     const double rad = M_PI / 180.0;
@@ -371,23 +269,23 @@ void calc_planet_helio_J2000(int planet, double julian_date,
     // Calculate number of centuries past J2000
     double t = (julian_date - 2451545.0) / 36525;
 
-    double a = elements.a + rates.da * t;
-    double e = elements.e + rates.de * t;
-    double I = elements.I + rates.dI * t;
-    double L = elements.L + rates.dL * t;
-    double w = elements.w + rates.dw * t;
-    double O = elements.O + rates.dO * t;
+    double a = elements->a + rates->da * t;
+    double e = elements->e + rates->de * t;
+    double I = elements->I + rates->dI * t;
+    double L = elements->L + rates->dL * t;
+    double w = elements->w + rates->dw * t;
+    double O = elements->O + rates->dO * t;
 
     // 2.
 
     double ww = w - O;
     double M = L - w;
-    if (JUPITER <= planet && planet <= NEPTUNE)
+    if (extras != NULL)
     {
-        double b = extras.b;
-        double c = extras.c;
-        double s = extras.s;
-        double f = extras.f;
+        double b = extras->b;
+        double c = extras->c;
+        double s = extras->s;
+        double f = extras->f;
         M = L - w + b * t * t + c * cos(f * t * rad) + s * sin(f * t * rad);
     }
 
@@ -419,50 +317,87 @@ void calc_planet_helio_J2000(int planet, double julian_date,
     // 5.
 
     a *= rad; e *= rad; I *= rad; L *= rad; ww *= rad; O *= rad;
-    *xh = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
-    *yh = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
-    *zh = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
+    double xecl = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
+    double yecl = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
+    double zecl = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
+
+    // 6.
+
+    // Obliquity at J2000 in radians
+    double eps = 84381.448 / (60.0 * 60.0) * M_PI / 180.0;
+
+    double x = xecl;
+    double y = cos(eps) * yecl - sin(eps) * zecl;
+    double z = sin(eps) * yecl + cos(eps) * zecl;
 
     return;
 }
 
-/* Correct rectangular J2000 ecliptic coordinates for precession (and maybe 
- * nutation?)
+/* Correct ICRF for polar motion, precession, nutation, frame bias & earth
+ * rotation
  *
  * According to ASCOM, *true* apparent coordinates would also correct for other
  * elements but those are beyond the scope of this project
  * https://ascom-standards.org/Help/Developer/html/72A95B28-BBE2-4C7D-BC03-2D6AB324B6F7.htm
  */
-void J2000_to_apparent(double *x, double *y, double *z)
+void ICRF_to_ITRF(double *x, double *y, double *z)
 {
-    // TODO: find a good source and implement
+    // TODO: implement concise CIO/CEO based transformations 
     *x = *x;
     *y = *y;
     *z = *z;
-
-    // 1. Convert to spherical eclectic coords
-    // 2. Correct for precession and other factors
-    // 3. Convert BACK to rectangular coords
 }
 
-/* Return the geocentric  position of a planet in rectangular ecliptic
- * coordinates within the J2000 frame (J2000 Mean Coordinates)
- */
-void calc_planet_geo_J2000(int planet, double julian_date,
-                      double *xg, double *yg, double *zg)
+void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct kep_rates *earth_rates,
+                          const struct kep_elems *planet_elements, const struct kep_rates *planet_rates,
+                          const struct kep_extra *planet_extras,
+                          double julian_date,
+                          double *xg, double *yg, double *zg)
 {
     // Coordinates of desired planet
     double xh, yh, zh;
-    calc_planet_helio_J2000(planet, julian_date, &xh, &yh, &zh);
+    calc_planet_helio_ICRF(planet_elements, planet_rates, planet_extras,
+                           julian_date, &xh, &yh, &zh);
 
-    // Coordinates of the Earth (Earth/Moon Barycenter)
+    // Coordinates of the Earth
     double xe, ye, ze;
-    calc_planet_helio_J2000(EARTH, julian_date, &xe, &ye, &ze);
+    calc_planet_helio_ICRF(earth_elements, earth_rates, NULL,
+                           julian_date, &xe, &ye, &ze);
+    
+    // Coordinates of the Sun are the opposite of the Earth
+    double xs = -xe;
+    double ys = -ye;
+    double zs = -ze;
 
-    // Get geocentric coordinates of desired planet
-    *xg = xh - xe;
-    *yg = yh - ye;
+    // Get geocentric coordinates of desired planet by adding the Sun's coordinates
+    *xg = xh + xs;
+    *yg = yh + ys;
     *zg = zh;
 
     return;
+}
+
+// Precession quantities
+
+double psi_a(double t)
+{
+    // Expressions for IAU 2000 precession quantities, N. Capitaine, P.T.Wallace,
+    // and J. Chapront
+
+    double psi_a_sec = 5038.7784 * t - 1.07259 * pow(t, 2) -
+                       0.001147 * powf(t, 3); // Eq. 6
+    double psi_a_rad = psi_a_sec / (60.0 * 60.0) * M_PI / 180.0;
+    return psi_a_rad;
+}
+
+// Nutation quantities
+
+double delta_psi()
+{
+
+}
+
+double delta_epsilon()
+{
+
 }

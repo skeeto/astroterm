@@ -8,7 +8,14 @@
 
 // CONVERSIONS
 
-void equatorial_to_horizontal(double declination, double right_ascension,
+void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
+                                         double *right_ascension, double *altitude)
+{
+    *right_ascension = atan2(yeq, xeq);
+    *altitude = atan2(zeq, sqrt(xeq * xeq + yeq * yeq));
+}
+
+void equatorial_to_horizontal(double right_ascension, double declination,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude)
 {

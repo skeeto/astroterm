@@ -56,12 +56,26 @@ struct star entry_to_star(struct entry *entry_data)
     return star_data;
 }
 
+int star_magnitude_comparator(const void *v1, const void *v2)
+{
+    const struct star *p1 = (struct star *)v1;
+    const struct star *p2 = (struct star *)v2;
+
+    // Lower magnitudes are brighter
+    if (p1->magnitude < p2->magnitude)
+        return +1;
+    else if (p1->magnitude > p2->magnitude)
+        return -1;
+    else
+        return 0;
+}
+
 struct star *generate_star_table(const char *file_path, int *num_stars_return)
 {
     int num_entries;
     struct entry *entries = parse_entries(file_path, &num_entries);
 
-    struct star *star_table = (struct star *)malloc(num_entries * sizeof(struct star));
+    struct star *star_table = malloc(num_entries * sizeof(struct star));
 
     for (int i = 0; i < num_entries; ++i)
     {
@@ -113,7 +127,7 @@ char **generate_name_table(const char *file_path, int num_stars)
 
         int table_index = catalog_number - 1;
 
-        name_table[table_index] = (char *)malloc(BUF_SIZE * sizeof(char));
+        name_table[table_index] = malloc(BUF_SIZE * sizeof(char));
         strcpy(name_table[table_index], name);
     }
 
@@ -162,7 +176,7 @@ int **generate_constell_table(const char *file_path, int *num_const)
     int num_constells = count_lines(file_pointer);
     rewind(file_pointer); // Reset file pointer position
 
-    int **constell_table = (int **)malloc(num_constells * sizeof(int *));
+    int **constell_table = malloc(num_constells * sizeof(int *));
 
     const unsigned BUF_SIZE = 256;
     char buffer[BUF_SIZE];
@@ -206,6 +220,12 @@ void free_stars(struct star *arr, int size)
     return;
 }
 
+void free_planets(struct planet *planets)
+{
+    free(planets);
+    return;
+}
+
 void free_constells(int **arr, int size)
 {
     for (int i = 0; i < size; i++)
@@ -234,10 +254,23 @@ void update_star_positions(struct star *star_table, int num_stars,
     for (int i = 0; i < num_stars; ++i)
     {
         struct star *star = &star_table[i];
-        calc_star_position(star, julian_date, gmst, latitude, longitude,
-                           &star->base.azimuth, &star->base.altitude);
+
+        double right_ascension, declination;
+        calc_star_position(star->right_ascension, star->ra_motion,
+                           star->declination, star->dec_motion,
+                           julian_date, gmst, latitude, longitude,
+                           &right_ascension, &declination);
+
+        // Convert to horizontal coordinates
+        double azimuth, altitude;
+        equatorial_to_horizontal(right_ascension, declination,
+                                 gmst, latitude, longitude,
+                                 &azimuth, &altitude);
+
         // FIXME: setting the azimuth and altitude this way is probably what is
         // causing the issue in astro.h... how to fix?
+        star->base.azimuth = azimuth;
+        star->base.altitude = altitude;
     }
 
     return;
@@ -337,6 +370,105 @@ void render_constells(WINDOW *win, int **constell_table, int num_const, struct s
             }
         }
     }
+}
+
+// Planets
+
+static const char *planet_symbols[NUM_PLANETS] =
+{
+    [SUN]       = "☉",
+    [MERCURY]   = "☿",
+    [VENUS]     = "♀",
+    [EARTH]     = "🜨",
+    [MARS]      = "♂",
+    [JUPITER]   = "♃",
+    [SATURN]    = "♄",
+    [URANUS]    = "⛢",
+    [NEPTUNE]   = "♆"
+};
+
+static const char *planet_labels[NUM_PLANETS] =
+{
+    [SUN]       = "Sun",
+    [MERCURY]   = "Mercury",
+    [VENUS]     = "Venus",
+    [MARS]      = "Mars",
+    [JUPITER]   = "Jupiter",
+    [SATURN]    = "Saturn",
+    [URANUS]    = "Uranus",
+    [NEPTUNE]   = "Neptune"
+};
+
+struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
+                                     const struct kep_rates *keplerian_rates,
+                                     const struct kep_extra *keplerian_extras)
+{
+    struct planet *planet_table = malloc(NUM_PLANETS * sizeof(struct planet));
+
+    for (int i = 0; i < NUM_PLANETS; ++i)
+    {
+        struct planet planet_data;
+        planet_data.base = (struct object_base)
+        {
+            .symbol_ASCII   = 'W',
+            .symbol_unicode = (char *) planet_symbols[i],
+            .label          = (char *) planet_labels[i],
+         };
+        planet_data.elements    = &keplerian_elements[i];
+        planet_data.rates       = &keplerian_rates[i];
+        planet_data.extras      = NULL;
+
+        if (JUPITER <= i && i <= NEPTUNE)
+        {
+            planet_data.extras  = &keplerian_extras[i];
+        }
+
+        planet_table[i] = planet_data;
+    }
+
+    return planet_table;
+}
+
+void update_planet_positions(struct planet *planet_table, double julian_date,
+                             double latitude, double longitude)
+{
+    double gmst = greenwich_mean_sidereal_time_rad(julian_date);
+
+    for (int i = 0; i < NUM_PLANETS; ++i)
+    {
+        // Geocentric rectangular equatorial coordinates
+        double xg, yg, zg;
+        calc_planet_geo_ICRF(planet_table[EARTH].elements,
+                             planet_table[EARTH].rates,
+                             planet_table[i].elements,
+                             planet_table[i].rates, planet_table[i].extras,
+                             julian_date, &xg, &yg, &zg);
+
+        // Convert to spherical equatorial coordinates
+        double right_ascension, declination;
+        equatorial_rectangular_to_spherical(xg, yg, zg,
+                                            &right_ascension, &declination);
+
+        double azimuth, altitude;
+        equatorial_to_horizontal(right_ascension, declination,
+                                 gmst, latitude, longitude,
+                                 &azimuth, &altitude);
+
+        planet_table[i].base.azimuth = azimuth;
+        planet_table[i].base.altitude = altitude;
+    }
+}
+
+void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode)
+{
+    // Render planets so that closest are drawn on top
+    for (int i = NUM_PLANETS - 1; i >= 0; --i)
+    {
+        struct planet planet_data = planet_table[i];
+        render_object_stereo(win, &planet_data.base, no_unicode);
+    }
+
+    return;
 }
 
 void render_azimuthal_grid(WINDOW *win, bool no_unicode)

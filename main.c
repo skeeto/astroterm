@@ -1,6 +1,7 @@
 #include "astro.h"
 #include "term.h"
 #include "cstar.h"
+#include "data/keplerian_elements.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,7 +24,7 @@ static float animation_mult = 1.0f;             // Real time animation speed mul
 static int no_unicode_flag;                     // Only use ASCII characters
 static int color_flag;                          // Use color--not implemented yet
 static int grid_flag;                           // Draw an azimuthal grid
-static int constell_flag;                  // Draw constellation figures
+static int constell_flag;                       // Draw constellation figures
 
 static volatile bool perform_resize = false;
 
@@ -55,6 +56,10 @@ int main(int argc, char *argv[])
 
     int num_const;
     int **constell_table = generate_constell_table("data/BSC5_constellations", &num_const);
+
+    struct planet *planet_table = generate_planet_table(keplerian_elements,
+                                                        keplerian_rates,
+                                                        keplerian_extras);
 
     // Sort stars by magnitude so brighter stars are always rendered on top
     int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
@@ -88,11 +93,13 @@ int main(int argc, char *argv[])
 
         // Update object positions
         update_star_positions(star_table, num_stars, julian_date, latitude, longitude);
+        update_planet_positions(planet_table, julian_date, latitude, longitude);
 
         // Render
         if (grid_flag)          { render_azimuthal_grid(win, no_unicode_flag); }
         render_stars(win, star_table, num_stars, num_by_mag, threshold, no_unicode_flag);
         if (constell_flag) { render_constells(win, constell_table, num_const, star_table, no_unicode_flag); }
+        render_planets(win, planet_table, no_unicode_flag);
 
         // TODO: implement variable time step
         julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
@@ -105,6 +112,7 @@ int main(int argc, char *argv[])
     free_constells(constell_table, num_const);
     free_star_names(name_table, num_stars);
     free_stars(star_table, num_stars);
+    free_planets(planet_table);
 
     return 0;
 }

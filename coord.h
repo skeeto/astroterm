@@ -27,7 +27,7 @@
  * - Azimuth        : measured East of North
  * - Altitude       : measured from equator to the zenith (complement of spherical phi)
  *
- * EQUATORIAL (right ascension, declination)
+ * EQUATORIAL-SPHERICAL (right ascension, declination)
  * - Right ascension    : measured East of the Vernal Equinox along the Celestial Equator
  * - Declination        : measured North of the Celestial Equator, along the hour circle
  *                        passing through the point in question
@@ -46,6 +46,12 @@
 void equatorial_to_horizontal(double declination, double right_ascension,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude);
+
+/* Converts rectangular equatorial coordinates to spherical rectangular
+ * coordinates
+ */
+void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
+                                         double *right_ascension, double *altitude);
 
 /* Converts horizontal coordinates to spherical coordinates
  */
