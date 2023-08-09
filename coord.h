@@ -43,7 +43,7 @@
  * Reference:   https://jonvoisey.net/blog/2018/07/data-converting-alt-az-to-ra-dec-derivation/
  *              https://astrogreg.com/convert_ra_dec_to_alt_az.html
  */
-void equatorial_to_horizontal(double declination, double right_ascension,
+void equatorial_to_horizontal(double right_ascension, double declination,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude);
 
@@ -51,7 +51,7 @@ void equatorial_to_horizontal(double declination, double right_ascension,
  * coordinates
  */
 void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
-                                         double *right_ascension, double *altitude);
+                                         double *right_ascension, double *declination);
 
 /* Converts horizontal coordinates to spherical coordinates
  */

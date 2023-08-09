@@ -17,6 +17,8 @@ struct object_base
     double azimuth;
     double altitude;
 
+    int color_pair; // 0 for no color pair
+
     char symbol_ASCII;
     char *symbol_unicode;
     char *label;
@@ -105,9 +107,9 @@ void render_azimuthal_grid(WINDOW *win, bool no_unicode);
 
 /* Render stars to the screen using a stereographic projection 
  */
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode);
+void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode, bool color_flag);
 
-void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode);
+void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode, bool color_flag);
 
 /* Render constellations
  */

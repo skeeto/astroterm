@@ -16,13 +16,14 @@ View stars in your terminal!
 | **`--fps, -f fps`**               | Frames per second                                                         | 24                    |
 | **`--animation-mult, -m mult`**   | Real time animation speed multiplier                                      | 1.0                   |
 | **`--no-unicode`**                | Only use ASCII characters                                                 |                       |
+| **`--colors`**                    | Render planets with terminal colors                                       |                       |
 | **`--grid`**                      | Draw an azimuthal grid                                                    |                       |
 | **`--constellations`**            | Draw constellations                                                       |                       |
 
-> ⓘ Use a tool like https://www.aavso.org/jd-calculator to convert Gregorian Calendar  Dates to Julian Dates \
+> ℹ️ Use a tool like https://www.aavso.org/jd-calculator to convert Gregorian Calendar  Dates to Julian Dates \
 > Use a tool like https://www.latlong.net/ to get your latitude and longitude (remember to convert to radians!)
 
-> ⓘ Star magnitudes decrease as apparent brightness increases
+> ℹ️ Star magnitudes decrease as apparent brightness increases
 
 ## Building
 
@@ -35,4 +36,5 @@ _You only need to link `-lncurses` if not using unicode_
 ## Data Sources
 - Stars: [Yale Bright Star Catalog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
 - Star Names: [IAU Star Names](https://www.iau.org/public/themes/naming_stars/)
-- Constellation Figure: [Stellarium](https://stellarium.org/)
+- Constellation Figures: [Stellarium](https://stellarium.org/) *modified
+- Planets: [NASA Jet Propulsion Laboratory](https://ssd.jpl.nasa.gov/planets/approx_pos.html)

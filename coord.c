@@ -9,17 +9,17 @@
 // CONVERSIONS
 
 void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
-                                         double *right_ascension, double *altitude)
+                                         double *right_ascension, double *declination)
 {
     *right_ascension = atan2(yeq, xeq);
-    *altitude = atan2(zeq, sqrt(xeq * xeq + yeq * yeq));
+    *declination = atan2(zeq, sqrt(xeq * xeq + yeq * yeq));
 }
 
 void equatorial_to_horizontal(double right_ascension, double declination,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude)
 {
-    // Compute the approximate hour angle (*not* corrected for nutation)
+    // Compute the approximate hour angle (not corrected for nutation)
     double hour_angle = gmst - longitude - right_ascension;
 
     *altitude = asin(sin(latitude) * sin(declination) +

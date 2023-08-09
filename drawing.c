@@ -213,10 +213,6 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
             x += sx;
         }
     }
-
-    // Add circles at beginning and end of segment to "prettify"
-    mvwaddstr(win, ya, xa, "◯");
-    mvwaddstr(win, yb, xb, "◯");
 }
 
 void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)

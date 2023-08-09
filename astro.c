@@ -267,7 +267,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     // 1.
 
     // Calculate number of centuries past J2000
-    double t = (julian_date - 2451545.0) / 36525;
+    double t = (julian_date - 2451545.0) / 36525.0;
 
     double a = elements->a + rates->da * t;
     double e = elements->e + rates->de * t;
@@ -324,11 +324,11 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     // 6.
 
     // Obliquity at J2000 in radians
-    double eps = 84381.448 / (60.0 * 60.0) * M_PI / 180.0;
+    double eps = 84381.448 / (60.0 * 60.0) * rad;
 
-    double x = xecl;
-    double y = cos(eps) * yecl - sin(eps) * zecl;
-    double z = sin(eps) * yecl + cos(eps) * zecl;
+    *xh = xecl;
+    *yh = cos(eps) * yecl - sin(eps) * zecl;
+    *zh = sin(eps) * yecl + cos(eps) * zecl;
 
     return;
 }
@@ -359,20 +359,16 @@ void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct k
     calc_planet_helio_ICRF(planet_elements, planet_rates, planet_extras,
                            julian_date, &xh, &yh, &zh);
 
-    // Coordinates of the Earth
+    // Coordinates of the Earth-Moon Barycenter
+    // TODO: expensive calculation, should be moved outside loop
     double xe, ye, ze;
     calc_planet_helio_ICRF(earth_elements, earth_rates, NULL,
                            julian_date, &xe, &ye, &ze);
-    
-    // Coordinates of the Sun are the opposite of the Earth
-    double xs = -xe;
-    double ys = -ye;
-    double zs = -ze;
 
-    // Get geocentric coordinates of desired planet by adding the Sun's coordinates
-    *xg = xh + xs;
-    *yg = yh + ys;
-    *zg = zh;
+    // Obtain geocentric coordinates by subtracting Earth's coordinates
+    *xg = xh - xe;
+    *yg = yh - ye;
+    *zg = zh - ze; 
 
     return;
 }

@@ -12,6 +12,10 @@
 #include <ncurses.h>
 #include <math.h>
 
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 // Star magnitude mapping
 static const char *mag_map_unicode_round[10]    = {"⬤", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅", "⋅"};
 static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
@@ -46,6 +50,11 @@ struct star entry_to_star(struct entry *entry_data)
     // This is necessary to avoid printing garbage data as labels. Rendering
     // functions check if label is NULL to determine whether to print or not
     star_data.base.label = NULL;
+
+    // This is necessary to avoid adding color to the star. Rendering
+    // functions check if color_pair is 0 to determine whether to add color
+    star_data.base.color_pair = 0;
+
 
     int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude,
                                               0, 9, star_data.magnitude);
@@ -276,7 +285,7 @@ void update_star_positions(struct star *star_table, int num_stars,
     return;
 }
 
-void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unicode)
+void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unicode, bool color_flag)
 {
     double theta_sphere, phi_sphere;
     horizontal_to_spherical(object->azimuth, object->altitude,
@@ -301,6 +310,13 @@ void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unico
         return;
     }
 
+    bool color = color_flag && has_colors() && object->color_pair != 0;
+
+    if (color)
+    {
+        wattron(win, COLOR_PAIR(object->color_pair));
+    }
+
     // Draw object
     if (no_unicode)
     {
@@ -317,9 +333,14 @@ void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unico
     {
         mvwaddstr(win, y - 1, x + 1, object->label);
     }
+
+    if (color)
+    {
+        wattroff(win, COLOR_PAIR(object->color_pair));
+    }
 }
 
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode)
+void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode, bool color_flag)
 {
     for (int i = 0; i < num_stars; ++i)
     {
@@ -333,7 +354,7 @@ void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_
             continue;
         }
 
-        render_object_stereo(win, &star->base, no_unicode);
+        render_object_stereo(win, &star->base, no_unicode, color_flag);
     }
 
     return;
@@ -364,45 +385,71 @@ void render_constells(WINDOW *win, int **constell_table, int num_const, struct s
             // TODO: is there a cleaner way to do this (perhaps if checking if
             // one of the stars is in the window?)
             double line_length = sqrt(pow(ya - yb, 2) + pow(xa - xb, 2));
-            if (line_length < 1000)
+            if (line_length < 10000)
             {
                 draw_line_smooth(win, ya, xa, yb, xb);
+
+                // Add circles at beginning and end of segment to "prettify"
+                mvwaddstr(win, ya, xa, "○");
+                mvwaddstr(win, yb, xb, "○");
             }
         }
     }
 }
 
-// Planets
-
-static const char *planet_symbols[NUM_PLANETS] =
-{
-    [SUN]       = "☉",
-    [MERCURY]   = "☿",
-    [VENUS]     = "♀",
-    [EARTH]     = "🜨",
-    [MARS]      = "♂",
-    [JUPITER]   = "♃",
-    [SATURN]    = "♄",
-    [URANUS]    = "⛢",
-    [NEPTUNE]   = "♆"
-};
-
-static const char *planet_labels[NUM_PLANETS] =
-{
-    [SUN]       = "Sun",
-    [MERCURY]   = "Mercury",
-    [VENUS]     = "Venus",
-    [MARS]      = "Mars",
-    [JUPITER]   = "Jupiter",
-    [SATURN]    = "Saturn",
-    [URANUS]    = "Uranus",
-    [NEPTUNE]   = "Neptune"
-};
-
 struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
                                      const struct kep_rates *keplerian_rates,
                                      const struct kep_extra *keplerian_extras)
 {
+    static const char *planet_symbols_unicode[NUM_PLANETS] =
+        {
+            [SUN] = "☉",
+            [MERCURY] = "☿",
+            [VENUS] = "♀",
+            [EARTH] = "🜨",
+            [MARS] = "♂",
+            [JUPITER] = "♃",
+            [SATURN] = "♄",
+            [URANUS] = "⛢",
+            [NEPTUNE] = "♆"};
+
+    static const char planet_symbols_ASCII[NUM_PLANETS] =
+        {
+            [SUN] = '@',
+            [MERCURY] = '*',
+            [VENUS] = '*',
+            [EARTH] = '*',
+            [MARS] = '*',
+            [JUPITER] = '*',
+            [SATURN] = '*',
+            [URANUS] = '*',
+            [NEPTUNE] = '*'};
+
+    static const char *planet_labels[NUM_PLANETS] =
+        {
+            [SUN] = "Sun",
+            [MERCURY] = "Mercury",
+            [VENUS] = "Venus",
+            [EARTH] = "Earth",
+            [MARS] = "Mars",
+            [JUPITER] = "Jupiter",
+            [SATURN] = "Saturn",
+            [URANUS] = "Uranus",
+            [NEPTUNE] = "Neptune"};
+
+    // TODO: find better way to map these values
+    static const int planet_colors[NUM_PLANETS] =
+        {
+            [SUN] = 4,
+            [MERCURY] = 8,
+            [VENUS] = 4,
+            [MARS] = 2,
+            [JUPITER] = 6,
+            [SATURN] = 4,
+            [URANUS] = 7,
+            [NEPTUNE] = 5,
+    };
+
     struct planet *planet_table = malloc(NUM_PLANETS * sizeof(struct planet));
 
     for (int i = 0; i < NUM_PLANETS; ++i)
@@ -410,9 +457,10 @@ struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
         struct planet planet_data;
         planet_data.base = (struct object_base)
         {
-            .symbol_ASCII   = 'W',
-            .symbol_unicode = (char *) planet_symbols[i],
-            .label          = (char *) planet_labels[i],
+            .symbol_ASCII   =           planet_symbols_ASCII[i],
+            .symbol_unicode = (char *)  planet_symbols_unicode[i],
+            .label          = (char *)  planet_labels[i],
+            .color_pair     =           planet_colors[i],
          };
         planet_data.elements    = &keplerian_elements[i];
         planet_data.rates       = &keplerian_rates[i];
@@ -429,6 +477,7 @@ struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
     return planet_table;
 }
 
+// FIXME: weird ghost star right where "Earth" would be rendered
 void update_planet_positions(struct planet *planet_table, double julian_date,
                              double latitude, double longitude)
 {
@@ -436,6 +485,7 @@ void update_planet_positions(struct planet *planet_table, double julian_date,
 
     for (int i = 0; i < NUM_PLANETS; ++i)
     {
+
         // Geocentric rectangular equatorial coordinates
         double xg, yg, zg;
         calc_planet_geo_ICRF(planet_table[EARTH].elements,
@@ -459,13 +509,32 @@ void update_planet_positions(struct planet *planet_table, double julian_date,
     }
 }
 
-void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode)
+void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode, bool color_flag)
 {
     // Render planets so that closest are drawn on top
     for (int i = NUM_PLANETS - 1; i >= 0; --i)
     {
+        // Skip rendering the Earth--we're on the Earth! The geocentric
+        // coordinates of the Earth are (0.0, 0.0, 0.0) and plotting the "Earth"
+        // simply traces along the ecliptic at the approximate hour angle
+        if (i == EARTH)
+        {
+            continue;
+        }
+
         struct planet planet_data = planet_table[i];
-        render_object_stereo(win, &planet_data.base, no_unicode);
+
+        if (color_flag && has_colors())
+        {
+            wattron(win, COLOR_PAIR(4));
+        }
+        
+        render_object_stereo(win, &planet_data.base, no_unicode, color_flag);
+
+        if (color_flag && has_colors())
+        {
+            wattroff(win, COLOR_PAIR(4));
+        }
     }
 
     return;
@@ -473,36 +542,65 @@ void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode)
 
 void render_azimuthal_grid(WINDOW *win, bool no_unicode)
 {
-    // TODO: fix this
-    int win_height = win->_maxy;
-    int win_width = win->_maxx;
+    const double to_rad = M_PI / 180.0;
 
-    int half_height = round(win_height / 2.0);
-    int half_width = round(win_width / 2.0);
+    // FIXME: is aspect ratio needed? we already squared the window...
+    int rad_vertical = round(win->_maxy / 2.0);
+    int rad_horizontal = round(win->_maxx / 2.0);
 
-    int quarter_height = round(win_height / 4.0);
-    int quarter_width = round(win_width / 4.0);
-    //printf("%d\n", win_width);
+    // Render lines
 
-    draw_line_smooth(win, 0, quarter_width, win_height, half_width + quarter_width);
-    draw_line_smooth(win, 0, half_width + quarter_width, win_height, quarter_width);
-    draw_line_smooth(win, quarter_height, 0, half_height + quarter_height, win_width);
-    draw_line_smooth(win, half_height + quarter_height, 0, quarter_height, win_width);
+    // Minumum number of rows separating grid line (at end of window)
+    int min_height = 10;
 
-    draw_line_smooth(win, 0, 0, win_height, win_width);
-    draw_line_smooth(win, 0, win_width, win_height, 0);
+    // Minimum and maximum step sizes in degrees
+    int min_inc = 15;
+    int max_inc = 90;
 
-    draw_line_smooth(win, 0, half_width, win_height, half_width);
-    draw_line_smooth(win, half_height, 0, half_height, win_width);
+    int inc = max_inc;
 
-    // DrawEllipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
+    // Set the step size to the smallest desirable increment
+    while (round(rad_vertical * sin(inc * to_rad)) >= min_height && inc > min_inc)
+    {
+        inc -= 15;
+    }
 
-    // if (no_unicode)
+    int angle = 0;
+    while (angle < 180)
+    {
+        int ya = rad_vertical - round(rad_vertical * sin(angle * to_rad));
+        int yb = rad_vertical + round(rad_vertical * sin(angle * to_rad));
+        int xa = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
+        int xb = rad_horizontal - round(rad_horizontal * cos(angle * to_rad));
+
+        draw_line_smooth(win, ya, xa, yb, xb);
+
+        // label the grid lines 
+        // FIXME: some labels get cutoff
+
+        int str_len = snprintf(NULL, 0, "%d", angle);
+        char *label = malloc(str_len + 1);
+        snprintf(label, str_len + 1, "%d", angle);
+
+        mvwaddstr(win, ya, xa, label);
+
+        str_len = snprintf(NULL, 0, "%d", angle + 180);
+        label = malloc(str_len + 1);
+        snprintf(label, str_len + 1, "%d", angle + 180);
+
+        mvwaddstr(win, yb, xb, label);
+
+        free(label);
+
+        angle += inc;
+    }
+
+    angle = 0;
+    // while (angle <= 90.0)
     // {
-    //     mvwaddch(win, round(win->_maxy / 2.0), round(win->_maxx / 2.0), '+');
-    // }
-    // else
-    // {
-    //     mvwaddstr(win, round(win->_maxy / 2.0), round(win->_maxx / 2.0), "+");
+    //     int rad_x = rad_horizontal * angle / 90.0;
+    //     int rad_x = rad_vertical * angle / 90.0;
+    //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
+    //     angle += inc;
     // }
 }

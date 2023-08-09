@@ -5,7 +5,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 
-void ncurses_init()
+void ncurses_init(bool color_flag)
 {
     initscr();
     clear();
@@ -13,6 +13,23 @@ void ncurses_init()
     cbreak();    // Disable line buffering
     curs_set(0); // Make cursor invisible
     timeout(0);  // Non-blocking read for getch
+
+    // Initialize colors
+    if (color_flag && has_colors())
+    {
+        start_color();
+        use_default_colors(); // Use terminal colors (fg and bg for pair 0)
+
+        // Colors with default backgrounds
+        init_pair(1, COLOR_BLACK,   -1);
+        init_pair(2, COLOR_RED,     -1);
+        init_pair(3, COLOR_GREEN,   -1);
+        init_pair(4, COLOR_YELLOW,  -1);
+        init_pair(5, COLOR_BLUE,    -1);
+        init_pair(6, COLOR_MAGENTA, -1);
+        init_pair(7, COLOR_CYAN,    -1);
+        init_pair(8, COLOR_WHITE,   -1);
+    }
 }
 
 void ncurses_kill()

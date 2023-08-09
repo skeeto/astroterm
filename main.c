@@ -22,7 +22,7 @@ static float animation_mult = 1.0f;             // Real time animation speed mul
 
 // Flags
 static int no_unicode_flag;                     // Only use ASCII characters
-static int color_flag;                          // Use color--not implemented yet
+static int color_flag;                       // Do not use color
 static int grid_flag;                           // Draw an azimuthal grid
 static int constell_flag;                       // Draw constellation figures
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");          // Required for unicode rendering
     signal(SIGWINCH, catch_winch);  // Capture window resizes
-    ncurses_init();
+    ncurses_init(color_flag);
 
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0);               // Non-blocking read for wgetch
@@ -96,10 +96,14 @@ int main(int argc, char *argv[])
         update_planet_positions(planet_table, julian_date, latitude, longitude);
 
         // Render
-        if (grid_flag)          { render_azimuthal_grid(win, no_unicode_flag); }
-        render_stars(win, star_table, num_stars, num_by_mag, threshold, no_unicode_flag);
+        
+        render_stars(win, star_table, num_stars, num_by_mag, threshold, no_unicode_flag, color_flag);
         if (constell_flag) { render_constells(win, constell_table, num_const, star_table, no_unicode_flag); }
-        render_planets(win, planet_table, no_unicode_flag);
+        render_planets(win, planet_table, no_unicode_flag, color_flag);
+        if (grid_flag)
+        {
+            render_azimuthal_grid(win, no_unicode_flag);
+        }
 
         // TODO: implement variable time step
         julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
