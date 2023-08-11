@@ -73,11 +73,13 @@ void project_stereographic_south(double sphere_radius, double point_theta, doubl
 // SCREEN SPACE MAPPING
 
 void polar_to_win(double r, double theta,
-                  int win_height, int win_width,
+                  int max_y, int max_x,
                   int *row, int *col)
 {
-    *row = (int)round(r * win_height / 2 * sin(theta)) + win_height / 2;
-    *col = (int)round(r * win_width / 2 * cos(theta)) + win_width / 2;
+    double row_d = r * max_y / 2.0 * sin(theta) + max_y / 2.0;
+    double col_d = r * max_x / 2.0 * cos(theta) + max_x / 2.0;
+    *row = (int) round(row_d);
+    *col = (int) round(col_d);
     return;
 }
 

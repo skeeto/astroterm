@@ -21,20 +21,20 @@ static int fps              = 24;               // Frames per second
 static float animation_mult = 1.0f;             // Real time animation speed mult (e.g. 2 is 2x real time)
 
 // Flags
-static int no_unicode_flag;                     // Only use ASCII characters
-static int color_flag;                       // Do not use color
-static int grid_flag;                           // Draw an azimuthal grid
-static int constell_flag;                       // Draw constellation figures
+static int unicode_flag     = TRUE;             // Only use ASCII characters
+static int color_flag       = FALSE;            // Do not use color
+static int grid_flag        = FALSE;            // Draw an azimuthal grid
+static int constell_flag    = FALSE;            // Draw constellation figures
 
 static volatile bool perform_resize = false;
 
 void catch_winch(int sig);
 void handle_resize(WINDOW *win);
-bool parse_options(int argc, char *argv[]);
+void parse_options(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    // Get current time
+    // Get current julian date
     time_t t = time(NULL);
     struct tm lt = *localtime(&t);
     double current_jd = datetime_to_julian_date(&lt);
@@ -43,27 +43,27 @@ int main(int argc, char *argv[])
     julian_date = current_jd;
 
     // Parse command line args
-    bool parse_error = parse_options(argc, argv);
-    if (parse_error) { return 1; }
+    parse_options(argc, argv);
 
-    // Data tables
+    // Set rendering struct
+    struct render_flags rf = { .unicode = unicode_flag, .color = color_flag };
 
-    int num_stars;
+    // Initialize data structs
+    int num_stars, num_const;
     struct star *star_table = generate_star_table("data/BSC5", &num_stars);
-
+    struct planet *planet_table = generate_planet_table(planet_elements, planet_rates, planet_extras);
+    struct moon moon_object = generate_moon_object(&moon_elements, &moon_rates);
     char **name_table = generate_name_table("data/BSC5_names", num_stars);
-    set_star_labels(star_table, name_table, num_stars, label_thresh);
-
-    int num_const;
     int **constell_table = generate_constell_table("data/BSC5_constellations", &num_const);
-
-    struct planet *planet_table = generate_planet_table(keplerian_elements,
-                                                        keplerian_rates,
-                                                        keplerian_extras);
 
     // Sort stars by magnitude so brighter stars are always rendered on top
     int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
 
+    // Set star labels
+    set_star_labels(star_table, name_table, num_stars, label_thresh);
+
+    // Terminal settings and ncurses initialization
+    
     setlocale(LC_ALL, "");          // Required for unicode rendering
     signal(SIGWINCH, catch_winch);  // Capture window resizes
     ncurses_init(color_flag);
@@ -92,20 +92,30 @@ int main(int argc, char *argv[])
         werase(win);
 
         // Update object positions
+        // FIXME: star and planet positions are NOT correct (off between 20 mins to 5 hours)
+        // FIXME: moon position is NOT correct
+        // FIXME: moon phase is NOT correct
         update_star_positions(star_table, num_stars, julian_date, latitude, longitude);
         update_planet_positions(planet_table, julian_date, latitude, longitude);
+        update_moon_position(&moon_object, julian_date, latitude, longitude);
+        update_moon_phase(planet_table, &moon_object, julian_date);
 
         // Render
         
-        render_stars(win, star_table, num_stars, num_by_mag, threshold, no_unicode_flag, color_flag);
-        if (constell_flag) { render_constells(win, constell_table, num_const, star_table, no_unicode_flag); }
-        render_planets(win, planet_table, no_unicode_flag, color_flag);
+        render_stars_stereo(win, &rf, star_table, num_stars, num_by_mag, threshold);
+        if (constell_flag) { render_constells(win, &rf, constell_table, num_const, star_table); }
+        render_planets_stereo(win, &rf, planet_table);
+        render_moon_stereo(win, &rf, moon_object);
         if (grid_flag)
         {
-            render_azimuthal_grid(win, no_unicode_flag);
+            render_azimuthal_grid(win, &rf);
+        }
+        else
+        {
+            render_cardinal_directions(win, &rf);
         }
 
-        // TODO: implement variable time step
+        // TODO: implement variable time step (or just a correct time step)
         julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
         usleep(1.0 / fps * 1000000);
     }
@@ -121,7 +131,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-bool parse_options(int argc, char *argv[])
+void parse_options(int argc, char *argv[])
 {
     // https://azrael.digipen.edu/~mmead/www/mg/getopt/index.html
     int c;
@@ -139,10 +149,10 @@ bool parse_options(int argc, char *argv[])
             {"threshold",       required_argument,  NULL,               't'},
             {"fps",             required_argument,  NULL,               'f'},
             {"animation-mult",  required_argument,  NULL,               'm'},
-            {"constellations",  no_argument,        &constell_flag,       1},
-            {"no-unicode",      no_argument,        &no_unicode_flag,     1},
-            {"color",           no_argument,        &color_flag,          1},
-            {"grid",            no_argument,        &grid_flag,           1},
+            {"constellations",  no_argument,        &constell_flag,    TRUE},
+            {"no-unicode",      no_argument,        &unicode_flag,    FALSE},
+            {"color",           no_argument,        &color_flag,       TRUE},
+            {"grid",            no_argument,        &grid_flag,        TRUE},
             {NULL,              0,                  NULL,                 0}
         };
 
@@ -196,22 +206,22 @@ bool parse_options(int argc, char *argv[])
             {
                 printf("Unrecognized option '%c'\n", optopt);
             }
-            parse_error = true;
+            exit(EXIT_FAILURE);
             break;
 
         case ':':
             printf("Missing option for '%c'\n", optopt);
-            parse_error = true;
+            exit(EXIT_FAILURE);
             break;
 
         default:
             printf("?? getopt returned character code 0%o ??\n", c);
-            parse_error = true;
+            exit(EXIT_FAILURE);
             break;
         }
     }
 
-    return parse_error;
+    return ;
 }
 
 void catch_winch(int sig)

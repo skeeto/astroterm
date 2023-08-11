@@ -1,4 +1,4 @@
-/* Terminal and ncurses common functions and utilities.
+/* Terminal, system, and ncurses common functions and utilities.
  */
 
 #ifndef TERM_H
@@ -6,7 +6,7 @@
 
 #include <ncurses.h>
 
-/* Initialize ncurses
+/* Initialize ncurses. 
  */
 void ncurses_init(bool color_flag);
 
@@ -14,6 +14,7 @@ void ncurses_init(bool color_flag);
  */
 void ncurses_kill();
 
+void wrectangle(WINDOW *win, int ya, int xa, int yb, int xb);
 
 /* Resize window to square with largest possible area
  * aspect: cell aspect ratio (font height to width)

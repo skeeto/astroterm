@@ -1,6 +1,7 @@
 #include "cstar.h"
 
 #include "astro.h"
+#include "term.h"
 #include "drawing.h"
 #include "coord.h"
 #include "parse_BSC5.h"
@@ -15,16 +16,6 @@
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
 #endif
-
-// Star magnitude mapping
-static const char *mag_map_unicode_round[10]    = {"⬤", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅", "⋅"};
-static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
-static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
-static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
-static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o', '.', '.', '.', '.'};
-
-static const float min_magnitude = -1.46f;
-static const float max_magnitude = 7.96f;
 
 /* Map a double `input` which lies in range [min_float, max_float]
  * to an integer which lies in range [min_int, max_int].
@@ -55,6 +46,15 @@ struct star entry_to_star(struct entry *entry_data)
     // functions check if color_pair is 0 to determine whether to add color
     star_data.base.color_pair = 0;
 
+    // Star magnitude mapping
+    static const char *mag_map_unicode_round[10]    = {"⬤", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅", "⋅"};
+    static const char *mag_map_unicode_diamond[10]  = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
+    static const char *mag_map_unicode_open[10]     = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+    static const char *mag_map_unicode_filled[10]   = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+    static const char mag_map_round_ASCII[10]       = {'0', '0', 'O', 'O', 'o', 'o', '.', '.', '.', '.'};
+
+    static const float min_magnitude = -1.46f;
+    static const float max_magnitude = 7.96f;
 
     int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude,
                                               0, 9, star_data.magnitude);
@@ -285,7 +285,7 @@ void update_star_positions(struct star *star_table, int num_stars,
     return;
 }
 
-void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unicode, bool color_flag)
+void render_object_stereo(WINDOW *win, struct object_base *object, struct render_flags *rf)
 {
     double theta_sphere, phi_sphere;
     horizontal_to_spherical(object->azimuth, object->altitude,
@@ -310,21 +310,21 @@ void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unico
         return;
     }
 
-    bool color = color_flag && has_colors() && object->color_pair != 0;
+    bool use_color = rf->color && object->color_pair != 0;
 
-    if (color)
+    if (use_color)
     {
         wattron(win, COLOR_PAIR(object->color_pair));
     }
 
     // Draw object
-    if (no_unicode)
+    if (rf->unicode)
     {
-        mvwaddch(win, y, x, object->symbol_ASCII);
+        mvwaddstr(win, y, x, object->symbol_unicode);
     }
     else
     {
-        mvwaddstr(win, y, x, object->symbol_unicode);
+        mvwaddch(win, y, x, object->symbol_ASCII);
     }
 
     // Draw label
@@ -334,13 +334,15 @@ void render_object_stereo(WINDOW *win, struct object_base *object, bool no_unico
         mvwaddstr(win, y - 1, x + 1, object->label);
     }
 
-    if (color)
+    if (use_color)
     {
         wattroff(win, COLOR_PAIR(object->color_pair));
     }
 }
 
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode, bool color_flag)
+void render_stars_stereo(WINDOW *win, struct render_flags *rf,
+                         struct star *star_table, int num_stars,
+                         int *num_by_mag, float threshold)
 {
     for (int i = 0; i < num_stars; ++i)
     {
@@ -354,13 +356,15 @@ void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_
             continue;
         }
 
-        render_object_stereo(win, &star->base, no_unicode, color_flag);
+        render_object_stereo(win, &star->base, rf);
     }
 
     return;
 }
 
-void render_constells(WINDOW *win, int **constell_table, int num_const, struct star *star_table, bool no_unicode)
+void render_constells(WINDOW *win, struct render_flags *rf,
+                      int **constell_table, int num_const,
+                      struct star *star_table)
 {
     for (int i = 0; i < num_const; ++i)
     {
@@ -384,22 +388,30 @@ void render_constells(WINDOW *win, int **constell_table, int num_const, struct s
             // Draw line if reasonable length (avoid printing crazy long lines)
             // TODO: is there a cleaner way to do this (perhaps if checking if
             // one of the stars is in the window?)
+            // FIXME: this is too nested
             double line_length = sqrt(pow(ya - yb, 2) + pow(xa - xb, 2));
             if (line_length < 10000)
             {
-                draw_line_smooth(win, ya, xa, yb, xb);
-
-                // Add circles at beginning and end of segment to "prettify"
-                mvwaddstr(win, ya, xa, "○");
-                mvwaddstr(win, yb, xb, "○");
+                if (rf->unicode)
+                {
+                    draw_line_smooth(win, ya, xa, yb, xb);
+                    mvwaddstr(win, ya, xa, "○");
+                    mvwaddstr(win, yb, xb, "○");
+                }
+                else
+                {
+                    draw_line_ASCII(win, ya, xa, yb, xb);
+                    mvwaddch(win, ya, xa, '+');
+                    mvwaddch(win, yb, xb, '+');
+                }
             }
         }
     }
 }
 
-struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
-                                     const struct kep_rates *keplerian_rates,
-                                     const struct kep_extra *keplerian_extras)
+struct planet *generate_planet_table(const struct kep_elems *planet_elements,
+                                     const struct kep_rates *planet_rates,
+                                     const struct kep_extra *planet_extras)
 {
     static const char *planet_symbols_unicode[NUM_PLANETS] =
         {
@@ -462,13 +474,13 @@ struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
             .label          = (char *)  planet_labels[i],
             .color_pair     =           planet_colors[i],
          };
-        planet_data.elements    = &keplerian_elements[i];
-        planet_data.rates       = &keplerian_rates[i];
+        planet_data.elements    = &planet_elements[i];
+        planet_data.rates       = &planet_rates[i];
         planet_data.extras      = NULL;
 
         if (JUPITER <= i && i <= NEPTUNE)
         {
-            planet_data.extras  = &keplerian_extras[i];
+            planet_data.extras  = &planet_extras[i];
         }
 
         planet_table[i] = planet_data;
@@ -483,16 +495,38 @@ void update_planet_positions(struct planet *planet_table, double julian_date,
 {
     double gmst = greenwich_mean_sidereal_time_rad(julian_date);
 
-    for (int i = 0; i < NUM_PLANETS; ++i)
+    for (int i = SUN; i < NUM_PLANETS; ++i)
     {
-
         // Geocentric rectangular equatorial coordinates
         double xg, yg, zg;
-        calc_planet_geo_ICRF(planet_table[EARTH].elements,
-                             planet_table[EARTH].rates,
-                             planet_table[i].elements,
-                             planet_table[i].rates, planet_table[i].extras,
-                             julian_date, &xg, &yg, &zg);
+
+        // Heliocentric coordinates of the Earth-Moon barycenter
+        double xe, ye, ze;
+        calc_planet_helio_ICRF(planet_table[EARTH].elements,
+                               planet_table[EARTH].rates, planet_table[EARTH].extras,
+                               julian_date, &xe, &ye, &ze);
+
+        if (i == SUN)
+        {
+            // Since the origin of the ICRF frame is the barycenter of the Solar
+            // System, (for our purposes this is roughly the position of the Sun)
+            // we obtain the geocentric coordinates of the Sun by negating the
+            // heliocentric coordinates of the Earth
+            xg = -xe;
+            yg = -ye;
+            zg = -ze;
+        }
+        else 
+        {
+            calc_planet_helio_ICRF(planet_table[i].elements,
+                                   planet_table[i].rates, planet_table[i].extras,
+                                   julian_date, &xg, &yg, &zg);
+            
+            // Obtain geocentric coordinates by subtracting Earth's coordinates
+            xg -= xe;
+            yg -= ye;
+            zg -= ze;
+        }
 
         // Convert to spherical equatorial coordinates
         double right_ascension, declination;
@@ -509,7 +543,7 @@ void update_planet_positions(struct planet *planet_table, double julian_date,
     }
 }
 
-void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode, bool color_flag)
+void render_planets_stereo(WINDOW *win, struct render_flags *rf, struct planet *planet_table)
 {
     // Render planets so that closest are drawn on top
     for (int i = NUM_PLANETS - 1; i >= 0; --i)
@@ -523,84 +557,204 @@ void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode, b
         }
 
         struct planet planet_data = planet_table[i];
+        render_object_stereo(win, &planet_data.base, rf);
 
-        if (color_flag && has_colors())
-        {
-            wattron(win, COLOR_PAIR(4));
-        }
-        
-        render_object_stereo(win, &planet_data.base, no_unicode, color_flag);
-
-        if (color_flag && has_colors())
-        {
-            wattroff(win, COLOR_PAIR(4));
-        }
     }
 
     return;
 }
 
-void render_azimuthal_grid(WINDOW *win, bool no_unicode)
+struct moon generate_moon_object(const struct kep_elems *moon_elements,
+                                 const struct kep_rates *moon_rates)
+{
+    struct moon moon_data;
+    moon_data.base      = (struct object_base) {
+        .symbol_ASCII   = 'M',
+        .symbol_unicode = "🌝︎︎",
+        .label          = "Moon",
+        .color_pair     = 0,
+    };
+    moon_data.elements  = moon_elements;
+    moon_data.rates     = moon_rates;
+
+    return moon_data;
+}
+
+void update_moon_position(struct moon *moon_object, double julian_date,
+                          double latitude, double longitude)
+{
+    double gmst = greenwich_mean_sidereal_time_rad(julian_date);
+
+    double xg, yg, zg;
+    calc_moon_geo_ICRF(moon_object->elements, moon_object->rates, julian_date,
+                       &xg, &yg, &zg);
+
+    // Convert to spherical equatorial coordinates
+    double right_ascension, declination;
+    equatorial_rectangular_to_spherical(xg, yg, zg,
+                                        &right_ascension, &declination);
+
+    double azimuth, altitude;
+    equatorial_to_horizontal(right_ascension, declination,
+                             gmst, latitude, longitude,
+                             &azimuth, &altitude);
+
+    moon_object->base.azimuth = azimuth;
+    moon_object->base.altitude = altitude;
+
+    return;
+}
+
+void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
+                       double julian_date)
+{
+    // Heliocentric coordinates of the Earth-Moon barycenter
+    double xe, ye, ze;
+    calc_planet_helio_ICRF(planet_table[EARTH].elements,
+                           planet_table[EARTH].rates, planet_table[EARTH].extras,
+                           julian_date, &xe, &ye, &ze);
+
+    // Convert to geocentric coordinates of the sun
+    xe *= -1;
+    ye *= -1;
+    ze *= -1;
+
+    // Sun's geocentric ecliptic longitude
+    double sun_ecliptic_long =  atan2(ye, xe);
+
+    double d = julian_date - 2451544.5;
+    double O = moon_object->elements->O + moon_object->rates->dO * d;
+    double w = moon_object->elements->w + moon_object->rates->dw * d;
+    double M = moon_object->elements->M + moon_object->rates->dM * d;
+
+    // Moon's mean longitude
+    double moon_true_long = O + w + M;
+
+    static const char *moon_phases[8] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
+    double phase = calc_moon_phase(sun_ecliptic_long, moon_true_long);
+    int phase_index = map_float_to_int_range(0.0, 1.0, 0, 7, phase);
+    char *moon_char = (char *) moon_phases[phase_index];
+
+    moon_object->base.symbol_unicode = moon_char;
+
+    return; 
+}
+
+void render_moon_stereo(WINDOW *win, struct render_flags *rf, struct moon moon_object)
+{
+    render_object_stereo(win, &moon_object.base, rf);
+
+    return;
+}
+
+int gcd(int a, int b)
+{
+    int temp;
+    while (b != 0)
+    {
+        temp = a % b;
+
+        a = b;
+        b = temp;
+    }
+    return a;
+}
+
+int compare_angles(const void *a, const void *b)
+{
+    int x = *(int *) a;
+    int y = *(int *) b;
+    return (90 / gcd(x, 90)) < (90 / gcd(y, 90));
+}
+
+void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
 {
     const double to_rad = M_PI / 180.0;
 
-    // FIXME: is aspect ratio needed? we already squared the window...
     int rad_vertical = round(win->_maxy / 2.0);
     int rad_horizontal = round(win->_maxx / 2.0);
 
-    // Render lines
+    // Possible step sizes in degrees (multiples of 5 and factors of 90)
+    int step_sizes[5] = {10, 15, 30, 45, 90};
+    int length = sizeof(step_sizes) / sizeof(step_sizes[0]);
 
     // Minumum number of rows separating grid line (at end of window)
     int min_height = 10;
 
-    // Minimum and maximum step sizes in degrees
-    int min_inc = 15;
-    int max_inc = 90;
-
-    int inc = max_inc;
-
     // Set the step size to the smallest desirable increment
-    while (round(rad_vertical * sin(inc * to_rad)) >= min_height && inc > min_inc)
+    int inc;
+    for (int i = length - 1; i >= 0; --i)
     {
-        inc -= 15;
+        inc = step_sizes[i];
+        if (round(rad_vertical * sin(inc * to_rad)) < min_height)
+        {
+            inc = step_sizes[--i]; // Go back to previous increment
+            break;
+        }
     }
 
-    int angle = 0;
-    while (angle < 180)
+    // Sort grid angles in the first quadrant by rendering priority
+    int number_angles = 90 / inc + 1;
+    int *angles = malloc(number_angles * sizeof(int));
+
+    for (int i = 0; i < number_angles; ++i)
     {
-        int ya = rad_vertical - round(rad_vertical * sin(angle * to_rad));
-        int yb = rad_vertical + round(rad_vertical * sin(angle * to_rad));
-        int xa = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
-        int xb = rad_horizontal - round(rad_horizontal * cos(angle * to_rad));
+        angles[i] = inc * i;
+    }
+    qsort(angles, number_angles, sizeof(int), compare_angles);
 
-        draw_line_smooth(win, ya, xa, yb, xb);
+    // Draw angles in all four quadrants
+    for (int quad = 0; quad < 4; ++quad)
+    {
+        for (int i = 0; i < number_angles; ++i)
+        {
+            int angle = angles[i] + 90 * quad;
 
-        // label the grid lines 
-        // FIXME: some labels get cutoff
+            int y = rad_vertical - round(rad_vertical * sin(angle * to_rad));
+            int x = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
 
-        int str_len = snprintf(NULL, 0, "%d", angle);
-        char *label = malloc(str_len + 1);
-        snprintf(label, str_len + 1, "%d", angle);
+            draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
 
-        mvwaddstr(win, ya, xa, label);
+            int str_len = snprintf(NULL, 0, "%d", angle);
+            char *label = malloc(str_len + 1);
 
-        str_len = snprintf(NULL, 0, "%d", angle + 180);
-        label = malloc(str_len + 1);
-        snprintf(label, str_len + 1, "%d", angle + 180);
+            snprintf(label, str_len + 1, "%d", angle);
 
-        mvwaddstr(win, yb, xb, label);
+            // Offset to avoid truncating string
+            int y_off = (y < rad_vertical) ? 1 : -1;
+            int x_off = (x < rad_horizontal) ? 0 : -(str_len - 1);
 
-        free(label);
+            mvwaddstr(win, y, x + x_off, label);
 
-        angle += inc;
+            free(label);
+        }
     }
 
-    angle = 0;
     // while (angle <= 90.0)
     // {
     //     int rad_x = rad_horizontal * angle / 90.0;
     //     int rad_x = rad_vertical * angle / 90.0;
-    //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20, no_unicode_flag);
+    //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20, unicode_flag);
     //     angle += inc;
     // }
+}
+
+void render_cardinal_directions(WINDOW *win, struct render_flags *rf)
+{
+    // Render horizon directions
+
+    if (rf->color)
+    {
+        wattron(win, COLOR_PAIR(5));
+    }
+
+    mvwaddch(win, 0, win->_maxx / 2, 'N');
+    mvwaddch(win, win->_maxy /2, win->_maxx, 'W');
+    mvwaddch(win, win->_maxy, win->_maxx / 2, 'S');
+    mvwaddch(win, win->_maxy / 2, 0, 'E');
+
+    if (rf->color)
+    {
+        wattroff(win, COLOR_PAIR(5));
+    }
 }

@@ -37,10 +37,6 @@ void calc_star_position(double right_ascension, double ra_motion,
     *ITRF_declination = declination + dec_motion * years_from_epoch;
 }
 
-/* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
- * from the celestial intermediate origin to the terrestrial intermediate origin
- * and is a replacement for Greenwich sidereal time
- */
 double earth_rotation_angle_rad(double jd)
 {
     double t = jd - 2451545.0;
@@ -140,115 +136,12 @@ struct tm* julian_date_to_datetime(double julian_date)
     return time;
 }
 
-void sun_position(double a, double e, double i,
-                  double l, double w, double m,
-                  double julian_date,
-                  double *right_ascension, double *declination)
-{
-    // These formulas use days after 2000 Jan 0.0 UT as a timescale
-    double d = julian_date - 2451545.0;
-
-    // Compute obliquity of the ecliptic
-    double ecl = (23.4393 - 3.563E-7 * d) * 180.0 / M_PI;
-
-    // Compute the eccentric anomaly
-    double E = m + e * sin(m) * (1.0 + e * cos(m));
-
-    // Compute the Sun's distance (r) and its true anomaly (v)
-
-    double xv = cos(E) - e;
-    double yv = sqrt(1.0 - e*e) * sin(E);
-
-    double v = atan2(yv, xv);
-    double r = sqrt(xv * xv + yv * yv);
-
-    // compute the Sun's true longitude
-    double lonsun = v + w;
-
-    // Convert lonsun to ecliptic rectangular geocentric coordinates
-    double xs = r * cos(lonsun);
-    double ys = r * sin(lonsun);
-
-    // Convert to equatorial, rectangular, geocentric coordinates
-    double xe = xs;
-    double ye = ys * cos(ecl);
-    double ze = ys * sin(ecl);
-
-    // Compute right ascension and declination
-    *right_ascension    = atan2(ye, xe);
-    *declination        = atan2(ze, sqrt(xe*xe+ye*ye));
-}
-
-void planetary_positions(double a, double e, double i,
-                         double l, double w, double m,
-                         double julian_date)
-{
-    // https://stjarnhimlen.se/comp/ppcomp.html
-
-    // These formulas use days after 2000 Jan 0.0 UT as a timescale
-    double d = julian_date - 2451545.0;
-
-    // Solve Kepler's equation: m = e * sin(E) - E, where we are solving for E,
-    // the eccentric anomaly
-
-    // First approximation of E
-    double E = m + e * sin(m) * (1.0 + e * cos(m));
-    
-    // Approximate E until E1 and E0 and sufficiently close
-    // Will converge if eccentricity (e) is not too close to 1
-
-    double E0, E1;
-
-    E0 = E;
-    E1 = E0 - (E0 - e * sin(E0) - m) / (1 - e * cos(E0));
-    
-    while (fabs(E1 - E0) > 1.0E-5)
-    {
-        E0 = E1;
-        E1 = E0 - (E0 - e * sin(E0) - m) / (1 - e * cos(E0));
-    }
-
-    // Compute planet's distance (r) and true anomaly (v)
-    double xv = a * (cos(E) - e);
-    double yv = a * (sqrt(1.0 - e * e) * sin(E));
-
-    double v = atan2(yv, xv);
-    double r = sqrt(xv * xv + yv * yv);
-
-    // Compute the planet's position in 3-dimensional space
-    double xh = r * ( cos(l) * cos(v + w) - sin(l) * sin(v + w) * cos(i) );
-    double yh = r * ( sin(l) * cos(v + w) + cos(l) * sin(v + w) * cos(i) );
-    double zh = r * ( sin(v + w) * sin(i) );
-
-    // Compute the ecliptic longitude and latitude
-    double lonecl = atan2(yh, xh);
-    double latecl = atan2(zh, sqrt(xh * xh + yh * yh));
-
-    // Correct for precession
-
-    // Convert heliocentric coordinates to geocentric coordinates
-    xh = r * cos(lonecl) * cos(latecl);
-    yh = r * sin(lonecl) * cos(latecl);
-    zh = r               * sin(latecl);
-
-    // xs = rs * cos(lonsun)
-    // ys = rs * sin(lonsun)
-    return;
-}
-
-void solve_orbit(double a, double e, double i,
-                 double l, double w, double L,
-                 double julian_date)
-{
-
-}
-
 double solve_kepler(double M, double e, double E)
 {
-    const double rad = M_PI / 180.0;
+    const double to_rad = M_PI / 180.0;
 
-    double dM = M - (E - e / rad * sin(E * rad));
-    double dE = dM / (1.0 - e * cos(E * rad));
+    double dM = M - (E - e / to_rad * sin(E * to_rad));
+    double dE = dM / (1.0 - e * cos(E * to_rad));
 
     return dE;
 }
@@ -262,7 +155,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
 {
     // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
 
-    const double rad = M_PI / 180.0;
+    const double to_rad = M_PI / 180.0;
 
     // 1.
 
@@ -272,21 +165,21 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     double a = elements->a + rates->da * t;
     double e = elements->e + rates->de * t;
     double I = elements->I + rates->dI * t;
-    double L = elements->L + rates->dL * t;
+    double M = elements->M + rates->dM * t;
     double w = elements->w + rates->dw * t;
     double O = elements->O + rates->dO * t;
 
-    // 2.
+    double L = M + w + O; // Mean longitude
+    double w_bar = w + O; // Longitude of perihelion 
 
-    double ww = w - O;
-    double M = L - w;
+    // 2.
     if (extras != NULL)
     {
         double b = extras->b;
         double c = extras->c;
         double s = extras->s;
         double f = extras->f;
-        M = L - w + b * t * t + c * cos(f * t * rad) + s * sin(f * t * rad);
+        M = L - w_bar + b * t * t + c * cos(f * t * to_rad) + s * sin(f * t * to_rad);
     }
 
     // 3.
@@ -297,7 +190,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     }
 
     double e_star = 180.0 / M_PI * e;
-    double E = M + e_star * sin(M * rad);
+    double E = M + e_star * sin(M * to_rad);
 
     double dE = 1.0;
     int n = 0;
@@ -310,21 +203,21 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
 
     // 4.
 
-    const double xp = a * (cos(E * rad) - e);
-    const double yp = a * sqrt(1 - e * e) * sin(E * rad);
-    const double zp = 0;
+    const double xp = a * (cos(E * to_rad) - e);
+    const double yp = a * sqrt(1 - e * e) * sin(E * to_rad);
+    const double zp = 0.0;
 
     // 5.
 
-    a *= rad; e *= rad; I *= rad; L *= rad; ww *= rad; O *= rad;
-    double xecl = (cos(ww) * cos(O) - sin(ww) * sin(O) * cos(I)) * xp + (-sin(ww) * cos(O) - cos(ww) * sin(O) * cos(I)) * yp;
-    double yecl = (cos(ww) * sin(O) + sin(ww) * cos(O) * cos(I)) * xp + (-sin(ww) * sin(O) + cos(ww) * cos(O) * cos(I)) * yp;
-    double zecl = (sin(ww) * sin(I)) * xp + (cos(ww) * sin(I)) * yp;
+    a *= to_rad; e *= to_rad; I *= to_rad; L *= to_rad; w *= to_rad; O *= to_rad;
+    double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
+    double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
+    double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
 
     // 6.
 
     // Obliquity at J2000 in radians
-    double eps = 84381.448 / (60.0 * 60.0) * rad;
+    double eps = 84381.448 / (60.0 * 60.0) * to_rad;
 
     *xh = xecl;
     *yh = cos(eps) * yecl - sin(eps) * zecl;
@@ -348,7 +241,7 @@ void ICRF_to_ITRF(double *x, double *y, double *z)
     *z = *z;
 }
 
-void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct kep_rates *earth_rates,
+void calc_planet_geo_ICRF(double xe, double ye, double ze,
                           const struct kep_elems *planet_elements, const struct kep_rates *planet_rates,
                           const struct kep_extra *planet_extras,
                           double julian_date,
@@ -359,12 +252,6 @@ void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct k
     calc_planet_helio_ICRF(planet_elements, planet_rates, planet_extras,
                            julian_date, &xh, &yh, &zh);
 
-    // Coordinates of the Earth-Moon Barycenter
-    // TODO: expensive calculation, should be moved outside loop
-    double xe, ye, ze;
-    calc_planet_helio_ICRF(earth_elements, earth_rates, NULL,
-                           julian_date, &xe, &ye, &ze);
-
     // Obtain geocentric coordinates by subtracting Earth's coordinates
     *xg = xh - xe;
     *yg = yh - ye;
@@ -373,27 +260,86 @@ void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct k
     return;
 }
 
-// Precession quantities
-
-double psi_a(double t)
+void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
+                        const struct kep_rates *moon_rates, double julian_date,
+                        double *xg, double *yg, double *zg)
 {
-    // Expressions for IAU 2000 precession quantities, N. Capitaine, P.T.Wallace,
-    // and J. Chapront
+    // Algorithm taken from Paul Schlyter's page "How to compute planetary positions"
+    // https://stjarnhimlen.se/comp/ppcomp.html#6
 
-    double psi_a_sec = 5038.7784 * t - 1.07259 * pow(t, 2) -
-                       0.001147 * powf(t, 3); // Eq. 6
-    double psi_a_rad = psi_a_sec / (60.0 * 60.0) * M_PI / 180.0;
-    return psi_a_rad;
+    const double to_rad = M_PI / 180.0;
+
+    // These formulas use days after 2000 Jan 0.0 UT as a timescale
+    double d = julian_date - 2451544.5;
+
+    // Calculate number of centuries past J2000
+    double t = (julian_date - 2451545.0) / 36525.0;
+
+    double a = moon_elements->a + moon_rates->da * d;
+    double e = moon_elements->e + moon_rates->de * d;
+    double I = moon_elements->I + moon_rates->dI * d;
+    double M = moon_elements->M + moon_rates->dM * d;
+    double w = moon_elements->w + moon_rates->dw * d;
+    double O = moon_elements->O + moon_rates->dO * d;
+
+    while (M > 180.0)
+    {
+        M -= 360.0;
+    }
+
+    // Compute the eccentric anomaly, E
+    double e_star = 180.0 / M_PI * e;
+    double E = M + e_star * sin(M * to_rad);
+
+    double dE = 1.0;
+    int n = 0;
+    while (fabs(dE) > 1E-6 && n < 10)
+    {
+        dE = solve_kepler(M, e, E);
+        E += dE;
+        n++;
+    }
+
+    // Compute moon's geocentric  coordinates in its orbital plane
+    double xp = a * (cos(E * to_rad) - e);
+    double yp = a * sqrt(1.0 - e * e) * sin(E * to_rad);
+    double zp = 0.0;
+
+    // Compute moon's distance (r) and true anomaly (v)
+    // double v = atan2(yv, xv);
+    // double r = sqrt(xv * xv + yv * yv);
+
+    // Compute the moon's position in 3-dimensional space in ecliptic coords
+    // O *= to_rad; w *= to_rad; I *= to_rad;
+    // double xecl = r * (cos(O) * cos(v + w) - sin(O) * sin(v + w) * cos(I));
+    // double yecl = r * (sin(O) * cos(v + w) + cos(O) * sin(v + w) * cos(I));
+    // double zecl = r * (sin(v + w) * sin(I));
+    I *= to_rad; w *= to_rad; O *= to_rad; M *= to_rad;
+    double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
+    double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
+    double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
+
+    // Obliquity at J2000 in radians
+    double eps = 84381.448 / (60.0 * 60.0) * to_rad;
+
+    // Convert to equatorial coords
+    *xg = xecl;
+    *yg = cos(eps) * yecl - sin(eps) * zecl;
+    *zg = sin(eps) * yecl + cos(eps) * zecl;
+
+    return;
 }
 
-// Nutation quantities
-
-double delta_psi()
+double calc_moon_phase(double sun_ecliptic_longitude,
+                       double moon_true_longitude)
 {
+    // Practical Astronomy with your Calculator, 3rd edition
+    // Peter Duffett-Smith, §67
 
-}
+    const double to_rad = M_PI / 180.0;
 
-double delta_epsilon()
-{
+    double D = sun_ecliptic_longitude - moon_true_longitude;
 
+    double phase = 0.5 * (1.0 - cos(D * to_rad));
+    return phase;
 }

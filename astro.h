@@ -10,6 +10,7 @@
 
 #include <time.h>
 
+
 // For our purposes, the Sun is treated the same as a planet
 enum planets
 {
@@ -25,17 +26,19 @@ enum planets
     NUM_PLANETS
 };
 
-// Data in data/keplerian_elements.h
+
+// Keplerian/orbital elements
+
 
 struct kep_elems
 {
     // Keplerian elements
-    double a; // semi-major axis                  (au)
-    double e; // eccentricity
-    double I; // inclination                      (deg)
-    double L; // mean longitude                   (deg)
-    double w; // longitude of perihelion          (deg)
-    double O; // longitude of the ascending node  (deg)
+    double a; // Semi-major axis                    (au)
+    double e; // Eccentricity
+    double I; // Inclination                        (deg)
+    double M; // Mean anomaly                       (deg)
+    double w; // Argument of periapsis              (deg)
+    double O; // Longitude of the ascending node    (deg)
 };
 
 struct kep_rates
@@ -44,7 +47,7 @@ struct kep_rates
     double da; // (au/century)
     double de;
     double dI; // (deg/century)
-    double dL; // (deg/century)
+    double dM; // (deg/century)
     double dw; // (deg/century)
     double dO; // (deg/century)
 };
@@ -57,6 +60,27 @@ struct kep_extra
     double f;
 };
 
+
+// Dates and times
+
+
+/* Calculate the greenwich mean sidereal time in radians given a julian date.
+ * TODO: some angles may need normalizing
+ */
+double greenwich_mean_sidereal_time_rad(double julian_date);
+
+/* Get the julian date from a given datetime
+ */
+double datetime_to_julian_date(struct tm *time);
+
+/* Get the julian date from a given datetime
+ */
+struct tm *julian_date_to_datetime(double julian_date);
+
+
+// Celestial body positioning
+
+
 /* Calculate the relative position of a star
  */
 void calc_star_position(double right_ascension, double ra_motion,
@@ -65,31 +89,43 @@ void calc_star_position(double right_ascension, double ra_motion,
                         double latitude, double longitude,
                         double *ITRF_right_ascension, double *ITRF_declination);
 
-/* Calculate the earth rotation angle in radians given a julian date.
- * TODO: some angles may need normalizing
+/* Calculate the heliocentric ICRF position of a planet in rectangular
+ * equatorial coordinates
  */
-double earth_rotation_angle_rad(double jd);
+void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates,
+                            const struct kep_extra *extras, double julian_date,
+                            double *xh, double *yh, double *zh);
 
 /* Calculate the geocentric ICRF position of a planet in rectangular
  * equatorial coordinates
  */
-void calc_planet_geo_ICRF(const struct kep_elems *earth_elements, const struct kep_rates *earth_rates,
+void calc_planet_geo_ICRF(double xe, double ye, double ze,
                           const struct kep_elems *planet_elements, const struct kep_rates *planet_rates,
                           const struct kep_extra *planet_extras,
                           double julian_date,
                           double *xg, double *yg, double *zg);
 
-/* Calculate the greenwich mean sidereal time in radians given a julian date.
- * TODO: some angles may need normalizing
+/* Calculate the geocentric ICRF position of the Moon in rectangular
+ * equatorial coordinates
  */
-double greenwich_mean_sidereal_time_rad(double jd);
+void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
+                        const struct kep_rates *moon_rates, double julian_date,
+                        double *xg, double *yg, double *zg);
 
-/* Get the julian date from a given datetime
- */
-double datetime_to_julian_date(struct tm *time);
 
-/* Get the julian date from a given datetime
+// Miscellaneous
+
+
+/* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and 
+ * 1 is a Full Moon. TODO: fix this
  */
-struct tm* julian_date_to_datetime(double julian_date);
+double calc_moon_phase(double sun_ecliptic_longitude,
+                       double moon_true_longitude);
+
+/* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
+ * from the celestial intermediate origin to the terrestrial intermediate origin
+ * and is a replacement for Greenwich sidereal time
+ */
+double earth_rotation_angle_rad(double jd);
 
 #endif  // ASTRO_H

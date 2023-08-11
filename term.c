@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 void ncurses_init(bool color_flag)
 {
@@ -15,8 +16,14 @@ void ncurses_init(bool color_flag)
     timeout(0);  // Non-blocking read for getch
 
     // Initialize colors
-    if (color_flag && has_colors())
+    if (color_flag)
     {
+        if (!has_colors())
+        {
+            printf("Your terminal does not support colors");
+            exit(EXIT_FAILURE);
+        }
+
         start_color();
         use_default_colors(); // Use terminal colors (fg and bg for pair 0)
 
@@ -47,6 +54,18 @@ void win_resize_square(WINDOW *win, float aspect)
     {
         wresize(win, LINES, LINES * aspect);
     }
+}
+
+void wrectangle(WINDOW *win, int ya, int xa, int yb, int xb)
+{
+    mvwhline(win, ya, xa, 0, xb - xa);
+    mvwhline(win, yb, xa, 0, xb - xa);
+    mvwvline(win, ya, xa, 0, yb - ya);
+    mvwvline(win, ya, xb, 0, yb - ya);
+    mvwaddch(win, ya, xa, ACS_ULCORNER);
+    mvwaddch(win, yb, xa, ACS_LLCORNER);
+    mvwaddch(win, ya, xb, ACS_URCORNER);
+    mvwaddch(win, yb, xb, ACS_LRCORNER);
 }
 
 void win_resize_full(WINDOW *win)

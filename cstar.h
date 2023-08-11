@@ -6,19 +6,24 @@
 
 #include <ncurses.h>
 
+struct render_flags
+{
+    bool unicode;
+    bool color;
+};
+
+// Data structures
+
+
 // All information pertinent to rendering a celestial body
 struct object_base
 {
     // Cache of last draw coordinates
-    // FIXME: using ints breaks things...
-    long y;
-    long x;
-
+    long y;                 // FIXME: using ints breaks things...
+    long x;                 // FIXME: using ints breaks things...
     double azimuth;
     double altitude;
-
-    int color_pair; // 0 for no color pair
-
+    int color_pair;         // 0 indicates no color pair
     char symbol_ASCII;
     char *symbol_unicode;
     char *label;
@@ -38,12 +43,21 @@ struct star
 struct planet
 {
     struct object_base base;
-    double right_ascension;
-    double declination;
     const struct kep_elems *elements;
     const struct kep_rates *rates;
     const struct kep_extra *extras;
 };
+
+struct moon
+{
+    struct object_base base;
+    const struct kep_elems *elements;
+    const struct kep_rates *rates; 
+};
+
+
+// Data structure generation
+
 
 /* Parse BSC5 star catalog and return array of star structures. Stars with
  * catalog number `n` are mapped to index `n-1`.This function allocates memory
@@ -65,9 +79,16 @@ char **generate_name_table(const char *file_path, int num_stars);
  */
 int **generate_constell_table(const char *file_path, int *num_const_return);
 
-struct planet *generate_planet_table(const struct kep_elems *keplerian_elements,
-                                     const struct kep_rates *keplerian_rates,
-                                     const struct kep_extra *keplerian_extras);
+/* Generate an array of planet structs using data from keplerian_elements.h
+ */
+struct planet *generate_planet_table(const struct kep_elems *planet_elements,
+                                     const struct kep_rates *planet_rates,
+                                     const struct kep_extra *planet_extras);
+
+/* Generate a moon struct using data from keplerian_elements.h
+ */
+struct moon generate_moon_object(const struct kep_elems *moon_elements,
+                                 const struct kep_rates *moon_rates);
 
 /* Update the label member of star structs given an array mapping catalog
  * numbers to names. Stars with magnitudes above label_thresh will not have a
@@ -84,12 +105,18 @@ int star_magnitude_comparator(const void *v1, const void *v2);
  */
 int *star_numbers_by_magnitude(struct star *star_table, int num_stars);
 
-/* Free memory functions
- */
+
+// Memory freeing
+
+
 void free_stars(struct star *arr, int size);
 void free_star_names(char **arr, int size);
 void free_constells(int **arr, int size);
 void free_planets(struct planet *planets);
+
+
+// Position update
+
 
 /* Update apparent star positions for a given observation time and location by
  * setting the azimuth and altitude of each star struct in an array of star
@@ -98,21 +125,57 @@ void free_planets(struct planet *planets);
 void update_star_positions(struct star *star_table, int num_stars,
                            double julian_date, double latitude, double longitude);
 
+/* Update apparent Sun & planet positions for a given observation time and
+ * location by setting the azimuth and altitude of each planet struct in an
+ * array of planet structs
+ */
 void update_planet_positions(struct planet *planet_table,
                              double julian_date, double latitude, double longitude);
 
-/* Render an azimuthal grid on a stereographic projection
+/* Update apparent Moon positions for a given observation time and
+ * location by setting the azimuth and altitude of a moon struct
  */
-void render_azimuthal_grid(WINDOW *win, bool no_unicode);
+void update_moon_position(struct moon *moon_object, double julian_date,
+                          double latitude, double longitude);
+
+/* Update the phase of the Moon at a given time by setting the unicode symbol
+ * for a moon struct
+ */
+void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
+                       double julian_date);
+
+
+// Rendering
+
 
 /* Render stars to the screen using a stereographic projection 
  */
-void render_stars(WINDOW *win, struct star *star_table, int num_stars, int *num_by_mag, float threshold, bool no_unicode, bool color_flag);
+void render_stars_stereo(WINDOW *win, struct render_flags *rf,
+                         struct star *star_table, int num_stars,
+                         int *num_by_mag, float threshold);
 
-void render_planets(WINDOW *win, struct planet *planet_table, bool no_unicode, bool color_flag);
+/* Render the Sun and planets to the screen using a stereographic projection
+ */
+void render_planets_stereo(WINDOW *win, struct render_flags *rf,
+                           struct planet *planet_table);
+
+/* Render the Moon to the screen using a stereographic projection
+ */
+void render_moon_stereo(WINDOW *win, struct render_flags *rf,
+                        struct moon moon_object);
 
 /* Render constellations
  */
-void render_constells(WINDOW *win, int **constellation_table, int num_const, struct star *star_table, bool no_unicode);
+void render_constells(WINDOW *win, struct render_flags *rf, int **constellation_table, int num_const,
+                      struct star *star_table);
+
+/* Render an azimuthal grid on a stereographic projection
+ */
+void render_azimuthal_grid(WINDOW *win, struct render_flags *rf);
+
+/* Render cardinal direction indicators for the Northern, Eastern, Southern, and
+ * Western horizons
+ */
+void render_cardinal_directions(WINDOW *win, struct render_flags *rf);
 
 #endif  // CSTAR_H
