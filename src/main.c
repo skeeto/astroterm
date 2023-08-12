@@ -1,6 +1,6 @@
 #include "astro.h"
 #include "term.h"
-#include "cstar.h"
+#include "starsaver.h"
 #include "data/keplerian_elements.h"
 
 #include <stdlib.h>
@@ -50,11 +50,11 @@ int main(int argc, char *argv[])
 
     // Initialize data structs
     int num_stars, num_const;
-    struct star *star_table = generate_star_table("data/BSC5", &num_stars);
+    struct star *star_table = generate_star_table("../data/BSC5", &num_stars);
     struct planet *planet_table = generate_planet_table(planet_elements, planet_rates, planet_extras);
     struct moon moon_object = generate_moon_object(&moon_elements, &moon_rates);
-    char **name_table = generate_name_table("data/BSC5_names", num_stars);
-    int **constell_table = generate_constell_table("data/BSC5_constellations", &num_const);
+    char **name_table = generate_name_table("../data/BSC5_names", num_stars);
+    int **constell_table = generate_constell_table("../data/BSC5_constellations", &num_const);
 
     // Sort stars by magnitude so brighter stars are always rendered on top
     int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
@@ -135,8 +135,6 @@ void parse_options(int argc, char *argv[])
 {
     // https://azrael.digipen.edu/~mmead/www/mg/getopt/index.html
     int c;
-    bool parse_error = false;
-
     while (1)
     {
         int option_index = 0;

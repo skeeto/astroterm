@@ -1,4 +1,4 @@
-#include "cstar.h"
+#include "starsaver.h"
 
 #include "astro.h"
 #include "term.h"
