@@ -15,6 +15,7 @@ void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
     *declination = atan2(zeq, sqrt(xeq * xeq + yeq * yeq));
 }
 
+// FIXME: could some angle error in gmst calculation or here be causing offset in celestial body positions?
 void equatorial_to_horizontal(double right_ascension, double declination,
                               double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude)
@@ -73,11 +74,13 @@ void project_stereographic_south(double sphere_radius, double point_theta, doubl
 // SCREEN SPACE MAPPING
 
 void polar_to_win(double r, double theta,
-                  int max_y, int max_x,
+                  int win_height, int win_width,
                   int *row, int *col)
 {
-    double row_d = r * max_y / 2.0 * sin(theta) + max_y / 2.0;
-    double col_d = r * max_x / 2.0 * cos(theta) + max_x / 2.0;
+    int maxy = win_height - 1;
+    int maxx = win_width - 1;
+    double row_d = r * maxy / 2.0 * sin(theta) + maxy / 2.0;
+    double col_d = r * maxx / 2.0 * cos(theta) + maxx / 2.0;
     *row = (int) round(row_d);
     *col = (int) round(col_d);
     return;

@@ -206,7 +206,7 @@ int **generate_constell_table(const char *file_path, int *num_const)
 
         int j = 1;
         char *token;
-        while (token = strtok(NULL, " \n"))
+        while ( (token = strtok(NULL, " \n")) )
         {
             constell_table[i][j] = atoi(token);
             j++;
@@ -223,7 +223,7 @@ int **generate_constell_table(const char *file_path, int *num_const)
 
 // Memory freeing functions
 
-void free_stars(struct star *arr, int size)
+void free_stars(struct star *arr)
 {
     free(arr);
     return;
@@ -267,7 +267,7 @@ void update_star_positions(struct star *star_table, int num_stars,
         double right_ascension, declination;
         calc_star_position(star->right_ascension, star->ra_motion,
                            star->declination, star->dec_motion,
-                           julian_date, gmst, latitude, longitude,
+                           julian_date,
                            &right_ascension, &declination);
 
         // Convert to horizontal coordinates
@@ -296,8 +296,10 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
                                 &radius_polar, &theta_polar);
 
     int y, x;
+    int height, width;
+    getmaxyx(win, height, width);
     polar_to_win(radius_polar, theta_polar,
-                 win->_maxy, win->_maxx,
+                 height, width,
                  &y, &x);
 
     // Cache object coordinates
@@ -331,6 +333,8 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
     // FIXME: labels wrap around side, cause flickering
     if (object->label != NULL)
     {
+        // FIXME: random segfaults on Mac OS here
+        // This is likely related to the other memory issue in the object struct
         mvwaddstr(win, y - 1, x + 1, object->label);
     }
 
@@ -594,6 +598,10 @@ void update_moon_position(struct moon *moon_object, double julian_date,
     equatorial_rectangular_to_spherical(xg, yg, zg,
                                         &right_ascension, &declination);
 
+    // FIXME: declination is roughly correct... right ascension is not
+    // printf("%fra\n", right_ascension);
+    // printf("%f\n", declination);
+
     double azimuth, altitude;
     equatorial_to_horizontal(right_ascension, declination,
                              gmst, latitude, longitude,
@@ -671,8 +679,13 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
 {
     const double to_rad = M_PI / 180.0;
 
-    int rad_vertical = round(win->_maxy / 2.0);
-    int rad_horizontal = round(win->_maxx / 2.0);
+    int height, width;
+    getmaxyx(win, height, width);
+    int maxy = height - 1;
+    int maxx = width - 1;
+    
+    int rad_vertical = round(maxy / 2.0);
+    int rad_horizontal = round(maxx / 2.0);
 
     // Possible step sizes in degrees (multiples of 5 and factors of 90)
     int step_sizes[5] = {10, 15, 30, 45, 90};
@@ -713,7 +726,14 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
             int y = rad_vertical - round(rad_vertical * sin(angle * to_rad));
             int x = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
 
-            draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
+            if (rf->unicode)
+            {
+                draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
+            }
+            else
+            {
+                draw_line_ASCII(win, y, x, rad_vertical, rad_horizontal);
+            }
 
             int str_len = snprintf(NULL, 0, "%d", angle);
             char *label = malloc(str_len + 1);
@@ -748,10 +768,18 @@ void render_cardinal_directions(WINDOW *win, struct render_flags *rf)
         wattron(win, COLOR_PAIR(5));
     }
 
-    mvwaddch(win, 0, win->_maxx / 2, 'N');
-    mvwaddch(win, win->_maxy /2, win->_maxx, 'W');
-    mvwaddch(win, win->_maxy, win->_maxx / 2, 'S');
-    mvwaddch(win, win->_maxy / 2, 0, 'E');
+    int height, width;
+    getmaxyx(win, height, width);
+    int maxy = height - 1;
+    int maxx = width - 1;
+
+    int half_maxy = round(maxy / 2.0);
+    int half_maxx = round(maxx / 2.0);
+
+    mvwaddch(win, 0, half_maxx, 'N');
+    mvwaddch(win, half_maxy, width - 1, 'W');
+    mvwaddch(win, height - 1, half_maxx, 'S');
+    mvwaddch(win, half_maxy, 0, 'E');
 
     if (rf->color)
     {

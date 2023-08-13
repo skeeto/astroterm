@@ -25,8 +25,7 @@ double norm_rad(double rad)
 
 void calc_star_position(double right_ascension, double ra_motion,
                         double declination, double dec_motion,
-                        double julian_date, double gmst,
-                        double latitude, double longitude,
+                        double julian_date,
                         double *ITRF_right_ascension, double *ITRF_declination)
 {
     double J200 = 2451545.0;         // J2000 epoch in julian days
@@ -98,7 +97,7 @@ double datetime_to_julian_date(struct tm *time)
     return julian_day_num + julian_day_frac;
 }
 
-struct tm* julian_date_to_datetime(double julian_date)
+struct tm julian_date_to_datetime(double julian_date)
 {
     // https://orbital-mechanics.space/reference/julian-date.html
     int julian_day_num = floor(julian_date);
@@ -122,16 +121,19 @@ struct tm* julian_date_to_datetime(double julian_date)
     double second_d = (minute_d - floor(minute_d)) * 60.0;
 
     // Convert Gregorian datetime format to ISO C tm struct
-    struct tm *time;
-    time->tm_sec    = floor(second_d);
-    time->tm_min    = floor(minute_d);
-    time->tm_hour   = floor(hour_d);
-    time->tm_mday   = day;
-    time->tm_mon    = month - 1;
-    time->tm_year   = year - 1900;
+    struct tm time =
+    {
+        .tm_sec    = floor(second_d),
+        .tm_min    = floor(minute_d),
+        .tm_hour   = floor(hour_d),
+        .tm_mday   = day,
+        .tm_mon    = month - 1,
+        .tm_year   = year - 1900,
+    };
+
 
     // Adjust all fields to usual range
-    mktime(time);
+    mktime(&time);
 
     return time;
 }
@@ -204,7 +206,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     // 4.
 
     const double xp = a * (cos(E * to_rad) - e);
-    const double yp = a * sqrt(1 - e * e) * sin(E * to_rad);
+    const double yp = a * sqrt(1.0 - e * e) * sin(E * to_rad);
     const double zp = 0.0;
 
     // 5.
@@ -265,15 +267,18 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
                         double *xg, double *yg, double *zg)
 {
     // Algorithm taken from Paul Schlyter's page "How to compute planetary positions"
-    // https://stjarnhimlen.se/comp/ppcomp.html#6
+    // https://stjarnhimlen.se/comp/ppcomp.html#6 (modified)
+
+    // https: // astronomy.stackexchange.com/questions/29522/moon-equatorial-coordinates
 
     const double to_rad = M_PI / 180.0;
 
-    // These formulas use days after 2000 Jan 0.0 UT as a timescale
-    double d = julian_date - 2451544.5;
+    // When using Paul Schlyter's elements
+    double d = julian_date - 2451543.5; // weird stuff here
 
+    // When using NASA JPL elements (currently not working)
     // Calculate number of centuries past J2000
-    double t = (julian_date - 2451545.0) / 36525.0;
+    // double t = (julian_date - 2451544.5) / 36525.0;
 
     double a = moon_elements->a + moon_rates->da * d;
     double e = moon_elements->e + moon_rates->de * d;
@@ -289,7 +294,7 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
 
     // Compute the eccentric anomaly, E
     double e_star = 180.0 / M_PI * e;
-    double E = M + e_star * sin(M * to_rad);
+    double E = M + e_star * sin(M * to_rad) * (1.0 + e * cos(M * to_rad));
 
     double dE = 1.0;
     int n = 0;
@@ -305,15 +310,7 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
     double yp = a * sqrt(1.0 - e * e) * sin(E * to_rad);
     double zp = 0.0;
 
-    // Compute moon's distance (r) and true anomaly (v)
-    // double v = atan2(yv, xv);
-    // double r = sqrt(xv * xv + yv * yv);
-
     // Compute the moon's position in 3-dimensional space in ecliptic coords
-    // O *= to_rad; w *= to_rad; I *= to_rad;
-    // double xecl = r * (cos(O) * cos(v + w) - sin(O) * sin(v + w) * cos(I));
-    // double yecl = r * (sin(O) * cos(v + w) + cos(O) * sin(v + w) * cos(I));
-    // double zecl = r * (sin(v + w) * sin(I));
     I *= to_rad; w *= to_rad; O *= to_rad; M *= to_rad;
     double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
     double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;

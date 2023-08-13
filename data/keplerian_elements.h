@@ -11,8 +11,9 @@ extern const struct kep_elems planet_elements[NUM_PLANETS];
 extern const struct kep_rates planet_rates[NUM_PLANETS];
 extern const struct kep_extra planet_extras[NUM_PLANETS];
 
-// Keplerian elements for orbits of the planets
-// https://ssd.jpl.nasa.gov/planets/approx_pos.html *
+// Keplerian elements for orbits of the Moon
+// https://stjarnhimlen.se/comp/ppcomp.html#4
+// https://ssd.jpl.nasa.gov/planets/approx_pos.html * currently not working
 
 extern const struct kep_elems moon_elements;
 extern const struct kep_rates moon_rates;

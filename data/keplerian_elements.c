@@ -32,10 +32,13 @@ const struct kep_extra planet_extras[NUM_PLANETS] =
     [NEPTUNE]   = {-0.00041348,     0.68346318,     -0.10162547,    7.67025000}
 };
 
-// *Recomputed to use AU instead of Earth radii and rates in deg/cent vs. deg/day
-// static const struct kep_elems moon_elements = {0.00256948,  0.054900,   5.1454,     115.3654,           318.0634,       125.1228        };
-// static const struct kep_rates moon_rates    = {0.0,         0.0,        0.0,        476872.24270785,    5999.04226395,  1932.81400295   };
-// static const struct kep_elems moon_elements = {.a = 60.2666, .e = 0.054900, .I = 5.1454, .M = 115.3654, .w = 318.0634, .O = 125.1228};
-// static const struct kep_rates moon_rates = {.da = 0.0, .de = 0.0, .dI = 0.0, .dM = 13.0649929509, .dw = 0.1643573223, .dO = -0.0529538083};
+// Paul Schlyter's "How to compute planetary positions"
+// https://stjarnhimlen.se/comp/ppcomp.html
 const struct kep_elems moon_elements = {.a = 60.2666, .e = 0.054900, .I = 5.1454, .M = 115.3654, .w = 318.0634, .O = 125.1228};
 const struct kep_rates moon_rates = {.da = 0.0, .de = 0.0, .dI = 0.0, .dM = 13.0649929509, .dw = 0.1643573223, .dO = -0.0529538083};
+
+// https://ssd.jpl.nasa.gov/planets/approx_pos.html *
+// Recomputed to use AU and rates in deg/cent
+// FIXME: this is broken
+// const struct kep_elems moon_elements = {.a = 0.0025173263, .e = 0.06476694, .I = 5.24001083, .M = 140.74025711, .w = 308.13590346, .O = 123.98370282};
+// const struct kep_rates moon_rates = {.da = 0.0, .de = 0.0, .dI = 0.0, .dM = 481257.606679, .dw = 6003.001501, .dO = -1934.095941};

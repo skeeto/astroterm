@@ -42,6 +42,9 @@ int main(int argc, char *argv[])
     // Set julian_date to current time
     julian_date = current_jd;
 
+    // Time for each frame in seconds
+    double dt = 1.0 / fps;
+
     // Parse command line args
     parse_options(argc, argv);
 
@@ -63,7 +66,7 @@ int main(int argc, char *argv[])
     set_star_labels(star_table, name_table, num_stars, label_thresh);
 
     // Terminal settings and ncurses initialization
-    
+
     setlocale(LC_ALL, "");          // Required for unicode rendering
     signal(SIGWINCH, catch_winch);  // Capture window resizes
     ncurses_init(color_flag);
@@ -116,8 +119,8 @@ int main(int argc, char *argv[])
         }
 
         // TODO: implement variable time step (or just a correct time step)
-        julian_date += (1.0 / fps) / (24 * 60 * 60) * animation_mult;
-        usleep(1.0 / fps * 1000000);
+        julian_date += dt / (24 * 60 * 60) * animation_mult;
+        usleep(dt * 1000000);
     }
     
     ncurses_kill();
@@ -125,7 +128,7 @@ int main(int argc, char *argv[])
     // Free memory
     free_constells(constell_table, num_const);
     free_star_names(name_table, num_stars);
-    free_stars(star_table, num_stars);
+    free_stars(star_table);
     free_planets(planet_table);
 
     return 0;
@@ -165,6 +168,8 @@ void parse_options(int argc, char *argv[])
             break;
 
         case 1:
+            printf("Unrecognized regular argument '%s'\n", optarg);
+            exit(EXIT_FAILURE);
             break;
 
         case 'a':

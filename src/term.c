@@ -5,6 +5,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 
 void ncurses_init(bool color_flag)
 {
@@ -39,7 +40,7 @@ void ncurses_init(bool color_flag)
     }
 }
 
-void ncurses_kill()
+void ncurses_kill(void)
 {
     endwin();
 }
@@ -75,7 +76,15 @@ void win_resize_full(WINDOW *win)
 
 void win_position_center(WINDOW *win)
 {
-    mvwin(win, (LINES - win->_maxy) / 2, (COLS - win->_maxx) / 2);
+    int height, width;
+    getmaxyx(win, height, width);
+    int maxy = height - 1;
+    int maxx = width - 1;
+
+    int center_y = (LINES - maxy) / 2;
+    int center_x = (COLS - maxx) / 2;
+
+    mvwin(win, center_y, center_x);
 }
 
 void term_size(int *y, int *x)
@@ -94,7 +103,7 @@ void term_size(int *y, int *x)
 }
 
 
-bool stdout_directed_to_console()
+bool stdout_directed_to_console(void)
 {
 #ifdef WINDOWS
     // Hacky way to check if stdout is directed to a console
@@ -107,7 +116,7 @@ bool stdout_directed_to_console()
 #endif  // WINDOWS
 }
 
-float get_cell_aspect_ratio()
+float get_cell_aspect_ratio(void)
 {
     float default_height = 2;
 

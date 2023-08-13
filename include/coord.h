@@ -23,6 +23,7 @@
  *  - Theta     (θ) : measured North of East
  *  - Phi       (Φ) : angular distance from positive z-axis
  *
+ * FIXME: our azimuth is half of what is should be...
  * HORIZONTAL (azimuth, altitude)
  * - Azimuth        : measured East of North
  * - Altitude       : measured from equator to the zenith (complement of spherical phi)

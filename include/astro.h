@@ -75,7 +75,7 @@ double datetime_to_julian_date(struct tm *time);
 
 /* Get the julian date from a given datetime
  */
-struct tm *julian_date_to_datetime(double julian_date);
+struct tm julian_date_to_datetime(double julian_date);
 
 
 // Celestial body positioning
@@ -85,8 +85,7 @@ struct tm *julian_date_to_datetime(double julian_date);
  */
 void calc_star_position(double right_ascension, double ra_motion,
                         double declination, double dec_motion,
-                        double julian_date, double gmst,
-                        double latitude, double longitude,
+                        double julian_date,
                         double *ITRF_right_ascension, double *ITRF_declination);
 
 /* Calculate the heliocentric ICRF position of a planet in rectangular

@@ -1,8 +1,8 @@
-/* Core cstar functions
+/* Core starsaver functions
  */
 
-#ifndef CSTAR_H
-#define CSTAR_H
+#ifndef STARSAVER_H
+#define STARSAVER_H
 
 #include <ncurses.h>
 
@@ -109,7 +109,7 @@ int *star_numbers_by_magnitude(struct star *star_table, int num_stars);
 // Memory freeing
 
 
-void free_stars(struct star *arr, int size);
+void free_stars(struct star *arr);
 void free_star_names(char **arr, int size);
 void free_constells(int **arr, int size);
 void free_planets(struct planet *planets);
@@ -178,4 +178,4 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf);
  */
 void render_cardinal_directions(WINDOW *win, struct render_flags *rf);
 
-#endif  // CSTAR_H
+#endif  // STARSAVER_H

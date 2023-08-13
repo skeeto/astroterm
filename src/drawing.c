@@ -345,7 +345,7 @@ void print_chars_ellipse_unicode(WINDOW *win, int center_y, int center_x,
 
 int ellipse_error(int y, int x, int rad_y, int rad_x)
 {
-    (rad_x * rad_x + x * x) + (rad_y * rad_y + y * y) - (rad_x * rad_x * rad_y * rad_y);
+    return (rad_x * rad_x + x * x) + (rad_y * rad_y + y * y) - (rad_x * rad_x * rad_y * rad_y);
 }
 
 void draw_ellipse(WINDOW *win, int center_y, int center_x,
@@ -356,7 +356,8 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
     int y = 0;
     int x = rad_x;
 
-    int y_next, x_next;
+    int y_next = y;
+    int x_next = x;
 
     // Point where slope = -1
     int magicY = sqrt(pow(rad_y, 4) / (rad_x * rad_x + rad_y * rad_y));

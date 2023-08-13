@@ -12,7 +12,7 @@ void ncurses_init(bool color_flag);
 
 /* Kill ncurses
  */
-void ncurses_kill();
+void ncurses_kill(void);
 
 void wrectangle(WINDOW *win, int ya, int xa, int yb, int xb);
 
@@ -37,6 +37,6 @@ void term_size(int *y, int *x);
 /* attempt to get the cell aspect ratio: cell height to width
  * i.e. "how many columns form the apparent height of a row"
  */
-float get_cell_aspect_ratio();
+float get_cell_aspect_ratio(void);
 
 #endif  // TERM_H
