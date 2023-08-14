@@ -6,7 +6,7 @@ View stars, planets, and more, right in your terminal!
 
 ## Building
 
-### Requirements:
+### Requirements
 
 - Linux or macOS
 - [Meson](https://github.com/mesonbuild/meson) 0.49 or newer
@@ -53,6 +53,8 @@ After installing *starsaver*, simply run `starsaver` to invoke it.
 ```
 starsaver
 ```
+
+Pressing ESC will exit.
 
 ### Basic Options
 

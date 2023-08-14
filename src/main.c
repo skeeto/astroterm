@@ -1,14 +1,12 @@
-#include "astro.h"
-#include "term.h"
 #include "starsaver.h"
+#include "term.h"
+#include "stopwatch.h"
 #include "data/keplerian_elements.h"
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
 #include <locale.h>
-#include <time.h>
 #include <stdbool.h>
 
 // Options
@@ -44,12 +42,12 @@ int main(int argc, char *argv[])
         julian_date = current_julian_date();
     }
 
-    // Time for each frame in seconds
-    double dt = 1.0 / fps;
-
     // Parse command line args and convert to internal representations
     parse_options(argc, argv);
     convert_options();
+
+    // Time for each frame in microseconds
+    unsigned long dt = (unsigned long) (1.0 / fps * 1.0E6);
 
     struct render_flags rf = {
         .unicode = unicode_flag,
@@ -81,23 +79,19 @@ int main(int argc, char *argv[])
     win_resize_square(win, get_cell_aspect_ratio());
     win_position_center(win);
 
+    clear();
+
     while (true)
     {
-        // Wait until ESC is pressed
-        if ((wgetch(win)) == 27)
-        {
-            break;
-        }
+        union sw_timestamp frame_begin = sw_gettime();
+
+        werase(win);
 
         if (perform_resize)
         {
+            // Putting this after erasing the window reduces flickering
             handle_resize(win);
         }
-
-        // ncurses erase should occur before rendering?
-        // https://stackoverflow.com/questions/68706290/how-to-reduce-flickering-lag-on-curses
-        // FIXME: rendered frames only show up starting on second frame
-        werase(win);
 
         // Update object positions
         update_star_positions(star_table, num_stars, julian_date, latitude, longitude);
@@ -122,14 +116,33 @@ int main(int argc, char *argv[])
             render_cardinal_directions(win, &rf);
         }
 
-        // TODO: implement variable time step (or just a correct time step)
-        julian_date += dt / (24 * 60 * 60) * animation_mult;
-        usleep(dt * 1000000);   // usleep takes time in microseconds
+        // Exit if ESC is pressed
+        if ((wgetch(win)) == 27)
+        {
+            // Note: wgetch also calls wrefresh(win), so we want this at the
+            // bottom after the virtual screen is updated
+            break;
+        }
+
+        // TODO: this timing scheme *should* minimize any drag or divergence
+        // between simulation time and realtime. Check this to make sure.
+
+        // Increment "simulation" time
+        const double microsec_per_day = 24.0 * 60.0 * 60.0 * 1.0E6;
+        julian_date += (double) dt / microsec_per_day * animation_mult;
+
+        // Determine time it took to update positions and render to screen
+        union sw_timestamp frame_end = sw_gettime();
+        unsigned long frame_time = sw_timediff_usec(frame_end, frame_begin);
+
+        if (frame_time < dt)
+        {
+            sw_sleep(dt - frame_time);
+        }
     }
     
     ncurses_kill();
 
-    // Free memory
     free_constells(constell_table, num_const);
     free_star_names(name_table, num_stars);
     free_stars(star_table);
@@ -192,6 +205,11 @@ void parse_options(int argc, char *argv[])
 
         case 'f':
             fps = atoi(optarg);
+            if (fps < 1)
+            {
+                printf("fps must be greater than or equal to 1\n");
+                exit(EXIT_FAILURE);
+            }
             break;
 
         case 'h':
@@ -305,6 +323,8 @@ void print_usage(void)
     printf("View stars, planets, and more, right in your terminal! ✨🪐\n");
     printf("\n");
     printf("Usage: starsaver [OPTION]...\n");
+    printf("\n");
+    printf("Exit: ESC\n");
     printf("\n");
     printf("Options:\n");
     printf(" -a, --latitude         [latitude]              Observer latitude in degrees. Positive North of the equator and negative South. Defaults to that of Boston, MA\n");

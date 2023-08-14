@@ -5,5 +5,6 @@ project_header_files += [
     files('starsaver.h'),
     files('drawing.h'),
     files('parse_BSC5.h'),
-    files('term.h')
+    files('stopwatch.h'),
+    files('term.h'),
 ]

@@ -6,5 +6,6 @@ project_source_files += [
     files('drawing.c'),
     files('main.c'),
     files('parse_BSC5.c'),
-    files('term.c')
+    files('stopwatch.c'),
+    files('term.c'),
 ]
