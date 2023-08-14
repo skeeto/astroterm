@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 #include <ncurses.h>
 #include <math.h>
 
@@ -81,8 +82,10 @@ int star_magnitude_comparator(const void *v1, const void *v2)
 
 struct star *generate_star_table(const char *file_path, int *num_stars_return)
 {
+    struct entry *entries;
     int num_entries;
-    struct entry *entries = parse_entries(file_path, &num_entries);
+    bool success = parse_entries(file_path, &entries, &num_entries);
+    if (!success) { exit(EXIT_FAILURE); }
 
     struct star *star_table = malloc(num_entries * sizeof(struct star));
 
@@ -613,6 +616,7 @@ void update_moon_position(struct moon *moon_object, double julian_date,
     return;
 }
 
+// FIXME: this does not render the correct phase and angle
 void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
                        double julian_date)
 {
@@ -785,4 +789,20 @@ void render_cardinal_directions(WINDOW *win, struct render_flags *rf)
     {
         wattroff(win, COLOR_PAIR(5));
     }
+}
+
+struct tm string_to_time(char *string, bool *success)
+{
+    *success = false;
+
+    struct tm time;
+    char *pointer = strptime(string, "%Y-%m-%dT%H:%M:%S", &time);
+    mktime(&time);
+
+    if (pointer != NULL)
+    {
+        *success = true;
+    }
+
+    return time;
 }

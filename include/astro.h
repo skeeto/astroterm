@@ -77,6 +77,10 @@ double datetime_to_julian_date(struct tm *time);
  */
 struct tm julian_date_to_datetime(double julian_date);
 
+/* Get the current julian date using system time
+ */
+double current_julian_date(void);
+
 
 // Celestial body positioning
 

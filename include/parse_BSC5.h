@@ -29,10 +29,12 @@ struct entry
     float XDPM;
 };
 
-/* Parse BSC5 star catalog and return array of entry structures sorted by
- * increasing catalog number (the default order in the BSC5 file).This function
- * allocates memory which should  be freed by the caller.
+/* Parse BSC5 star catalog and fill the array of entry structures (sorted by
+ * increasing catalog number, the default order in the BSC5 file). This function
+ * allocates memory which must be freed by the caller. Returns false in event
+ * of a file error
  */
-struct entry *parse_entries(const char *file_path, int *num_entries_return);
+bool parse_entries(const char *file_path, struct entry **entries_out,
+                   int *num_entries_out);
 
 #endif  // PARSE_BSC5_H

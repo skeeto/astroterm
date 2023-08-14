@@ -1,40 +1,84 @@
-# ✨cstar
+# ✨starsaver
 
-View stars in your terminal!
+View stars, planets, and more, right in your terminal!
 
 ![](/assets/screenshot.png)
 
-## Command Line Options
+## Building
 
-| Option                            | Description                                                               | Default               |
-|-----------------------------------|---------------------------------------------------------------------------|-----------------------|
-| **`--latitude, -a lat`**          | Latitude of observation in radians (measured East of the Prime Meridian)  | Boston, MA            |
-| **`--longitude, -o long`**        | Longitude of observation in radians (measured North of the Equator)       | Boston, MA            |
-| **`--julian-date, -j jd`**        | Julian date of observation                                                | Current system time   |
-| **`--threshold, -t thresh`**      | Only stars brighter than this will be rendered                            | 3.0                   |
-| **`--label-thresh, -l thresh`**   | Only stars brighter than this will be labeled                             | 0.5                   |
-| **`--fps, -f fps`**               | Frames per second                                                         | 24                    |
-| **`--animation-mult, -m mult`**   | Real time animation speed multiplier                                      | 1.0                   |
-| **`--no-unicode`**                | Only use ASCII characters                                                 |                       |
-| **`--colors`**                    | Render planets with terminal colors                                       |                       |
-| **`--grid`**                      | Draw an azimuthal grid                                                    |                       |
-| **`--constellations`**            | Draw constellations                                                       |                       |
+### Requirements:
 
-> ℹ️ Use a tool like https://www.aavso.org/jd-calculator to convert Gregorian Calendar  Dates to Julian Dates \
-> Use a tool like https://www.latlong.net/ to get your latitude and longitude (remember to convert to radians!)
+- Linux or macOS
+- [Meson](https://github.com/mesonbuild/meson) 0.49 or newer
+- [Ninja](https://github.com/ninja-build/ninja) 1.8.2 or newer
+- A C compiler
+- ncurses library
+
+### Installation
+
+Clone this repo in your local system and enter on of the project directories.
+
+Initialize the builder:
+
+```
+meson setup build
+```
+
+To rebuild from then on from within the newly created `../build/` directory:
+
+```
+meson compile
+```
+
+To install to default location (this may require sudo privileges):
+
+```
+meson install
+```
+
+_Note, after rebuilding any changes, rerunning `meson install` is required_
+
+### Known issues
+
+- Ncurses detection is spotty on some systems, and you may need to install [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order for Meson to find it
+- Many unicode characters will not render (at all) on macOS
+- The Moon's phase is currently not correct
+- Azimuthal grid drawing needs improvement
+- Unsafe usage of the object_base struct results in random seg faults on macOS
+
+## Usage
+
+After installing *starsaver*, simply run `starsaver` to invoke it.
+
+```
+starsaver
+```
+
+### Basic Options
+
+Say we wanted to view the sky at 5:00 AM on July 16, 1969—the morning of the
+Apollo 11 launch at the Kennedy Space Center in Florida. We would run:
+
+```
+starsaver --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:32:00 --threshold 5.0 --color
+```
+
+If we then wanted to display all stars with a magnitude brighter than or equal
+to 5.0 and add color, we would add `--threshold 5.0 --color` as options.
+
+If you simply want the current time, don't specify the `--datetime` option and
+_starsaver_ will use the system time. For your current location, you will still
+have to specify the `--lat` and `--long` options.
+
+For more options and help run `starsaver -h` or `starsaver --help`
+
+> ℹ️ Use a tool like https://www.latlong.net/ to get your latitude and longitude
 
 > ℹ️ Star magnitudes decrease as apparent brightness increases
 
-## Building
-
-Compile with gcc:
-```
-gcc main.c bit.c term.c coord.c astro.c parse_BSC5.c cstar.c -lm -lncursesw
-```
-_You only need to link `-lncurses` if not using unicode_
-
 ## Data Sources
+
 - Stars: [Yale Bright Star Catalog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
-- Star Names: [IAU Star Names](https://www.iau.org/public/themes/naming_stars/)
-- Constellation Figures: [Stellarium](https://stellarium.org/) *modified
-- Planets: [NASA Jet Propulsion Laboratory](https://ssd.jpl.nasa.gov/planets/approx_pos.html)
+- Star names: [IAU Star Names](https://www.iau.org/public/themes/naming_stars/)
+- Constellation figures: [Stellarium](https://stellarium.org/)
+- Planet orbital elements: [NASA Jet Propulsion Laboratory](https://ssd.jpl.nasa.gov/planets/approx_pos.html)

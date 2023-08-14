@@ -178,4 +178,11 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf);
  */
 void render_cardinal_directions(WINDOW *win, struct render_flags *rf);
 
+
+// Miscellaneous
+
+/* Parse a string in format yyy-mm-ddThh:mm:ss to a tm struct
+ */
+struct tm string_to_time(char *string, bool *success);
+
 #endif  // STARSAVER_H

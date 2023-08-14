@@ -5,7 +5,6 @@ project('starsaver', 'c',
 project_source_files = []
 project_header_files = []
 project_dependencies = []
-target_link_args = []
 project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
@@ -45,15 +44,13 @@ endif
 # Check what curses headers are available
 if (conf.get('HAVE_NCURSESW_H', 0) == 1)
     # Have ncurses with wide char support
-    target_link_args += '-lncursesw'
 else
     if (conf.get('HAVE_NCURSES_H', 0) == 1)
         # Have ncurses without wide char support*
-        # *on certain systems like macOS, the ncurses header includes wide char
-        # functions
-        warning('ncursesw header not found, which is needed for unicode ' + 
-                'support. If you are on macOS, this can be ignored')
-        target_link_args += '-lncurses'
+        # *on certain systems, the ncurses header includes wide char functions
+        warning('ncursesw header not found, which is sometimes needed for ' + 
+                'unicode support. This may not be an issue as the regular ' +
+                'ncurses.h sometimes contains wide character support')
     else
         if (conf.get('HAVE_CURSES_H', 0) == 1)
             # Have curses but not ncurses 
@@ -69,6 +66,5 @@ executable(
     dependencies        : project_dependencies,
     include_directories : project_include_dirs,
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
-    link_args           : target_link_args,
     install             : true,
 )

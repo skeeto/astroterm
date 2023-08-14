@@ -11,8 +11,8 @@
  * - West:  corresponds with negative x-axis on cartesian grid
  *
  * GEOGRAPHIC (longitude, latitude)
- * - Longitude      : measured East of the Prime Meridian   [0, 2π]
- * - Latitude       : measured North of the Equator         [0, 2π]
+ * - Longitude      : positive East & negative West of the Prime Meridian   [-π, π]
+ * - Latitude       : positive North & negative South of the Equator        [-π/2, π/2]
  *
  * POLAR (r, θ)
  *  - Radius    (r)

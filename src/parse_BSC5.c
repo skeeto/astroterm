@@ -42,14 +42,19 @@ struct entry parse_entry(uint8_t *buffer)
     return entry_data;
 }
 
-struct entry *parse_entries(const char *file_path, int *num_entries_return)
+bool parse_entries(const char *file_path, struct entry **entries_out,
+                   int *num_entries_out)
 {
-    FILE *file_pointer;
-    file_pointer = fopen(file_path, "rb");
+    FILE *stream;
+    int num;                                // Number of characters read from stream
+    stream = fopen(file_path, "rb");
+    if (stream == NULL) { return false; }   // Error opening file
 
     // Read header
     uint8_t header_buffer[header_bytes];
-    fread(header_buffer, sizeof(header_buffer), 1, file_pointer);
+    num = fread(header_buffer, sizeof(header_buffer), 1, stream);
+    if (!num) { return false; } // Error reading header
+
     struct header header_data = parse_header(header_buffer);
 
     // As defined in http://tdc-www.harvard.edu/catalogs/catalogsb.html,
@@ -57,15 +62,18 @@ struct entry *parse_entries(const char *file_path, int *num_entries_return)
     int num_entries = abs(header_data.STARN);
 
     // Read entries
-    struct entry *entries = (struct entry *) malloc(num_entries * sizeof(struct entry));
+    *entries_out = (struct entry *) malloc(num_entries * sizeof(struct entry));
     uint8_t entry_buffer[entry_bytes];
 
     for (int i = 0; i < num_entries; i++)
     {
-        fread(entry_buffer, entry_bytes, 1, file_pointer);
-        entries[i] = parse_entry(entry_buffer);
+        num = fread(entry_buffer, entry_bytes, 1, stream);
+        if (!num) { return false; } // Error reading entry
+
+        (*entries_out)[i] = parse_entry(entry_buffer);
     }
 
-    *num_entries_return = num_entries;
-    return entries;
+    *num_entries_out = num_entries;
+
+    return true;
 }

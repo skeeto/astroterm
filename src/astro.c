@@ -18,7 +18,7 @@
  */
 double norm_rad(double rad)
 {
-    double rem = remainder(rad, 2 * M_PI);
+    double rem = fmod(rad, 2 * M_PI);
     rem += rem < 0 ? 2 * M_PI : 0;
     return rem;
 }
@@ -28,9 +28,9 @@ void calc_star_position(double right_ascension, double ra_motion,
                         double julian_date,
                         double *ITRF_right_ascension, double *ITRF_declination)
 {
-    double J200 = 2451545.0;         // J2000 epoch in julian days
-    double days_per_year = 365.2425; // Average number of days per year
-    double years_from_epoch = (julian_date - J200) / days_per_year;
+    double J2000 = 2451545.0;           // J2000 epoch in julian days
+    double days_per_year = 365.2425;    // Average number of days per year
+    double years_from_epoch = (julian_date - J2000) / days_per_year;
 
     *ITRF_right_ascension = right_ascension + ra_motion * years_from_epoch;
     *ITRF_declination = declination + dec_motion * years_from_epoch;
@@ -38,23 +38,24 @@ void calc_star_position(double right_ascension, double ra_motion,
 
 double earth_rotation_angle_rad(double jd)
 {
+    // IERS Technical Note No. 32: 5.4.4 eq. 14
+
     double t = jd - 2451545.0;
     double d = jd - floor(jd);
 
-    // IERS Technical Note No. 32: 5.4.4 eq. (14);
-    double theta = 2 * M_PI * (d + 0.7790572732640 + 0.00273781191135448 * t);
+    double theta = 2.0 * M_PI * (d + 0.7790572732640 + 0.00273781191135448 * t);
+    theta = norm_rad(theta);
 
     return theta;
 }
 
 double greenwich_mean_sidereal_time_rad(double jd)
 {
+    // "Expressions for IAU 2000 precession quantities,"
+    // N.Capitaine, P.T.Wallace, and J.Chapront, eq. 42
 
     // Calculate Julian centuries after J2000
     double t = (jd - 2451545.0) / 36525.0;
-
-    // "Expressions for IAU 2000 precession quantities,"
-    // N.Capitaine, P.T.Wallace, and J.Chapront
 
     // This isn't explicitly stated, but I believe this gives the accumulated
     // precession as described in https://en.wikipedia.org/wiki/Sidereal_time
@@ -64,9 +65,10 @@ double greenwich_mean_sidereal_time_rad(double jd)
                                 powf(t, 5);
 
     // Convert to degrees then radians
-    double acc_precession_rad = acc_precession_sec / 3600.0 * 180.0 / M_PI;
+    double acc_precession_rad = acc_precession_sec / 3600.0 *  M_PI / 180.0;
 
-    double gmst = earth_rotation_angle_rad(jd) - acc_precession_rad; // eq 42
+    double gmst = earth_rotation_angle_rad(jd) - acc_precession_rad;
+    gmst = norm_rad(gmst);
 
     return gmst;
 }
@@ -131,11 +133,17 @@ struct tm julian_date_to_datetime(double julian_date)
         .tm_year   = year - 1900,
     };
 
-
     // Adjust all fields to usual range
     mktime(&time);
 
     return time;
+}
+
+double current_julian_date(void)
+{
+    time_t t = time(NULL);
+    struct tm lt = *gmtime(&t); // UTC
+    return datetime_to_julian_date(&lt);
 }
 
 double solve_kepler(double M, double e, double E)
