@@ -175,7 +175,6 @@ void parse_options(int argc, char *argv[])
             {NULL,              0,                  NULL,                 0}
         };
 
-        // TODO: reorder optstring
         c = getopt_long(argc, argv, "-:a:d:f:hl:m:o:t:", long_options, &option_index);
         if (c == -1)
             break;

@@ -8,11 +8,6 @@
 #include <windows.h>
 #endif
 
-#ifdef __MACH__
-#include <mach/clock.h>
-#include <mach/mach.h>
-#endif
-
 union sw_timestamp sw_gettime(void)
 {
     union sw_timestamp stamp;
@@ -27,9 +22,7 @@ union sw_timestamp sw_gettime(void)
 #elif defined(__APPLE__) && defined(__MACH__)
     // Apple OSX and iOS (Darwin)
 
-    struct timespec tick;
-    clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW, &tick);
-    stamp.tick_spec = tick;
+    stamp.tick_apple = clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW);
 
 #elif defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
     // Available on some POSIX systems (preferable to gettimeofday() below)
@@ -59,9 +52,8 @@ unsigned long sw_timediff_usec(union sw_timestamp end, union sw_timestamp begin)
     QueryPerformanceFrequency(&frequency);
     time_diff = (end.tick_windows.QuadPart - begin.tick_windows.QuadPart) * 1.0E6 / frequency.QuadPart;
 
-#elif #defined(__APPLE__) && defined(__MACH__)
-    time_diff = (end.tick_spec.tv_sec - begin.tick_spec.tv_sec) * 1.0E6;        // sec to us
-    time_diff += (end.tick_spec.tv_nsec - begin.tick_spec.tv_nsec) / 1.0E3;     // ns to us
+#elif defined(__APPLE__) && defined(__MACH__)
+    time_diff = (end.tick_apple - begin.tick_apple) / 1.0E3;                    // ns to us
 
 #elif defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
     time_diff = (end.tick_spec.tv_sec - begin.tick_spec.tv_sec) * 1.0E6;        // sec to us

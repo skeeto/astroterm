@@ -18,6 +18,7 @@ union sw_timestamp
 #ifdef _WIN32
     LARGE_INTEGER tick_windows;
 #endif
+    unsigned long long tick_apple;
     struct timespec tick_spec;
     struct timeval tick_val;
 };
