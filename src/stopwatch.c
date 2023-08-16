@@ -28,7 +28,7 @@ union sw_timestamp sw_gettime(void)
     // Available on some POSIX systems (preferable to gettimeofday() below)
 
     struct timespec tick;
-    clock_gettime(CLOCK_MONOTONIC, &tick);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
     stamp.tick_spec = tick;
 
 # else

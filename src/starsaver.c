@@ -48,6 +48,7 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
     *star_table_out = malloc(num_stars * sizeof(struct star));
     if (*star_table_out == NULL)
     {
+        printf("Allocation of memory for star table failed\n");
         return false;
     }
 
@@ -87,6 +88,7 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
         temp_star.base.symbol_unicode = malloc(strlen(unicode_temp) + 1);
         if (temp_star.base.symbol_unicode == NULL)
         {
+            printf("Allocation of memory for star struct symbol failed\n");
             return false;
         }
         strcpy(temp_star.base.symbol_unicode, unicode_temp);
@@ -99,6 +101,7 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
             temp_star.base.label = malloc(strlen(label_temp) + 1);
             if (temp_star.base.label == NULL)
             {
+                printf("Allocation of memory for star struct label failed\n");
                 return false;
             }
             strcpy(temp_star.base.label, label_temp);
@@ -111,23 +114,36 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
     return true;
 }
 
-int *star_numbers_by_magnitude(struct star *star_table, unsigned int num_stars)
+bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table,
+                               unsigned int num_stars)
 {
     // Create and sort a copy of the star table
     struct star *table_copy = malloc(num_stars * sizeof(struct star));
+    if (table_copy == NULL)
+    {
+        printf("Allocation of memory for star table copy failed\n");
+        return false;
+    }
+
     memcpy(table_copy, star_table, num_stars * sizeof(*table_copy));
     qsort(table_copy, num_stars, sizeof(struct star), star_magnitude_comparator);
 
     // Create and fill array of indicies in table copy
-    int *num_by_mag = malloc(num_stars * sizeof(int));
+    *num_by_mag = malloc(num_stars * sizeof(int));
+    if (num_by_mag == NULL)
+    {
+        printf("Allocation of memory for num by mag array  failed\n");
+        return false;
+    }
+
     for (unsigned int i = 0; i < num_stars; ++i)
     {
-        num_by_mag[i] = table_copy[i].catalog_number;
+        (*num_by_mag)[i] = table_copy[i].catalog_number;
     }
 
     free(table_copy);
 
-    return num_by_mag;
+    return true;
 }
 
 bool generate_name_table(struct star_name **name_table_out, const char *file_path,
@@ -136,6 +152,7 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
     *name_table_out = malloc(num_stars * sizeof(struct star_name));
     if (*name_table_out == NULL)
     {
+        printf("Allocation of memory for name table failed\n");
         return false;
     }
 
@@ -143,6 +160,7 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
     stream = fopen(file_path, "r");
     if (stream == NULL)
     {
+        printf("Couldn't open file '%s'\n", file_path);
         return false;
     }
 
@@ -178,6 +196,7 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
     // Close file
     if (fclose(stream) == EOF)
     {
+        printf("Couldn't open file '%s'\n", file_path);
         return false;
     }
 
@@ -208,6 +227,7 @@ bool generate_constell_table(struct constell **constell_table_out, const char *f
     stream = fopen(file_path, "r");
     if (stream == NULL)
     {
+        printf("Couldn't open file '%s'\n", file_path);
         return false;
     }
 
@@ -218,6 +238,7 @@ bool generate_constell_table(struct constell **constell_table_out, const char *f
     *constell_table_out = malloc(num_constells * sizeof(struct constell));
     if (*constell_table_out == NULL)
     {
+        printf("Allocation of memory for constellation table failed\n");
         return false;
     }
 
@@ -240,6 +261,7 @@ bool generate_constell_table(struct constell **constell_table_out, const char *f
         temp_constell.star_numbers = malloc(num_segments * 2 * sizeof(int));
         if (temp_constell.star_numbers == NULL)
         {
+            printf("Allocation of memory for constellation struct failed\n");
             return false;
         }
 
@@ -258,6 +280,7 @@ bool generate_constell_table(struct constell **constell_table_out, const char *f
     // Close file
     if (fclose(stream) == EOF)
     {
+        printf("Failed to close file '%s'\n", file_path);
         return false;
     }
 
@@ -367,8 +390,6 @@ void update_star_positions(struct star *star_table, int num_stars,
                                  gmst, latitude, longitude,
                                  &azimuth, &altitude);
 
-        // FIXME: setting the azimuth and altitude this way is probably what is
-        // causing the issue in astro.h... how to fix?
         star->base.azimuth = azimuth;
         star->base.altitude = altitude;
     }
@@ -424,8 +445,6 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
     // FIXME: labels wrap around side, cause flickering
     if (object->label != NULL)
     {
-        // FIXME: random segfaults on Mac OS here
-        // This is likely related to the other memory issue in the object struct
         mvwaddstr(win, y - 1, x + 1, object->label);
     }
 
@@ -642,7 +661,6 @@ bool generate_planet_table(struct planet **planet_table,
     return true;
 }
 
-// FIXME: weird ghost star right where "Earth" would be rendered
 void update_planet_positions(struct planet *planet_table, double julian_date,
                              double latitude, double longitude)
 {
@@ -749,10 +767,6 @@ void update_moon_position(struct moon *moon_object, double julian_date,
     double right_ascension, declination;
     equatorial_rectangular_to_spherical(xg, yg, zg,
                                         &right_ascension, &declination);
-
-    // FIXME: declination is roughly correct... right ascension is not
-    // printf("%fra\n", right_ascension);
-    // printf("%f\n", declination);
 
     double azimuth, altitude;
     equatorial_to_horizontal(right_ascension, declination,

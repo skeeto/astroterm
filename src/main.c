@@ -37,12 +37,6 @@ static void print_usage(void);
 
 int main(int argc, char *argv[])
 {
-    // If no datetime specified, set julian date to current time
-    if (dt_string_utc == NULL)
-    {
-        julian_date = current_julian_date();
-    }
-
     // Parse command line args and convert to internal representations
     parse_options(argc, argv);
     convert_options();
@@ -50,10 +44,12 @@ int main(int argc, char *argv[])
     // Time for each frame in microseconds
     unsigned long dt = (unsigned long) (1.0 / fps * 1.0E6);
 
-    struct render_flags rf = {
-        .unicode = (unicode_flag != 0),
-        .color = (color_flag != 0),
-        .label_thresh = label_thresh,
+    // Render flags
+    struct render_flags rf =
+    {
+        .unicode        = (unicode_flag != 0),
+        .color          = (color_flag != 0),
+        .label_thresh   = label_thresh,
     };
 
     // Initialize data structs
@@ -65,21 +61,28 @@ int main(int argc, char *argv[])
     struct star         *star_table;
     struct planet       *planet_table;
     struct moon         moon_object;
+    int                 *num_by_mag;
 
-    // Blindly assume these functions will succeed
-    parse_entries(&BSC5_entries, "../data/BSC5", &num_stars);
-    generate_name_table(&name_table, "../data/BSC5_names.txt", num_stars);
-    generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
-    generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
-    generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);
-    generate_moon_object(&moon_object, & moon_elements, &moon_rates);
+    // Track success of functions
+    bool s = true;
+
+    s = s && parse_entries(&BSC5_entries, "../data/BSC5", &num_stars);
+    s = s && generate_name_table(&name_table, "../data/BSC5_names.txt", num_stars);
+    s = s && generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
+    s = s && generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
+    s = s && generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);
+    s = s && generate_moon_object(&moon_object, &moon_elements, &moon_rates);
+    s = s && star_numbers_by_magnitude(&num_by_mag, star_table, num_stars);
+
+    if (!s)
+    {
+        // At least one of the above functions failed, abort
+        abort();
+    }
 
     // This memory is no longer needed
     free(BSC5_entries);
     free_star_names(name_table, num_stars);
-
-    // Sort stars by magnitude so brighter stars are always rendered on top
-    int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
 
     // Terminal/System settings
     setlocale(LC_ALL, "");          // Required for unicode rendering
@@ -88,12 +91,11 @@ int main(int argc, char *argv[])
     // Ncurses initialization
     ncurses_init(color_flag != 0);
     WINDOW *win = newwin(0, 0, 0, 0);
-    wtimeout(win, 0);               // Non-blocking read for wgetch
+    wtimeout(win, 0);   // Non-blocking read for wgetch
     win_resize_square(win, get_cell_aspect_ratio());
     win_position_center(win);
 
-    clear();
-
+    // Render loop
     while (true)
     {
         union sw_timestamp frame_begin = sw_gettime();
@@ -137,7 +139,7 @@ int main(int argc, char *argv[])
             break;
         }
 
-        // TODO: this timing scheme *should* minimize any drag or divergence
+        // TODO: this timing scheme *should* minimize any drift or divergence
         // between simulation time and realtime. Check this to make sure.
 
         // Increment "simulation" time
@@ -288,7 +290,12 @@ void convert_options(void)
     latitude *= M_PI / 180.0;
 
     // Convert Gregorian calendar date to Julian date
-    if (dt_string_utc != NULL)
+    if (dt_string_utc == NULL)
+    {
+        // Set julian date to current time
+        julian_date = current_julian_date();
+    }
+    else
     {
         struct tm datetime;
         bool parse_success = string_to_time(dt_string_utc, &datetime);

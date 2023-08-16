@@ -7,7 +7,10 @@
 #include "parse_BSC5.h"
 
 #include <ncurses.h>
+#include <time.h>
 
+/* Describes how objects should be rendered
+ */
 struct render_flags
 {
     bool unicode;
@@ -119,9 +122,11 @@ bool generate_moon_object(struct moon *moon_data,
  */
 int star_magnitude_comparator(const void *v1, const void *v2);
 
-/* Return an array of star numbers sorted by increasing magnitude
+/* Modify an array of star numbers sorted by increasing magnitude. Used in
+ * rendering functions so brighter stars are always rendered on top
  */
-int *star_numbers_by_magnitude(struct star *star_table, unsigned int num_stars);
+bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table,
+                               unsigned int num_stars);
 
 
 // Memory freeing

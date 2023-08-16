@@ -44,7 +44,7 @@ _Note, after rebuilding any changes, rerunning `meson install` is required_
 - Many unicode characters will not render (at all) on macOS
 - The Moon's phase is currently not correct
 - Azimuthal grid drawing needs improvement
-- Unsafe usage of the object_base struct results in random seg faults on macOS
+- Only a few constellation figures are currently available
 
 ## Usage
 
@@ -62,7 +62,7 @@ Say we wanted to view the sky at 5:00 AM on July 16, 1969—the morning of the
 Apollo 11 launch at the Kennedy Space Center in Florida. We would run:
 
 ```
-starsaver --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:32:00 --threshold 5.0 --color
+starsaver --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:32:00
 ```
 
 If we then wanted to display all stars with a magnitude brighter than or equal

@@ -51,6 +51,7 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
     stream = fopen(file_path, "rb");
     if (stream == NULL)
     {
+        printf("Couldn't open file '%s'\n", file_path);
         return false;
     }
 
@@ -59,6 +60,7 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
     stream_items = fread(header_buffer, sizeof(header_buffer), 1, stream);
     if (stream_items == 0)
     {
+        printf("Failure to read line in '%s'\n", file_path);
         return false;
     }
 
@@ -71,6 +73,7 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
     *entries_out = malloc(num_entries * sizeof(struct entry));
     if (*entries_out == NULL)
     {
+        printf("Allocation of memory for BSC5 entries failed\n");
         return false;
     }
 
@@ -81,6 +84,7 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
         stream_items = fread(entry_buffer, entry_bytes, 1, stream);
         if (stream_items == 0)
         {
+            printf("Failure to read line in '%s'\n", file_path);
             return false;
         }
 
@@ -90,6 +94,7 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
     // Close file
     if (fclose(stream) == EOF)
     {
+        printf("Failed to close file '%s'\n", file_path);
         return false;
     }
 

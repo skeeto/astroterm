@@ -17,6 +17,7 @@ subdir('data')
 
 cc = meson.get_compiler('c')
 
+# FIXME: Using the 'system' method for finding curses breaks time.h header...
 curses = dependency('curses', required : true)
 math = cc.find_library('m', required : true)
 
