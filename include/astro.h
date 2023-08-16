@@ -119,7 +119,7 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
 // Miscellaneous
 
 
-/* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and 
+/* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and
  * 1 is a Full Moon. TODO: fix this
  */
 double calc_moon_phase(double sun_ecliptic_longitude,

@@ -1,5 +1,5 @@
 /* An attempt at relatively portable & accurate timing library
- * 
+ *
  * Very helpful reference: https://stackoverflow.com/questions/12392278/measure-time-in-linux-time-vs-clock-vs-getrusage-vs-clock-gettime-vs-gettimeof
  */
 
@@ -30,7 +30,7 @@ union sw_timestamp sw_gettime(void);
 /* Returns the difference between two timestamps in microseconds. On 16 & 32 bit
  * systems, will unsigned long can store over an hour in microseconds before
  * wrapping around. Should be safe in that regard.
- * 
+ *
  * TODO: is it safe to assume the unions have the same member set?
  */
 unsigned long sw_timediff_usec(union sw_timestamp end, union sw_timestamp begin);

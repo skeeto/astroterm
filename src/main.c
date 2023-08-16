@@ -1,4 +1,5 @@
 #include "starsaver.h"
+#include "parse_BSC5.h"
 #include "term.h"
 #include "stopwatch.h"
 #include "data/keplerian_elements.h"
@@ -28,11 +29,11 @@ static int constell_flag    = FALSE;        // Draw constellation figures
 
 static volatile bool perform_resize = false;
 
-void catch_winch(int sig);
-void handle_resize(WINDOW *win);
-void parse_options(int argc, char *argv[]);
-void convert_options(void);
-void print_usage(void);
+static void catch_winch(int sig);
+static void handle_resize(WINDOW *win);
+static void parse_options(int argc, char *argv[]);
+static void convert_options(void);
+static void print_usage(void);
 
 int main(int argc, char *argv[])
 {
@@ -50,30 +51,42 @@ int main(int argc, char *argv[])
     unsigned long dt = (unsigned long) (1.0 / fps * 1.0E6);
 
     struct render_flags rf = {
-        .unicode = unicode_flag,
-        .color = color_flag
+        .unicode = (unicode_flag != 0),
+        .color = (color_flag != 0),
+        .label_thresh = label_thresh,
     };
 
     // Initialize data structs
-    int num_stars, num_const;
-    struct star *star_table = generate_star_table("../data/BSC5", &num_stars);
-    struct planet *planet_table = generate_planet_table(planet_elements, planet_rates, planet_extras);
-    struct moon moon_object = generate_moon_object(&moon_elements, &moon_rates);
-    char **name_table = generate_name_table("../data/BSC5_names", num_stars);
-    int **constell_table = generate_constell_table("../data/BSC5_constellations", &num_const);
+    unsigned int num_stars, num_const;
+
+    struct entry        *BSC5_entries;
+    struct star_name    *name_table;
+    struct constell     *constell_table;
+    struct star         *star_table;
+    struct planet       *planet_table;
+    struct moon         moon_object;
+
+    // Blindly assume these functions will succeed
+    parse_entries(&BSC5_entries, "../data/BSC5", &num_stars);
+    generate_name_table(&name_table, "../data/BSC5_names.txt", num_stars);
+    generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
+    generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
+    generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);
+    generate_moon_object(&moon_object, & moon_elements, &moon_rates);
+
+    // This memory is no longer needed
+    free(BSC5_entries);
+    free_star_names(name_table, num_stars);
 
     // Sort stars by magnitude so brighter stars are always rendered on top
     int *num_by_mag = star_numbers_by_magnitude(star_table, num_stars);
-
-    // Set star labels
-    set_star_labels(star_table, name_table, num_stars, label_thresh);
 
     // Terminal/System settings
     setlocale(LC_ALL, "");          // Required for unicode rendering
     signal(SIGWINCH, catch_winch);  // Capture window resizes
 
     // Ncurses initialization
-    ncurses_init(color_flag);
+    ncurses_init(color_flag != 0);
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0);               // Non-blocking read for wgetch
     win_resize_square(win, get_cell_aspect_ratio());
@@ -101,13 +114,13 @@ int main(int argc, char *argv[])
 
         // Render
         render_stars_stereo(win, &rf, star_table, num_stars, num_by_mag, threshold);
-        if (constell_flag)
+        if (constell_flag != 0)
         {
-            render_constells(win, &rf, constell_table, num_const, star_table);
+            render_constells(win, &rf, &constell_table, num_const, star_table);
         }
         render_planets_stereo(win, &rf, planet_table);
         render_moon_stereo(win, &rf, moon_object);
-        if (grid_flag)
+        if (grid_flag != 0)
         {
             render_azimuthal_grid(win, &rf);
         }
@@ -140,13 +153,13 @@ int main(int argc, char *argv[])
             sw_sleep(dt - frame_time);
         }
     }
-    
+
     ncurses_kill();
 
     free_constells(constell_table, num_const);
-    free_star_names(name_table, num_stars);
-    free_stars(star_table);
-    free_planets(planet_table);
+    free_stars(star_table, num_stars);
+    free_planets(planet_table, NUM_PLANETS);
+    free_moon_object(moon_object);
 
     return 0;
 }
@@ -155,7 +168,7 @@ void parse_options(int argc, char *argv[])
 {
     // https://azrael.digipen.edu/~mmead/www/mg/getopt/index.html
     int c;
-    while (1)
+    while (true)
     {
         int option_index = 0;
         static struct option long_options[] =
@@ -217,11 +230,11 @@ void parse_options(int argc, char *argv[])
             break;
 
         case 'l':
-            label_thresh = atof(optarg);
+            label_thresh = (float) atof(optarg);
             break;
 
         case 'm':
-            animation_mult = atof(optarg);
+            animation_mult = (float) atof(optarg);
             break;
 
         case 'o':
@@ -234,7 +247,7 @@ void parse_options(int argc, char *argv[])
             break;
 
         case 't':
-            threshold = atof(optarg);
+            threshold = (float) atof(optarg);
             break;
 
         case '?':
@@ -255,7 +268,7 @@ void parse_options(int argc, char *argv[])
             break;
 
         default:
-            printf("?? getopt returned character code 0%o ??\n", c);
+            printf("?? getopt returned character code 0%d ??\n", c);
             exit(EXIT_FAILURE);
             break;
         }
@@ -277,9 +290,9 @@ void convert_options(void)
     // Convert Gregorian calendar date to Julian date
     if (dt_string_utc != NULL)
     {
-        bool success;
-        struct tm datetime = string_to_time(dt_string_utc, &success);
-        if (!success)
+        struct tm datetime;
+        bool parse_success = string_to_time(dt_string_utc, &datetime);
+        if (!parse_success)
         {
             printf("Unable to parse datetime string '%s'\n", dt_string_utc);
             exit(EXIT_FAILURE);

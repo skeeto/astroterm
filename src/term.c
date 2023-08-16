@@ -97,11 +97,10 @@ void term_size(int *y, int *x)
 #else
     struct winsize ws;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-    *y = ws.ws_row;
-    *x = ws.ws_col;
+    *y = (int) ws.ws_row;
+    *x = (int) ws.ws_col;
 #endif  // WINDOWS
 }
-
 
 bool stdout_directed_to_console(void)
 {
@@ -112,7 +111,7 @@ bool stdout_directed_to_console(void)
     fgetpos(stdout, &pos);
     return (pos == -1);
 #else
-    return isatty(fileno(stdout));
+    return (isatty(fileno(stdout)) != 0);
 #endif  // WINDOWS
 }
 

@@ -56,7 +56,7 @@ void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
 
 /* Converts horizontal coordinates to spherical coordinates
  */
-void horizontal_to_spherical(double azimuth, double altitude, 
+void horizontal_to_spherical(double azimuth, double altitude,
                              double *theta_sphere, double *phi_sphere);
 
 // MAP PROJECTIONS

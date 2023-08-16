@@ -77,7 +77,7 @@ void project_stereographic_north(double sphere_radius, double theta_point, doubl
 
     double c = fabs(0.0 - point_phi);               // Angular separation between center (Φ_north_pole = 0) & point
     *radius_polar = sphere_radius * tan(c / 2.0);   // eq (21 - 1) Dividing by 2 gives projection onto plane containing equator
-    *theta_polar = M_PI - theta_point;              // eq (20 - 2) This is a little weird, but doing so makes the "North" 
+    *theta_polar = M_PI - theta_point;              // eq (20 - 2) This is a little weird, but doing so makes the "North"
                                                     //             horizon is at the "top" of the projection
 }
 
@@ -127,6 +127,10 @@ void perspective_to_win(double aov_phi, double aov_theta,
     double start_phi = perspective_phi - aov_phi / 2.0;
     double start_theta = perspective_theta - aov_theta / 2.0;
 
-    *row = (start_phi - object_phi) / aov_phi * win_height;
-    *col = (object_theta - start_theta) / aov_theta * win_width;
+    double row_d = (start_phi - object_phi) / aov_phi * win_height;
+    double col_d = (object_theta - start_theta) / aov_theta *win_width;
+
+    *row = (int) round(row_d);
+    *col = (int) round(col_d);
+    return;
 }

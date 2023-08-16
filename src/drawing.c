@@ -39,10 +39,10 @@ void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb)
         while (abs(y) <= abs(dy))
         {
             int curr_y = ya + y;
-            int curr_x = xa + round(x);
+            int curr_x = xa + (int) round(x);
 
             int next_y = ya + y + sy;
-            int next_x = xa + round(x + sx);
+            int next_x = xa + (int) round(x + sx);
 
             mvwaddch(win, curr_y, curr_x, '|');
 
@@ -67,10 +67,10 @@ void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb)
 
         while (abs(x) <= abs(dx))
         {
-            int curr_y = ya + round(y);
+            int curr_y = ya + (int) round(y);
             int curr_x = xa + x;
 
-            int next_y = ya + round(y + sy);
+            int next_y = ya + (int) round(y + sy);
             int next_x = xa + x + sx;
 
             // Edge case where we draw a horizontal line
@@ -153,10 +153,10 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
         while (abs(y) <= abs(dy))
         {
             int curr_y = ya + y;
-            int curr_x = xa + round(x);
+            int curr_x = xa + (int) round(x);
 
             int next_y = ya + y + sy;
-            int next_x = xa + round(x + sx);
+            int next_x = xa + (int) round(x + sx);
 
             mvwaddstr(win, curr_y, curr_x, "│");
 
@@ -194,10 +194,10 @@ void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
 
         while (abs(x) <= abs(dx))
         {
-            int curr_y = ya + round(y);
+            int curr_y = ya + (int) round(y);
             int curr_x = xa + x;
 
-            int next_y = ya + round(y + sy);
+            int next_y = ya + (int) round(y + sy);
             int next_x = xa + x + sx;
 
             mvwaddstr(win, curr_y, curr_x, "─");
@@ -236,7 +236,7 @@ void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)
         while (abs(y) <= abs(dy))
         {
             int curr_y = ya + y;
-            int curr_x = xa + round(x);
+            int curr_x = xa + (int) round(x);
 
             mvwaddstr(win, curr_y, curr_x, fill);
 
@@ -255,7 +255,7 @@ void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)
 
         while (abs(x) <= abs(dx))
         {
-            int curr_y = ya + round(y);
+            int curr_y = ya + (int) round(y);
             int curr_x = xa + x;
 
             mvwaddstr(win, curr_y, curr_x, fill);
@@ -333,7 +333,7 @@ void print_chars_ellipse_unicode(WINDOW *win, int center_y, int center_x,
 
         case HORIZONTAL:
             mvwaddstr(win, center_y - y, center_x + x, "─");
-            mvwaddstr(win, center_y - y, center_x - x, "─"); 
+            mvwaddstr(win, center_y - y, center_x - x, "─");
             mvwaddstr(win, center_y + y, center_x - x, "─");
             mvwaddstr(win, center_y + y, center_x + x, "─");
             break;
@@ -360,7 +360,7 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
     int x_next = x;
 
     // Point where slope = -1
-    int magicY = sqrt(pow(rad_y, 4) / (rad_x * rad_x + rad_y * rad_y));
+    int magicY = (int) sqrt(pow((double) rad_y, 4.0) / (rad_x * rad_x + rad_y * rad_y));
 
     // Print first part of first quadrant: slope is > -1
     while (y_next > magicY)
@@ -373,7 +373,7 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
         bool corner = y_next > y && x_next < x;
         bool vertical = y_next > y && x_next == x;
 
-        char fill = corner ? CORNER : 
+        char fill = corner ? CORNER :
                     vertical ? VERTICAL :
                     HORIZONTAL;
 
@@ -401,7 +401,7 @@ void draw_ellipse(WINDOW *win, int center_y, int center_x,
         bool corner = y_next > y && x_next < x;
         bool vertical = y_next > y && x_next == x;
 
-        char fill = corner ? CORNER : 
+        char fill = corner ? CORNER :
                     vertical ? VERTICAL :
                     HORIZONTAL;
 

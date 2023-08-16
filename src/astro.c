@@ -16,7 +16,7 @@
 
 /* Normalize a radian angle to [0, 2π]
  */
-double norm_rad(double rad)
+static double norm_rad(double rad)
 {
     double rem = fmod(rad, 2 * M_PI);
     rem += rem < 0 ? 2 * M_PI : 0;
@@ -60,9 +60,9 @@ double greenwich_mean_sidereal_time_rad(double jd)
     // This isn't explicitly stated, but I believe this gives the accumulated
     // precession as described in https://en.wikipedia.org/wiki/Sidereal_time
     double acc_precession_sec = -0.014506 - 4612.156534 * t - 1.3915817 *
-                                powf(t, 2) + 0.00000044 * powf(t, 3) +
-                                0.000029956 * powf(t, 4) + 0.0000000368 *
-                                powf(t, 5);
+                                pow(t, 2) + 0.00000044 * pow(t, 3) +
+                                0.000029956 * pow(t, 4) + 0.0000000368 *
+                                pow(t, 5);
 
     // Convert to degrees then radians
     double acc_precession_rad = acc_precession_sec / 3600.0 *  M_PI / 180.0;
@@ -102,7 +102,7 @@ double datetime_to_julian_date(struct tm *time)
 struct tm julian_date_to_datetime(double julian_date)
 {
     // https://orbital-mechanics.space/reference/julian-date.html
-    int julian_day_num = floor(julian_date);
+    int julian_day_num = (int) julian_date;
 
     int l = julian_day_num + 68569;
     int n = 4 * l / 146097;
@@ -110,7 +110,7 @@ struct tm julian_date_to_datetime(double julian_date)
     int i = 4000 * (l + 1) / 1461001;
     l = l - 1461 * i / 4 + 31;
     int j = 80 * l / 2447;
-    
+
     int day = l - 2447 * j / 80;
     l = j / 11;
     int month = j + 2 - 12 * l;
@@ -146,7 +146,7 @@ double current_julian_date(void)
     return datetime_to_julian_date(&lt);
 }
 
-double solve_kepler(double M, double e, double E)
+static double solve_kepler(double M, double e, double E)
 {
     const double to_rad = M_PI / 180.0;
 
@@ -180,7 +180,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
     double O = elements->O + rates->dO * t;
 
     double L = M + w + O; // Mean longitude
-    double w_bar = w + O; // Longitude of perihelion 
+    double w_bar = w + O; // Longitude of perihelion
 
     // 2.
     if (extras != NULL)
@@ -245,7 +245,7 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
  */
 void ICRF_to_ITRF(double *x, double *y, double *z)
 {
-    // TODO: implement concise CIO/CEO based transformations 
+    // TODO: implement concise CIO/CEO based transformations
     *x = *x;
     *y = *y;
     *z = *z;
@@ -265,7 +265,7 @@ void calc_planet_geo_ICRF(double xe, double ye, double ze,
     // Obtain geocentric coordinates by subtracting Earth's coordinates
     *xg = xh - xe;
     *yg = yh - ye;
-    *zg = zh - ze; 
+    *zg = zh - ze;
 
     return;
 }

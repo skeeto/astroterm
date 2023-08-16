@@ -4,13 +4,17 @@
 #ifndef STARSAVER_H
 #define STARSAVER_H
 
+#include "parse_BSC5.h"
+
 #include <ncurses.h>
 
 struct render_flags
 {
     bool unicode;
     bool color;
+    float label_thresh;
 };
+
 
 // Data structures
 
@@ -19,8 +23,8 @@ struct render_flags
 struct object_base
 {
     // Cache of last draw coordinates
-    long y;                 // FIXME: using ints breaks things...
-    long x;                 // FIXME: using ints breaks things...
+    int y;
+    int x;
     double azimuth;
     double altitude;
     int color_pair;         // 0 indicates no color pair
@@ -52,50 +56,64 @@ struct moon
 {
     struct object_base base;
     const struct kep_elems *elements;
-    const struct kep_rates *rates; 
+    const struct kep_rates *rates;
+};
+
+struct constell
+{
+    unsigned int num_segments;
+    int *star_numbers;
+};
+
+struct star_name
+{
+    char *name;
 };
 
 
 // Data structure generation
 
 
-/* Parse BSC5 star catalog and return array of star structures. Stars with
- * catalog number `n` are mapped to index `n-1`.This function allocates memory
- * which should  be freed by the caller.
+/* Fill array of star structures using entries from BSC5 and table of star
+ * names. Stars with catalog number `n` are mapped to index `n-1`. This function
+ * allocates memory which must be freed by the caller. Returns false upon memory
+ * allocation error
  */
-struct star *generate_star_table(const char *file_path, int *num_stars_return);
+bool generate_star_table(struct star **star_table, struct entry *entries,
+                         struct star_name *name_table, unsigned int num_stars);
 
-/* Parse BSC5 names and return an array of names. Stars with catalog number `n`
+/* Parse BSC5_names.txt and return an array of names. Stars with catalog number `n`
  * are mapped to index `n-1`. This function allocates memory which should be
- * freed by the caller.
+ * freed by the caller. Returns false upon memory allocation or file IO error
  */
-char **generate_name_table(const char *file_path, int num_stars);
+bool generate_name_table(struct star_name **name_table_out, const char *file_path,
+                         int num_stars);
 
-/* Parse BSC5 constellations and return a matrix, where each index points to an
- * integer array. The first index of each array dictates the number of star
- * pairs in the rest of the array (each star represented by its catalog number).
- * Each pair of stars represents a line segment within the constellation stick
- * figure. This function allocates memory which should  be freed by the caller.
+/* Parse BSC5_constellations.txt and return an array of constell structs. This
+ * function allocates memory which should  be freed by the caller. Returns false
+ * upon memory allocation or file IO error
  */
-int **generate_constell_table(const char *file_path, int *num_const_return);
+bool generate_constell_table(struct constell **constell_table_out,
+                             const char *file_path,
+                             unsigned int *num_constell_out);
 
-/* Generate an array of planet structs using data from keplerian_elements.h
+/* Generate an array of planet structs. This function allocates memory which
+ * should  be freed by the caller. Returns false upon memory allocation error
  */
-struct planet *generate_planet_table(const struct kep_elems *planet_elements,
-                                     const struct kep_rates *planet_rates,
-                                     const struct kep_extra *planet_extras);
+bool generate_planet_table(struct planet **planet_table,
+                           const struct kep_elems *planet_elements,
+                           const struct kep_rates *planet_rates,
+                           const struct kep_extra *planet_extras);
 
-/* Generate a moon struct using data from keplerian_elements.h
+/* Generate a moon struct. Returns false upon error during generation
  */
-struct moon generate_moon_object(const struct kep_elems *moon_elements,
-                                 const struct kep_rates *moon_rates);
+bool generate_moon_object(struct moon *moon_data,
+                          const struct kep_elems *moon_elements,
+                          const struct kep_rates *moon_rates);
 
-/* Update the label member of star structs given an array mapping catalog
- * numbers to names. Stars with magnitudes above label_thresh will not have a
- * label set.
- */
-void set_star_labels(struct star *star_table, char **name_table, int num_stars,
-                     float label_thresh);
+
+// Structure utils
+
 
 /* Comparator for star structs
  */
@@ -103,16 +121,17 @@ int star_magnitude_comparator(const void *v1, const void *v2);
 
 /* Return an array of star numbers sorted by increasing magnitude
  */
-int *star_numbers_by_magnitude(struct star *star_table, int num_stars);
+int *star_numbers_by_magnitude(struct star *star_table, unsigned int num_stars);
 
 
 // Memory freeing
 
 
-void free_stars(struct star *arr);
-void free_star_names(char **arr, int size);
-void free_constells(int **arr, int size);
-void free_planets(struct planet *planets);
+void free_stars(struct star *star_table, unsigned int size);
+void free_star_names(struct star_name *name_table, unsigned int size);
+void free_constells(struct constell *constell_table, unsigned int size);
+void free_planets(struct planet *planets, unsigned int size);
+void free_moon_object(struct moon moon_data);
 
 
 // Position update
@@ -148,7 +167,7 @@ void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
 // Rendering
 
 
-/* Render stars to the screen using a stereographic projection 
+/* Render stars to the screen using a stereographic projection
  */
 void render_stars_stereo(WINDOW *win, struct render_flags *rf,
                          struct star *star_table, int num_stars,
@@ -166,7 +185,8 @@ void render_moon_stereo(WINDOW *win, struct render_flags *rf,
 
 /* Render constellations
  */
-void render_constells(WINDOW *win, struct render_flags *rf, int **constellation_table, int num_const,
+void render_constells(WINDOW *win, struct render_flags *rf,
+                      struct constell **constell_table, int num_const,
                       struct star *star_table);
 
 /* Render an azimuthal grid on a stereographic projection
@@ -181,8 +201,10 @@ void render_cardinal_directions(WINDOW *win, struct render_flags *rf);
 
 // Miscellaneous
 
-/* Parse a string in format yyy-mm-ddThh:mm:ss to a tm struct
+
+/* Parse a string in format yyy-mm-ddThh:mm:ss to a tm struct. Returns false
+ * upon error during conversion
  */
-struct tm string_to_time(char *string, bool *success);
+bool string_to_time(char *string, struct tm *time);
 
 #endif  // STARSAVER_H

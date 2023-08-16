@@ -53,13 +53,16 @@ unsigned long sw_timediff_usec(union sw_timestamp end, union sw_timestamp begin)
     time_diff = (end.tick_windows.QuadPart - begin.tick_windows.QuadPart) * 1.0E6 / frequency.QuadPart;
 
 #elif defined(__APPLE__) && defined(__MACH__)
+
     time_diff = (end.tick_apple - begin.tick_apple) / 1.0E3;                    // ns to us
 
 #elif defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
+
     time_diff = (end.tick_spec.tv_sec - begin.tick_spec.tv_sec) * 1.0E6;        // sec to us
     time_diff += (end.tick_spec.tv_nsec - begin.tick_spec.tv_nsec) / 1.0E3;     // ns to us
 
 #else
+
     time_diff = (end.tick_val.tv_sec - begin.tick_val.tv_sec) * 1.0E6;          // sec to us
     time_diff += (end.tick_val.tv_usec - begin.tick_val.tv_usec);
 

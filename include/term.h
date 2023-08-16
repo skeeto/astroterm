@@ -6,7 +6,7 @@
 
 #include <ncurses.h>
 
-/* Initialize ncurses. 
+/* Initialize ncurses.
  */
 void ncurses_init(bool color_flag);
 

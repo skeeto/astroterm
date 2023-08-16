@@ -1,4 +1,5 @@
-/* Byte formatting utilities.
+/* Byte formatting utilities. Converts little-endian sequence of bytes to
+ * specified types
  */
 
 #ifndef BIT_UTILS_H
@@ -7,7 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Convert little-endian sequence of bytes to specified types
+// Fixed-width types
 
 char byte_to_char(uint8_t byte);
 

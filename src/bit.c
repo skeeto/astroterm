@@ -11,14 +11,18 @@ char byte_to_char(uint8_t byte)
     return (char) byte;
 }
 
+
+// Fixed width types
+
+
 // Signed formats
 
 int16_t bytes_to_int16_LE(uint8_t *buffer)
 {
     int16_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(int16_t); ++i)
+    for (size_t i = 0; i < sizeof(int16_t); ++i)
     {
-        result = result | (int16_t)buffer[i] << (8 * i);
+        result = result | (int16_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -26,9 +30,9 @@ int16_t bytes_to_int16_LE(uint8_t *buffer)
 int32_t bytes_to_int32_LE(uint8_t *buffer)
 {
     uint32_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(int32_t); ++i)
+    for (size_t i = 0; i < sizeof(int32_t); ++i)
     {
-        result = result | (int32_t)buffer[i] << (8 * i);
+        result = result | (int32_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -36,9 +40,9 @@ int32_t bytes_to_int32_LE(uint8_t *buffer)
 int64_t bytes_to_int64_LE(uint8_t *buffer)
 {
     uint64_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(int64_t); ++i)
+    for (size_t i = 0; i < sizeof(int64_t); ++i)
     {
-        result = result | (int64_t)buffer[i] << (8 * i);
+        result = result | (int64_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -48,9 +52,9 @@ int64_t bytes_to_int64_LE(uint8_t *buffer)
 uint16_t bytes_to_uint16_LE(uint8_t *buffer)
 {
     uint16_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(uint16_t); ++i)
+    for (size_t i = 0; i < sizeof(uint16_t); ++i)
     {
-        result = result | (uint16_t)buffer[i] << (8 * i);
+        result = result | (uint16_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -58,9 +62,9 @@ uint16_t bytes_to_uint16_LE(uint8_t *buffer)
 uint32_t bytes_to_uint32_LE(uint8_t *buffer)
 {
     uint32_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(uint32_t); ++i)
+    for (size_t i = 0; i < sizeof(uint32_t); ++i)
     {
-        result = result | (uint32_t)buffer[i] << (8 * i);
+        result = result | (uint32_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -68,9 +72,9 @@ uint32_t bytes_to_uint32_LE(uint8_t *buffer)
 uint64_t bytes_to_uint64_LE(uint8_t *buffer)
 {
     uint64_t result = 0x0;
-    for (unsigned long i = 0; i < sizeof(uint64_t); ++i)
+    for (size_t i = 0; i < sizeof(uint64_t); ++i)
     {
-        result = result | (uint64_t)buffer[i] << (8 * i);
+        result = result | (uint64_t) buffer[i] << (8 * i);
     }
     return result;
 }
@@ -104,5 +108,5 @@ double bytes_to_double64_LE(uint8_t *buffer)
 bool bytes_to_bool32_LE(uint8_t *buffer)
 {
     int result = bytes_to_int32_LE(buffer);
-    return result!=0;
+    return (result != 0);
 }
