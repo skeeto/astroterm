@@ -1,4 +1,7 @@
-#include "starsaver.h"
+#include "core.h"
+#include "core_position.h"
+#include "core_render.h"
+
 #include "parse_BSC5.h"
 #include "term.h"
 #include "stopwatch.h"
@@ -98,7 +101,8 @@ int main(int argc, char *argv[])
     // Render loop
     while (true)
     {
-        union sw_timestamp frame_begin = sw_gettime();
+        struct sw_timestamp frame_begin;
+        sw_gettime(&frame_begin);
 
         werase(win);
 
@@ -147,8 +151,11 @@ int main(int argc, char *argv[])
         julian_date += (double) dt / microsec_per_day * animation_mult;
 
         // Determine time it took to update positions and render to screen
-        union sw_timestamp frame_end = sw_gettime();
-        unsigned long frame_time = sw_timediff_usec(frame_end, frame_begin);
+        struct sw_timestamp frame_end;
+        sw_gettime(&frame_end);
+
+        unsigned long long frame_time;
+        sw_timediff_usec(frame_end, frame_begin, &frame_time);
 
         if (frame_time < dt)
         {

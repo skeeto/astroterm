@@ -1,12 +1,13 @@
-/* Core starsaver functions
+/* Core functions for parsing data and data structures
  */
 
-#ifndef STARSAVER_H
-#define STARSAVER_H
+#ifndef CORE_H
+#define CORE_H
 
+#include "astro.h"
 #include "parse_BSC5.h"
 
-#include <ncurses.h>
+#include <stdbool.h>
 #include <time.h>
 
 /* Describes how objects should be rendered
@@ -18,17 +19,12 @@ struct render_flags
     float label_thresh;
 };
 
-
-// Data structures
-
-
 // All information pertinent to rendering a celestial body
 struct object_base
 {
-    // Cache of last draw coordinates
-    int y;
+    int y;                  // Cache of last draw coordinates
     int x;
-    double azimuth;
+    double azimuth;         // Coordinates used for rendering
     double altitude;
     int color_pair;         // 0 indicates no color pair
     char symbol_ASCII;
@@ -40,11 +36,11 @@ struct star
 {
     struct object_base base;
     int catalog_number;
-    float magnitude;
     double right_ascension;
     double declination;
     double ra_motion;
     double dec_motion;
+    float magnitude;
 };
 
 struct planet
@@ -53,6 +49,7 @@ struct planet
     const struct kep_elems *elements;
     const struct kep_rates *rates;
     const struct kep_extra *extras;
+    float magnitude;
 };
 
 struct moon
@@ -60,6 +57,7 @@ struct moon
     struct object_base base;
     const struct kep_elems *elements;
     const struct kep_rates *rates;
+    float magnitude;
 };
 
 struct constell
@@ -115,7 +113,17 @@ bool generate_moon_object(struct moon *moon_data,
                           const struct kep_rates *moon_rates);
 
 
-// Structure utils
+// Memory freeing
+
+
+void free_stars(struct star *star_table, unsigned int size);
+void free_star_names(struct star_name *name_table, unsigned int size);
+void free_constells(struct constell *constell_table, unsigned int size);
+void free_planets(struct planet *planets, unsigned int size);
+void free_moon_object(struct moon moon_data);
+
+
+// Miscellaneous
 
 
 /* Comparator for star structs
@@ -128,88 +136,15 @@ int star_magnitude_comparator(const void *v1, const void *v2);
 bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table,
                                unsigned int num_stars);
 
-
-// Memory freeing
-
-
-void free_stars(struct star *star_table, unsigned int size);
-void free_star_names(struct star_name *name_table, unsigned int size);
-void free_constells(struct constell *constell_table, unsigned int size);
-void free_planets(struct planet *planets, unsigned int size);
-void free_moon_object(struct moon moon_data);
-
-
-// Position update
-
-
-/* Update apparent star positions for a given observation time and location by
- * setting the azimuth and altitude of each star struct in an array of star
- * structs
+/* Map a double `input` which lies in range [min_float, max_float]
+ * to an integer which lies in range [min_int, max_int].
  */
-void update_star_positions(struct star *star_table, int num_stars,
-                           double julian_date, double latitude, double longitude);
-
-/* Update apparent Sun & planet positions for a given observation time and
- * location by setting the azimuth and altitude of each planet struct in an
- * array of planet structs
- */
-void update_planet_positions(struct planet *planet_table,
-                             double julian_date, double latitude, double longitude);
-
-/* Update apparent Moon positions for a given observation time and
- * location by setting the azimuth and altitude of a moon struct
- */
-void update_moon_position(struct moon *moon_object, double julian_date,
-                          double latitude, double longitude);
-
-/* Update the phase of the Moon at a given time by setting the unicode symbol
- * for a moon struct
- */
-void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
-                       double julian_date);
-
-
-// Rendering
-
-
-/* Render stars to the screen using a stereographic projection
- */
-void render_stars_stereo(WINDOW *win, struct render_flags *rf,
-                         struct star *star_table, int num_stars,
-                         int *num_by_mag, float threshold);
-
-/* Render the Sun and planets to the screen using a stereographic projection
- */
-void render_planets_stereo(WINDOW *win, struct render_flags *rf,
-                           struct planet *planet_table);
-
-/* Render the Moon to the screen using a stereographic projection
- */
-void render_moon_stereo(WINDOW *win, struct render_flags *rf,
-                        struct moon moon_object);
-
-/* Render constellations
- */
-void render_constells(WINDOW *win, struct render_flags *rf,
-                      struct constell **constell_table, int num_const,
-                      struct star *star_table);
-
-/* Render an azimuthal grid on a stereographic projection
- */
-void render_azimuthal_grid(WINDOW *win, struct render_flags *rf);
-
-/* Render cardinal direction indicators for the Northern, Eastern, Southern, and
- * Western horizons
- */
-void render_cardinal_directions(WINDOW *win, struct render_flags *rf);
-
-
-// Miscellaneous
-
+int map_float_to_int_range(double min_float, double max_float,
+                           int min_int, int max_int, double input);
 
 /* Parse a string in format yyy-mm-ddThh:mm:ss to a tm struct. Returns false
  * upon error during conversion
  */
 bool string_to_time(char *string, struct tm *time);
 
-#endif  // STARSAVER_H
+#endif  // CORE_H

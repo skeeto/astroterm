@@ -89,30 +89,38 @@ void win_position_center(WINDOW *win)
 
 void term_size(int *y, int *x)
 {
-#ifdef WINDOWS
+#if defined(_WIN32)
+
     CONSOLE_SCREEN_BUFFER_INFO csbi;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
     *y = csbi.srWindow.Right - csbi.srWindow.Left + 1;
     *x = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
 #else
+
     struct winsize ws;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
     *y = (int) ws.ws_row;
     *x = (int) ws.ws_col;
-#endif  // WINDOWS
+
+#endif // _WIN32
 }
 
 bool stdout_directed_to_console(void)
 {
-#ifdef WINDOWS
+#if defined(_WIN32)
+
     // Hacky way to check if stdout is directed to a console
     // https://stackoverflow.com/questions/2087775/how-do-i-detect-when-output-is-being-redirected
     fpost_t pos;
     fgetpos(stdout, &pos);
     return (pos == -1);
+
 #else
+
     return (isatty(fileno(stdout)) != 0);
-#endif  // WINDOWS
+
+#endif  // _WIN32
 }
 
 float get_cell_aspect_ratio(void)
@@ -122,7 +130,9 @@ float get_cell_aspect_ratio(void)
     // Attempt to get aspect ratio only if stdout writing to console
     if (stdout_directed_to_console())
     {
-#ifdef WINDOWS
+
+#if defined(_WIN32)
+
         static const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
         CONSOLE_FONT_INFO cfi;
         GetCurrentConsoleFont(handle, false, &cfi);
@@ -131,6 +141,7 @@ float get_cell_aspect_ratio(void)
 
         return cell_height / cell_width;
 #else
+
         struct winsize ws;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
 
@@ -144,7 +155,8 @@ float get_cell_aspect_ratio(void)
         float cell_width = (float) ws.ws_xpixel / ws.ws_col;
 
         return cell_height / cell_width;
-#endif  // WINDOWS
+
+#endif  // _WIN32
     }
 
     return default_height;

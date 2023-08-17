@@ -1,7 +1,5 @@
 #include "astro.h"
 
-#include "coord.h"
-
 #include <math.h>
 #include <time.h>
 #include <stdio.h>

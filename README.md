@@ -84,3 +84,4 @@ For more options and help run `starsaver -h` or `starsaver --help`
 - Star names: [IAU Star Names](https://www.iau.org/public/themes/naming_stars/)
 - Constellation figures: [Stellarium](https://stellarium.org/)
 - Planet orbital elements: [NASA Jet Propulsion Laboratory](https://ssd.jpl.nasa.gov/planets/approx_pos.html)
+- Planet magnitudes: [Computing Apparent Planetary Magnitudes for The Astronomical Almanac](https://arxiv.org/abs/1808.01973)
