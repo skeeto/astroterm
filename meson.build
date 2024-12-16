@@ -11,9 +11,16 @@ project_include_dirs = [
 ]
 conf = configuration_data()
 
+test_source_files = [] 
+test_header_files = []
+test_include_dirs = [
+    include_directories('test'),
+]
+
 subdir('include')
 subdir('src')
 subdir('data')
+subdir('test')
 
 cc = meson.get_compiler('c')
 
@@ -69,3 +76,12 @@ executable(
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
     install             : true,
 )
+
+test_executable = executable(
+    'test_my_feature', 
+    test_source_files, 
+    dependencies : [],
+    include_directories : test_include_dirs,
+    install : false
+)
+test('unit_tests', test_executable)
