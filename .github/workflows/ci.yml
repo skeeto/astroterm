@@ -1,0 +1,48 @@
+name: CI and Code Coverage
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Meson
+      uses: mesonbuild/meson-action@v1
+      with:
+        meson_version: 'latest'
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc g++ python3-pip ninja-build pkg-config
+
+    - name: Configure Build
+      run: |
+        meson setup builddir --buildtype debugoptimized -Db_coverage=true  # Enable code coverage
+
+    - name: Build and Test
+      run: |
+        meson compile -C build
+        meson test -C build
+
+    - name: Generate Code Coverage Reports
+      run: |
+        ninja coverage-xml -C build
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: build/meson-logs/coverage.xml

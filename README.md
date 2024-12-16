@@ -52,6 +52,13 @@ _Note, after rebuilding any changes, rerunning `meson install` is required_
 
 Run `meson test` within the build directory.
 
+### Coverage
+
+```bash
+meson test
+ninja coverage
+```
+
 ## Usage
 
 After installing _starsaver_, simply run `starsaver` to invoke it.
