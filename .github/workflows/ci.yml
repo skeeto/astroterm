@@ -21,8 +21,8 @@ jobs:
     - name: Install Meson and Ninja
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip python3-setuptools ninja-build build-essential
-        pip3 install meson
+        sudo apt-get install -y python3-pip python3-setuptools ninja-build build-essential lcov
+        pip3 install meson gcovr
 
     - name: Install Dependencies
       run: |
