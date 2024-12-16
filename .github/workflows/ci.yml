@@ -30,7 +30,8 @@ jobs:
 
     - name: Configure Build
       run: |
-        meson setup builddir --buildtype debugoptimized -Db_coverage=true  # Enable code coverage
+        meson setup build --buildtype debugoptimized -Db_coverage=true
+        # Enable code coverage
 
     - name: Build and Test
       run: |
