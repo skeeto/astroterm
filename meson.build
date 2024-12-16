@@ -70,7 +70,7 @@ endif
 
 executable(
     meson.project_name(),
-    project_source_files,
+    project_source_files + 'src/main.c',
     dependencies        : project_dependencies,
     include_directories : project_include_dirs,
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
@@ -78,10 +78,11 @@ executable(
 )
 
 test_executable = executable(
-    'test_my_feature', 
-    test_source_files, 
-    dependencies : [],
-    include_directories : test_include_dirs,
+    'test_all', 
+    test_source_files + project_source_files, 
+    dependencies : project_dependencies,
+    include_directories : test_include_dirs + project_include_dirs,
+    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
     install : false
 )
 test('unit_tests', test_executable)

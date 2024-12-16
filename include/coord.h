@@ -3,6 +3,8 @@
  * Coordinate systems definitons
  *  - All angles in radians unless otherwise noted
  *  - Using common mathmatical conventions as opposed to physics
+ *  - https://en.wikipedia.org/wiki/Spherical_coordinate_system
+ *  - FIXME: this is not the ISO standard, maybe we should change it.
  *
  * DIRECTIONS
  * - North: corresponds with positive y-axis on cartesian grid          N
@@ -31,6 +33,8 @@
  * - Right ascension    : measured East of the Vernal Equinox along the Celestial Equator
  * - Declination        : measured North of the Celestial Equator, along the hour circle
  *                        passing through the point in question
+ *
+ * See: https://en.wikipedia.org/wiki/Equatorial_coordinate_system
  */
 
 #ifndef COORD_H
