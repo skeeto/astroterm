@@ -90,13 +90,11 @@ bool generate_star_table(struct star **star_table, struct entry *entries,
  */
 bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name **name_table_out, int num_stars);
 
-/* Parse BSC5_constellations.txt and return an array of constell structs. This
- * function allocates memory which should  be freed by the caller. Returns false
- * upon memory allocation or file IO error
+/* Parse data from bsc5_constellations.txt and return an array of constell
+ * structs. This function allocates memory which should  be freed by the
+ * caller. Returns false upon memory allocation error.
  */
-bool generate_constell_table(struct constell **constell_table_out,
-                             const char *file_path,
-                             unsigned int *num_constell_out);
+bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out, unsigned int *num_constell_out);
 
 /* Generate an array of planet structs. This function allocates memory which
  * should  be freed by the caller. Returns false upon memory allocation error

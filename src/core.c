@@ -11,18 +11,16 @@
 
 /* Count number of lines in file
  */
-static unsigned int count_lines(FILE *file_pointer)
+unsigned int count_lines_from_data(const uint8_t *data, size_t data_len)
 {
-    const unsigned BUF_SIZE = 65536;
-
-    char buffer[BUF_SIZE];
     unsigned int count = 0;
-
-    while (fgets(buffer, sizeof(buffer), file_pointer))
+    for (size_t i = 0; i < data_len; ++i)
     {
-        count++;
+        if (data[i] == '\n')
+        {
+            ++count;
+        }
     }
-
     return count;
 }
 
@@ -304,23 +302,133 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name 
     return true;
 }
 
-bool generate_constell_table(struct constell **constell_table_out, const char *file_path,
-                             unsigned int *num_constell_out)
+/* Parse a single constellation entry, e.g.:
+ *
+ * CVn 1 4915 4785
+ *
+ * Adds the entry *constell_table_out[line_number - 1]:
+ *
+ * struct constell
+ * {
+ * num_segments=1
+ * int *star_numbers=[4915, 4785]
+ * };
+ * 
+ * NOTE: line numbers are 1-indexed
+ */
+bool parse_line(const uint8_t *data, struct constell **constell_table_out, int line_start, int line_end, int line_number)
 {
-    FILE *stream;
-    size_t stream_items; // Number of characters read from stream
-
-    stream = fopen(file_path, "r");
-    if (stream == NULL)
+    // Validate the input range
+    if (line_end <= line_start || data == NULL || constell_table_out == NULL)
     {
-        printf("Couldn't open file '%s'\n", file_path);
         return false;
     }
 
-    unsigned int num_constells = count_lines(stream);
+    // Create a temporary buffer for the line data
+    size_t line_length = line_end - line_start + 1;
+    char buffer[line_length + 1]; // +1 for null-terminator
 
-    rewind(stream); // Reset file pointer position
+    // Copy the relevant data into the buffer (ensure null-termination)
+    memcpy(buffer, &data[line_start], line_length);
+    buffer[line_length] = '\0';
 
+    // Parse the line:
+    char *name = strtok(buffer, " "); // First token is the constellation name
+    if (name == NULL)
+    {
+        return false; // Malformed line, no name found
+    }
+
+    // The next token is the number of segments
+    char *num_segments_str = strtok(NULL, " ");
+    if (num_segments_str == NULL)
+    {
+        return false; // Malformed line, no number of segments
+    }
+
+    unsigned int num_segments = atoi(num_segments_str);
+    if (num_segments == 0)
+    {
+        return false; // Invalid number of segments
+    }
+
+    // Allocate memory for the star numbers
+    int *star_numbers = malloc(num_segments * 2 * sizeof(int)); // Each segment has two star numbers
+    if (star_numbers == NULL)
+    {
+        return false; // Memory allocation failed
+    }
+
+    // Parse the star numbers (expecting num_segments * 2 star numbers)
+    unsigned int i = 0;
+    char *token;
+    while ((token = strtok(NULL, " ")) != NULL && i < num_segments * 2)
+    {
+        star_numbers[i] = atoi(token);
+        ++i;
+    }
+
+    // If we didn't get enough star numbers, it's an error
+    if (i != num_segments * 2)
+    {
+        free(star_numbers);
+        return false; // Malformed line, not enough star numbers
+    }
+
+    // Allocate memory for the constellations table if necessary
+    if (*constell_table_out == NULL)
+    {
+        *constell_table_out = malloc(sizeof(struct constell) * (line_number + 1));
+        if (*constell_table_out == NULL)
+        {
+            free(star_numbers);
+            return false; // Memory allocation failed for the table
+        }
+    }
+    else
+    {
+        // Reallocate memory to accommodate new constellations
+        *constell_table_out = realloc(*constell_table_out, sizeof(struct constell) * (line_number + 1));
+        if (*constell_table_out == NULL)
+        {
+            free(star_numbers);
+            return false; // Memory allocation failed for the table
+        }
+    }
+
+    // Store the parsed constellation in the correct table location
+    struct constell temp_constell = {
+        .num_segments = num_segments,
+        .star_numbers = star_numbers};
+
+    (*constell_table_out)[line_number - 1] = temp_constell;
+
+    return true;
+}
+
+// FIXME: first one doesn't render!
+bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out, unsigned int *num_constell_out)
+{
+    // Validate input
+    if (data == NULL || constell_table_out == NULL || num_constell_out == NULL || data_len == 0)
+    {
+        return false;
+    }
+
+    unsigned int num_constells = 0;
+    size_t line_start = 0;
+    size_t line_end = 0;
+
+    // Count the number of lines in the data
+    for (size_t i = 0; i < data_len; ++i)
+    {
+        if (data[i] == '\n')
+        {
+            num_constells++;
+        }
+    }
+
+    // Allocate memory for the constellation table
     *constell_table_out = malloc(num_constells * sizeof(struct constell));
     if (*constell_table_out == NULL)
     {
@@ -330,51 +438,40 @@ bool generate_constell_table(struct constell **constell_table_out, const char *f
 
     const unsigned BUF_SIZE = 256;
     char buffer[BUF_SIZE];
+    size_t offset = 0;
+    size_t i = 0; // Use size_t here for consistency with offset
 
-    int i = 0;
-    while (fgets(buffer, BUF_SIZE, stream))
+    // Parse each line of data
+    int line_number = 0;
+    for (size_t i = 0; i < data_len; ++i)
     {
-        char *name = strtok(buffer, " ");
-        int num_segments = atoi(strtok(NULL, " \n"));
+        // Find the start of the current line
+        if (i == 0 || data[i - 1] == '\n')
+        {
+            line_start = i;
+        }
 
-        struct constell temp_constell =
+        // Find the end of the current line
+        if (i == data_len - 1 || data[i] == '\n')
+        {
+            line_end = i;
+
+            // Parse the line and store the parsed constellation in the table
+            if (!parse_line(data, constell_table_out, line_start, line_end, line_number))
             {
-                .num_segments = num_segments,
-                .star_numbers = NULL,
-            };
+                printf("Failed to parse line %d\n", line_number);
+                return false;
+            }
 
-        // Allocate memory for stars in the constellation
-        temp_constell.star_numbers = malloc(num_segments * 2 * sizeof(int));
-        if (temp_constell.star_numbers == NULL)
-        {
-            printf("Allocation of memory for constellation struct failed\n");
-            return false;
+            line_number++; // Increment line number
         }
-
-        int j = 0;
-        char *token;
-        while ((token = strtok(NULL, " \n")))
-        {
-            temp_constell.star_numbers[j] = atoi(token);
-            ++j;
-        }
-
-        (*constell_table_out)[i] = temp_constell;
-        ++i;
     }
 
-    // Close file
-    if (fclose(stream) == EOF)
-    {
-        printf("Failed to close file '%s'\n", file_path);
-        return false;
-    }
-
+    // Set the number of constellations in the output parameter
     *num_constell_out = num_constells;
 
     return true;
 }
-
 
 // Memory freeing
 

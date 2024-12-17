@@ -7,6 +7,7 @@
 #include "stopwatch.h"
 #include "data/keplerian_elements.h"
 
+// Embedded data generated during build
 #include "bsc5_data.h"
 #include "bsc5_names.h"
 #include "bsc5_constellations.h"
@@ -73,19 +74,14 @@ int main(int argc, char *argv[])
     // Track success of functions
     bool s = true;
 
-    // xxd generated BSC5 data during build:
-    // 
-    // bsc5_data.h
-    // ---------------------
-    // uint8_t bsc5_data[];
-    // size_t bsc5_data_len;
+    // Generated BSC5 data during build in bsc5_xxx.h:
     //
-    // bsc5_names.h
-    // 
+    // uint8_t bsc5_xxx[];
+    // size_t bsc5_xxx_len;
 
     s = s && parse_entries(bsc5_data, bsc5_data_len, &BSC5_entries, &num_stars);
     s = s && generate_name_table(bsc5_names, bsc5_names_len, &name_table, num_stars);
-    s = s && generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
+    s = s && generate_constell_table(bsc5_constellations, bsc5_constellations_len, & constell_table, &num_const);
     s = s && generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
     s = s && generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);
     s = s && generate_moon_object(&moon_object, &moon_elements, &moon_rates);
