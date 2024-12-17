@@ -243,6 +243,7 @@ bool generate_moon_object(struct moon *moon_data,
     return true;
 }
 
+// TODO: verify this catches the first and last entries
 bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name **name_table_out, int num_stars)
 {
     *name_table_out = malloc(num_stars * sizeof(struct star_name));
@@ -306,7 +307,7 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name 
  *
  * CVn 1 4915 4785
  *
- * Adds the entry *constell_table_out[line_number - 1]:
+ * Adds the entry *constell_table_out[line_number]:
  *
  * struct constell
  * {
@@ -314,7 +315,7 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name 
  * int *star_numbers=[4915, 4785]
  * };
  * 
- * NOTE: line numbers are 1-indexed
+ * NOTE: line numbers are 0-indexed
  */
 bool parse_line(const uint8_t *data, struct constell **constell_table_out, int line_start, int line_end, int line_number)
 {
@@ -401,12 +402,11 @@ bool parse_line(const uint8_t *data, struct constell **constell_table_out, int l
         .num_segments = num_segments,
         .star_numbers = star_numbers};
 
-    (*constell_table_out)[line_number - 1] = temp_constell;
+    (*constell_table_out)[line_number] = temp_constell;
 
     return true;
 }
 
-// FIXME: first one doesn't render!
 bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out, unsigned int *num_constell_out)
 {
     // Validate input

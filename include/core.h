@@ -93,6 +93,8 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name 
 /* Parse data from bsc5_constellations.txt and return an array of constell
  * structs. This function allocates memory which should  be freed by the
  * caller. Returns false upon memory allocation error.
+ * 
+ * NOTE: bsc5.constellations.txt MUST end in a new line to grab all the data.
  */
 bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out, unsigned int *num_constell_out);
 
