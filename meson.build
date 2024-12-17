@@ -1,5 +1,6 @@
 project('starsaver', 'c',
     default_options : ['warning_level=3', 'c_std=c99', 'buildtype=debugoptimized'],
+    meson_version: '>=1.4.0',
 )
 
 project_source_files = []
@@ -63,9 +64,37 @@ endif
 
 executable(
     meson.project_name(),
-    project_source_files,
+    project_source_files + 'src/main.c',
     dependencies        : project_dependencies,
     include_directories : project_include_dirs,
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
     install             : true,
 )
+
+# ------------------------------------------------------------------------------
+# Testing
+# ------------------------------------------------------------------------------
+
+test_source_files = [] 
+unity_header_files = []
+unity_source_files = []
+
+subdir('test')
+
+# Compile test modules separately (this keeps things a bit cleaner, can call
+# main individually in each file.
+foreach test_file : test_source_files
+    filepath = test_file[0].full_path()
+    filename = filepath.split('/')[-1]
+    test_name = filename.split('.')[0]
+    test_exe = executable(
+        test_name,
+        [test_file] + project_source_files + unity_source_files,
+        dependencies: project_dependencies,
+        include_directories: project_include_dirs,
+        c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+        install: false
+    )
+
+    test(test_name, test_exe)
+endforeach
