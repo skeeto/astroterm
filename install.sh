@@ -2,6 +2,22 @@
  
 SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
 
+check_dependencies() {
+    for dep in "xxd" "sed" "meson" "ninja"; do
+        if ! command -v "$dep" > /dev/null 2>&1; then
+            echo "Error: $dep is not installed. Please install $dep to continue."
+            exit 1
+        fi
+    done
+
+    if ! (command -v curl > /dev/null 2>&1 || command -v wget > /dev/null 2>&1); then
+        echo "Error: Neither curl nor wget is installed. Please install one of them to continue."
+        exit 1
+    fi
+
+    echo "All dependencies are installed."
+}
+
 download_bsc5() {
     BSC5_URL="http://tdc-www.harvard.edu/catalogs/BSC5"
     BSC5_LOCATION="data/bsc5"
@@ -44,7 +60,6 @@ build_with_meson() {
     meson compile -C "$BUILD_DIR"
 }
 
-
+check_dependencies
 download_bsc5
 build_with_meson
-
