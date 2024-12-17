@@ -6,6 +6,8 @@
 #define PARSE_BSC5_H
 
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 
 struct header
 {
@@ -34,7 +36,10 @@ struct entry
  * allocates memory which must be freed by the caller. Returns false in event
  * of a file error
  */
-bool parse_entries(struct entry **entries_out, const char *file_path,
-                   unsigned int *num_entries_out);
+bool parse_entries(uint8_t *data,
+                size_t data_size,
+                struct entry **entries_out,
+                unsigned int *num_entries_out
+);
 
 #endif  // PARSE_BSC5_H

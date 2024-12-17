@@ -7,7 +7,9 @@
 #include "stopwatch.h"
 #include "data/keplerian_elements.h"
 
-#include "data_BSC5.h"
+#include "bsc5_data.h"
+#include "bsc5_names.h"
+#include "bsc5_constellations.h"
 
 #include <stdlib.h>
 #include <getopt.h>
@@ -71,8 +73,18 @@ int main(int argc, char *argv[])
     // Track success of functions
     bool s = true;
 
-    s = s && parse_entries(&BSC5_entries, "../data/BSC5", &num_stars);
-    s = s && generate_name_table(&name_table, "../data/BSC5_names.txt", num_stars);
+    // xxd generated BSC5 data during build:
+    // 
+    // bsc5_data.h
+    // ---------------------
+    // uint8_t bsc5_data[];
+    // size_t bsc5_data_len;
+    //
+    // bsc5_names.h
+    // 
+
+    s = s && parse_entries(bsc5_data, bsc5_data_len, &BSC5_entries, &num_stars);
+    s = s && generate_name_table(bsc5_names, bsc5_names_len, &name_table, num_stars);
     s = s && generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
     s = s && generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
     s = s && generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);

@@ -26,7 +26,6 @@ static unsigned int count_lines(FILE *file_pointer)
     return count;
 }
 
-
 // Data generation
 
 
@@ -246,8 +245,7 @@ bool generate_moon_object(struct moon *moon_data,
     return true;
 }
 
-bool generate_name_table(struct star_name **name_table_out, const char *file_path,
-                         int num_stars)
+bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name **name_table_out, int num_stars)
 {
     *name_table_out = malloc(num_stars * sizeof(struct star_name));
     if (*name_table_out == NULL)
@@ -256,16 +254,9 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
         return false;
     }
 
-    FILE *stream;
-    stream = fopen(file_path, "r");
-    if (stream == NULL)
-    {
-        printf("Couldn't open file '%s'\n", file_path);
-        return false;
-    }
-
     const unsigned BUF_SIZE = 32; // More than enough room to store any line
     char buffer[BUF_SIZE];
+    size_t offset = 0;
 
     // Fill array with NULL pointers to start
     for (int i = 0; i < num_stars; ++i)
@@ -273,10 +264,27 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
         (*name_table_out)[i].name = NULL;
     }
 
-    // Set desired indicies with names
-    while (fgets(buffer, BUF_SIZE, stream))
+    // Set desired indices with names
+    while (offset < data_len)
     {
-        // Split by delimiter
+        // Find the next line in the embedded data (similar to fgets)
+        size_t i = 0;
+        while (offset + i < data_len && data[offset + i] != '\n' && i < BUF_SIZE - 1)
+        {
+            buffer[i] = data[offset + i];
+            i++;
+        }
+        buffer[i] = '\0'; // Null terminate the string
+
+        // If we haven't reached the end of the buffer, move to the next line
+        offset += i + 1; // Move past the newline character
+
+        if (buffer[0] == '\0')
+        {
+            continue; // Skip empty lines
+        }
+
+        // Split by delimiter (expecting the format "catalog_number,name")
         int catalog_number = atoi(strtok(buffer, ","));
         char *name = strtok(NULL, ",\n");
 
@@ -291,13 +299,6 @@ bool generate_name_table(struct star_name **name_table_out, const char *file_pat
         strcpy(temp_name.name, name);
 
         (*name_table_out)[table_index] = temp_name;
-    }
-
-    // Close file
-    if (fclose(stream) == EOF)
-    {
-        printf("Couldn't open file '%s'\n", file_path);
-        return false;
     }
 
     return true;

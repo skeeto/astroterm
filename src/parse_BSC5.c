@@ -42,34 +42,27 @@ static struct entry parse_entry(uint8_t *buffer)
     return entry_data;
 }
 
-bool parse_entries(struct entry **entries_out, const char *file_path,
-                   unsigned int *num_entries_out)
+bool parse_entries(uint8_t *data, size_t data_size, struct entry **entries_out, unsigned int *num_entries_out)
 {
-    FILE *stream;
-    size_t stream_items;    // Number of characters read from stream
+    size_t stream_items; // Number of bytes read from data
 
-    stream = fopen(file_path, "rb");
-    if (stream == NULL)
+    // Check if there's enough data to read the header
+    if (data_size < header_bytes)
     {
-        printf("Couldn't open file '%s'\n", file_path);
+        printf("Insufficient data size for header\n");
         return false;
     }
 
-    // Read header
+    // Read the header from the embedded binary data
     uint8_t header_buffer[header_bytes];
-    stream_items = fread(header_buffer, sizeof(header_buffer), 1, stream);
-    if (stream_items == 0)
-    {
-        printf("Failure to read line in '%s'\n", file_path);
-        return false;
-    }
-
+    memcpy(header_buffer, data, header_bytes);
     struct header header_data = parse_header(header_buffer);
 
     // STARN is negative if coordinates are J2000 (which they are in BSC5)
     // http://tdc-www.harvard.edu/catalogs/catalogsb.html
     unsigned int num_entries = (unsigned int) abs(header_data.STARN);
 
+    // Allocate memory for the entries
     *entries_out = malloc(num_entries * sizeof(struct entry));
     if (*entries_out == NULL)
     {
@@ -77,27 +70,29 @@ bool parse_entries(struct entry **entries_out, const char *file_path,
         return false;
     }
 
-    // Read entriess
+    // Move the data pointer to the beginning of the entries section
+    data += header_bytes;
+    data_size -= header_bytes;
+
+    // Read entries from the embedded binary data
     uint8_t entry_buffer[entry_bytes];
     for (unsigned int i = 0; i < num_entries; ++i)
     {
-        stream_items = fread(entry_buffer, entry_bytes, 1, stream);
-        if (stream_items == 0)
+        if (data_size < entry_bytes)
         {
-            printf("Failure to read line in '%s'\n", file_path);
+            printf("Insufficient data size for entry %u\n", i);
             return false;
         }
 
+        memcpy(entry_buffer, data, entry_bytes);
         (*entries_out)[i] = parse_entry(entry_buffer);
+
+        // Move the data pointer to the next entry
+        data += entry_bytes;
+        data_size -= entry_bytes;
     }
 
-    // Close file
-    if (fclose(stream) == EOF)
-    {
-        printf("Failed to close file '%s'\n", file_path);
-        return false;
-    }
-
+    // Set the number of entries found
     *num_entries_out = num_entries;
 
     return true;

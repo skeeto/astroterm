@@ -83,12 +83,12 @@ struct star_name
 bool generate_star_table(struct star **star_table, struct entry *entries,
                          struct star_name *name_table, unsigned int num_stars);
 
-/* Parse BSC5_names.txt and return an array of names. Stars with catalog number `n`
- * are mapped to index `n-1`. This function allocates memory which should be
- * freed by the caller. Returns false upon memory allocation or file IO error
+/* Parse data from bsc5_names.txt and return an array of names. Stars with
+ * catalog number `n` are mapped to index `n-1`. This function allocates memory
+ * which should be freed by the caller. Returns false upon memory allocation
+ * error.
  */
-bool generate_name_table(struct star_name **name_table_out, const char *file_path,
-                         int num_stars);
+bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name **name_table_out, int num_stars);
 
 /* Parse BSC5_constellations.txt and return an array of constell structs. This
  * function allocates memory which should  be freed by the caller. Returns false
