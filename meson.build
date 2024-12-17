@@ -1,5 +1,6 @@
 project('starsaver', 'c',
     default_options : ['warning_level=3', 'c_std=c99', 'buildtype=debugoptimized'],
+    meson_version: '>=1.4.0',
 )
 
 project_source_files = []

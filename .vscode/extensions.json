@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "xaver.clang-format",           // Formatting
+        "editorconfig.editorconfig"     // Consistent styles between IDEs
+    ]
+}

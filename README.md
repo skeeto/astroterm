@@ -4,12 +4,24 @@ Stellar magic, now in your terminal! ✨🪐 See stars, planets, constellations,
 
 ![Screenshot of Starsacer](/assets/screenshot.png)
 
+- [✨starsaver](#starsaver)
+  - [Building](#building)
+    - [Requirements](#requirements)
+    - [Installation](#installation)
+    - [Known issues](#known-issues)
+    - [Testing](#testing)
+    - [Coverage](#coverage)
+  - [Usage](#usage)
+    - [Options](#options)
+  - [Citations](#citations)
+  - [Data Sources](#data-sources)
+
 ## Building
 
 ### Requirements
 
 - Linux or macOS
-- [Meson](https://github.com/mesonbuild/meson) 0.49 or newer
+- [Meson](https://github.com/mesonbuild/meson) 1.4.0 or newer
 - [Ninja](https://github.com/ninja-build/ninja) 1.8.2 or newer
 - A C compiler
 - ncurses library
