@@ -145,6 +145,6 @@ int map_float_to_int_range(double min_float, double max_float,
 /* Parse a string in format yyy-mm-ddThh:mm:ss to a tm struct. Returns false
  * upon error during conversion
  */
-bool string_to_time(char *string, struct tm *time);
+bool string_to_time(const char *string, struct tm *time);
 
 #endif  // CORE_H

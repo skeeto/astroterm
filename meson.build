@@ -15,6 +15,7 @@ conf = configuration_data()
 subdir('include')
 subdir('src')
 subdir('data')
+subdir('third_party')
 
 cc = meson.get_compiler('c')
 
