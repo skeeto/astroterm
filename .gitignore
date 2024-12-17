@@ -1,4 +1,5 @@
 *.exe
+data/bsc5
 build
 coverage
 build_coverage

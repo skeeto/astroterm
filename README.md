@@ -2,7 +2,7 @@
 
 Stellar magic, now in your terminal! ✨🪐 See stars, planets, constellations, and more, all rendered right the command line—no telescope required 🌌
 
-![Screenshot of Starsacer](/assets/screenshot.png)
+![Screenshot of Starsaver](/assets/screenshot.png)
 
 - [✨starsaver](#starsaver)
   - [Building](#building)
@@ -18,6 +18,10 @@ Stellar magic, now in your terminal! ✨🪐 See stars, planets, constellations,
 
 ## Building
 
+> Ncurses detection is spotty on some systems, and you may need to install
+> [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order
+> for Meson to find it. You may install via [Homebrew](https://formulae.brew.sh/formula/ncurses) on MacOS.
+
 ### Requirements
 
 - Linux or macOS
@@ -25,12 +29,27 @@ Stellar magic, now in your terminal! ✨🪐 See stars, planets, constellations,
 - [Ninja](https://github.com/ninja-build/ninja) 1.8.2 or newer
 - A C compiler
 - ncurses library
+- [xxd](https://linux.die.net/man/1/xxd)
 
 ### Installation
 
-> Ncurses detection is spotty on some systems, and you may need to install [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order for Meson to find it.
->
-> You may install via [Homebrew](https://formulae.brew.sh/formula/ncurses) on MacOS.
+Clone this repo in your local system and enter the project directory
+
+```bash
+git clone https://github.com/da-luce/starsaver && cd starsaver
+```
+
+Download the [BSC5 star catalog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
+
+```bash
+wget -O data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+```
+
+or
+
+```bash
+curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+```
 
 Clone this repo to your local system and enter the project directory.
 
