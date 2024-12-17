@@ -28,17 +28,23 @@ project_dependencies += [curses, math]
 bsc5_data = configure_file(
     input: 'data/bsc5',
     output: 'bsc5_data.h',
-    command: ['xxd', '-i', '-n', 'bsc5_data', '@INPUT@', '@OUTPUT@'],
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
 )
 bsc5_constellations = configure_file(
     input: 'data/bsc5_constellations.txt',
     output: 'bsc5_constellations.h',
-    command: ['xxd', '-i', '-n', 'bsc5_constellations', '@INPUT@', '@OUTPUT@'],
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
 )
 bsc5_names = configure_file(
     input: 'data/bsc5_names.txt',
     output: 'bsc5_names.h',
-    command: ['xxd', '-i', '-n', 'bsc5_names', '@INPUT@', '@OUTPUT@'],
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
 )
 project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
 
