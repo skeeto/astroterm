@@ -610,7 +610,7 @@ int map_float_to_int_range(double min_float, double max_float,
     return min_int + (int) round((max_int - min_int) * percent);
 }
 
-bool string_to_time(char *string, struct tm *time)
+bool string_to_time(const char *string, struct tm *time)
 {
     char *pointer = strptime(string, "%Y-%m-%dT%H:%M:%S", time);
     mktime(time);
