@@ -1,8 +1,12 @@
 test_source_files += [
-    files('unity/unity.c'),
     files('coord_test.c'),
+    files('astro_test.c'),
 ]
 
-test_header_files += [
+unity_source_files += [
+    files('unity/unity.c'),
+]
+
+unity_header_files += [
     files('unity/unity.h'),
 ]

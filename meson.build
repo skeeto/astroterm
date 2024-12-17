@@ -11,16 +11,9 @@ project_include_dirs = [
 ]
 conf = configuration_data()
 
-test_source_files = [] 
-test_header_files = []
-test_include_dirs = [
-    include_directories('test'),
-]
-
 subdir('include')
 subdir('src')
 subdir('data')
-subdir('test')
 
 cc = meson.get_compiler('c')
 
@@ -77,12 +70,30 @@ executable(
     install             : true,
 )
 
-test_executable = executable(
-    'test_all', 
-    test_source_files + project_source_files, 
-    dependencies : project_dependencies,
-    include_directories : test_include_dirs + project_include_dirs,
-    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
-    install : false
-)
-test('unit_tests', test_executable)
+# ------------------------------------------------------------------------------
+# Testing
+# ------------------------------------------------------------------------------
+
+test_source_files = [] 
+unity_header_files = []
+unity_source_files = []
+
+subdir('test')
+
+# Compile test modules separately (this keeps things a bit cleaner, can call
+# main individually in each file.
+foreach test_file : test_source_files
+    filepath = test_file[0].full_path()
+    filename = filepath.split('/')[-1]
+    test_name = filename.split('.')[0]
+    test_exe = executable(
+        test_name,
+        [test_file] + project_source_files + unity_source_files,
+        dependencies: project_dependencies,
+        include_directories: project_include_dirs,
+        c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+        install: false
+    )
+
+    test(test_name, test_exe)
+endforeach

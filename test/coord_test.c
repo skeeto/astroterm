@@ -5,15 +5,8 @@
     #define M_PI 3.14159265358979323846
 #endif
 
-void setUp(void)
-{
-    // Optional: Code to set up the test environment before each test
-}
-
-void tearDown(void)
-{
-    // Optional: Code to clean up after each test
-}
+void setUp(void) {}
+void tearDown(void) {}
 
 void test_project_stereographic_top(void)
 {
