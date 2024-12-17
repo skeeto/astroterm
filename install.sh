@@ -2,6 +2,13 @@
  
 SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
 
+check_dependencies() {
+    if ! command -v xxd > /dev/null 2>&1; then
+        echo "Error: xxd is not installed. Please install xxd to continue."
+        exit 1
+    fi
+}
+
 download_bsc5() {
     BSC5_URL="http://tdc-www.harvard.edu/catalogs/BSC5"
     BSC5_LOCATION="data/bsc5"
@@ -44,7 +51,6 @@ build_with_meson() {
     meson compile -C "$BUILD_DIR"
 }
 
-
+check_dependencies
 download_bsc5
 build_with_meson
-
