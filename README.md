@@ -2,17 +2,18 @@
 
 View stars, planets, and more, right in your terminal!
 
-![](/assets/screenshot.png)
+![Screenshot](/assets/screenshot.png)
 
 ## Building
 
 ### Requirements
 
-- Linux or macOS
+- Linux, macOS, or WSL
 - [Meson](https://github.com/mesonbuild/meson) 0.49 or newer
 - [Ninja](https://github.com/ninja-build/ninja) 1.8.2 or newer
 - A C compiler
 - ncurses library
+- [xxd](https://linux.die.net/man/1/xxd)
 
 ### Installation
 
@@ -22,7 +23,7 @@ Clone this repo in your local system and enter the project directory
 git clone https://github.com/da-luce/starsaver && cd starsaver
 ```
 
-Download the [BSC5 star catolog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
+Download the [BSC5 star catalog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
 
 ```bash
 wget -O data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
