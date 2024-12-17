@@ -3,6 +3,11 @@ project('starsaver', 'c',
     meson_version: '>=1.4.0',
 )
 
+# ------------------------------------------------------------------------------
+# Dependencies
+# ------------------------------------------------------------------------------
+
+conf = configuration_data()
 project_source_files = []
 project_header_files = []
 project_dependencies = []
@@ -10,7 +15,6 @@ project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
 ]
-conf = configuration_data()
 
 subdir('include')
 subdir('src')
@@ -18,36 +22,13 @@ subdir('data')
 subdir('third_party')
 
 cc = meson.get_compiler('c')
-
-# FIXME: Using the 'system' method for finding curses breaks time.h header...
 curses = dependency('curses', required : true)
 math = cc.find_library('m', required : true)
-
 project_dependencies += [curses, math]
 
-# Embed binary data
-bsc5_data = configure_file(
-    input: 'data/bsc5',
-    output: 'bsc5_data.h',
-    command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
-    ]
-)
-bsc5_constellations = configure_file(
-    input: 'data/bsc5_constellations.txt',
-    output: 'bsc5_constellations.h',
-    command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
-    ]
-)
-bsc5_names = configure_file(
-    input: 'data/bsc5_names.txt',
-    output: 'bsc5_names.h',
-    command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
-    ]
-)
-project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
+# ------------------------------------------------------------------------------
+# Curses info
+# ------------------------------------------------------------------------------
 
 # Define some curses preprocessor symbols
 if curses.found()
@@ -86,6 +67,37 @@ else
         endif
     endif
 endif
+
+# ------------------------------------------------------------------------------
+# Embed data
+# ------------------------------------------------------------------------------
+
+bsc5_data = configure_file(
+    input: 'data/bsc5',
+    output: 'bsc5_data.h',
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+bsc5_constellations = configure_file(
+    input: 'data/bsc5_constellations.txt',
+    output: 'bsc5_constellations.h',
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+bsc5_names = configure_file(
+    input: 'data/bsc5_names.txt',
+    output: 'bsc5_names.h',
+    command: [
+        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
+
+# ------------------------------------------------------------------------------
+# Application executable
+# ------------------------------------------------------------------------------
 
 executable(
     meson.project_name(),
