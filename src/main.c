@@ -147,8 +147,9 @@ int main(int argc, char *argv[])
             render_cardinal_directions(win, &rf);
         }
 
-        // Exit if ESC is pressed
-        if ((wgetch(win)) == 27)
+        // Exit if ESC or q is pressed
+        int ch = wgetch(win);
+        if (ch == 27 || ch == 'q')
         {
             // Note: wgetch also calls wrefresh(win), so we want this at the
             // bottom after the virtual screen is updated
