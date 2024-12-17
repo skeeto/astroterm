@@ -16,7 +16,23 @@ View stars, planets, and more, right in your terminal!
 
 ### Installation
 
-Clone this repo in your local system and enter on of the project directories.
+Clone this repo in your local system and enter the project directory
+
+```bash
+git clone https://github.com/da-luce/starsaver && cd starsaver
+```
+
+Download the [BSC5 star catolog](http://tdc-www.harvard.edu/catalogs/bsc5.html)
+
+```bash
+wget -O data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+```
+
+or
+
+```bash
+curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+```
 
 Initialize the builder:
 
