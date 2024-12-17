@@ -23,6 +23,15 @@ math = cc.find_library('m', required : true)
 
 project_dependencies += [curses, math]
 
+# Generate C source with the embedded binary data
+run_command('ls', '-lh', 'data')
+bsc5_data = configure_file(
+    input: 'data/BSC5',
+    output: 'data_BSC5.h',
+    command: ['xxd', '-i', '-n', 'BSC5_data', '@INPUT@', '@OUTPUT@'],
+)
+project_source_files += [bsc5_data]
+
 # Define some curses preprocessor symbols
 if curses.found()
     check_headers = [

@@ -7,6 +7,8 @@
 #include "stopwatch.h"
 #include "data/keplerian_elements.h"
 
+#include "data_BSC5.h"
+
 #include <stdlib.h>
 #include <getopt.h>
 #include <signal.h>
