@@ -1,5 +1,7 @@
 # ✨ starsaver
 
+![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
+
 Stellar magic, now in your terminal! ✨🪐 See stars, planets, constellations, and more, all rendered right the command line—no telescope required 🌌
 
 ![Screenshot of Starsaver](/assets/screenshot.png)

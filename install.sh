@@ -3,9 +3,7 @@
 SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
 
 check_dependencies() {
-    DEPS=("xxd" "sed" "meson" "ninja")
-
-    for dep in "${DEPS[@]}"; do
+    for dep in "xxd" "sed" "meson" "ninja"; do
         if ! command -v "$dep" > /dev/null 2>&1; then
             echo "Error: $dep is not installed. Please install $dep to continue."
             exit 1
