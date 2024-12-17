@@ -3,10 +3,21 @@
 SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
 
 check_dependencies() {
-    if ! command -v xxd > /dev/null 2>&1; then
-        echo "Error: xxd is not installed. Please install xxd to continue."
+    DEPS=("xxd" "sed" "meson" "ninja")
+
+    for dep in "${DEPS[@]}"; do
+        if ! command -v "$dep" > /dev/null 2>&1; then
+            echo "Error: $dep is not installed. Please install $dep to continue."
+            exit 1
+        fi
+    done
+
+    if ! (command -v curl > /dev/null 2>&1 || command -v wget > /dev/null 2>&1); then
+        echo "Error: Neither curl nor wget is installed. Please install one of them to continue."
         exit 1
     fi
+
+    echo "All dependencies are installed."
 }
 
 download_bsc5() {
