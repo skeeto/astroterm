@@ -4,7 +4,7 @@ SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
 
 download_bsc5() {
     BSC5_URL="http://tdc-www.harvard.edu/catalogs/BSC5"
-    BSC5_LOCATION="data/BSC5"
+    BSC5_LOCATION="data/bsc5"
     DOWNLOAD_LOCATION="$SCRIPT_DIR/$BSC5_LOCATION"
 
     if [ -f "$DOWNLOAD_LOCATION" ]; then
