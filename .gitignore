@@ -1,5 +1,5 @@
 *.exe
-.vscode
-build
-
 data/bsc5
+build
+coverage
+build_coverage
