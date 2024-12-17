@@ -21,21 +21,19 @@ jobs:
     - name: Install Meson and Ninja
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip python3-setuptools ninja-build build-essential lcov
+        sudo apt-get install -y python3-pip python3-setuptools ninja-build build-essential lcov xxd
         pip3 install meson gcovr
 
     - name: Install Dependencies
       run: |
         sudo apt-get install -y pkg-config libncurses-dev
 
-    - name: Configure Build
+    - name: Build
       run: |
-        meson setup build --buildtype debugoptimized -Db_coverage=true
-        # Enable code coverage
+        sh install.sh
 
-    - name: Build and Test
+    - name: Test
       run: |
-        meson compile -C build
         meson test -C build
 
     - name: Generate Code Coverage Reports
