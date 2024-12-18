@@ -76,21 +76,21 @@ bsc5_data = configure_file(
     input: 'data/bsc5',
     output: 'bsc5_data.h',
     command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
     ]
 )
 bsc5_constellations = configure_file(
     input: 'data/bsc5_constellations.txt',
     output: 'bsc5_constellations.h',
     command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
     ]
 )
 bsc5_names = configure_file(
     input: 'data/bsc5_names.txt',
     output: 'bsc5_names.h',
     command: [
-        'sh', '../embed.sh', '@INPUT@', '@OUTPUT@'
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
     ]
 )
 project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
