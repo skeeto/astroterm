@@ -29,7 +29,6 @@ void update_moon_position(struct moon *moon_object, double julian_date,
 /* Update the phase of the Moon at a given time by setting the unicode symbol
  * for a moon struct
  */
-void update_moon_phase(struct planet *planet_table, struct moon *moon_object,
-                       double julian_date);
+void update_moon_phase(struct moon *moon_object, double julian_date, double latitude);
 
 #endif // CORE_POSITION_H

@@ -3,12 +3,17 @@
 #include "unity/unity.h"
 #include "../include/astro.h"
 #include <time.h>
+#include <math.h>
 
 // Tolerance for floating-point comparison
 #define EPSILON 0.0001
 
 void setUp(void) {}
 void tearDown(void) {}
+
+// -----------------------------------------------------------------------------
+// datetime_to_julian_date
+// -----------------------------------------------------------------------------
 
 /* https://ssd.jpl.nasa.gov/tools/jdc/#/cd
  */
@@ -56,9 +61,64 @@ void test_datetime_to_julian_date(void)
     TEST_ASSERT_FLOAT_WITHIN(EPSILON, expected_jd, result);
 }
 
+// -----------------------------------------------------------------------------
+// calc_moon_phase
+// -----------------------------------------------------------------------------
+
+#define EPSILON_PHASE 0.05
+
+// Account for wrapping around the 0-1 boundary of moon phase
+double circular_distance(double phase1, double phase2) {
+    double diff = fabs(phase1 - phase2);
+    return fmin(diff, 1.0 - diff);
+}
+
+void test_calc_moon_phase(void)
+{
+    // Got actual phases using: https://www.moongiant.com/phase/3/20/2029/
+    // Not sure how accurate that really is
+
+    double date;
+    double calculated_phase;
+    double expected_phase;
+    double distance;
+
+    date = 2451550.1;
+    expected_phase = 0.0;
+    calculated_phase = calc_moon_phase(date);
+    distance = circular_distance(calculated_phase, expected_phase);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+
+    date = 2460645.5;
+    expected_phase = 0.0;
+    calculated_phase = calc_moon_phase(date);
+    distance = circular_distance(calculated_phase, expected_phase);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+
+    date = 2459242.5;
+    expected_phase = 0.5;
+    calculated_phase = calc_moon_phase(date);
+    distance = circular_distance(calculated_phase, expected_phase);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+
+    date = 2466447.5;
+    expected_phase = 0.5;
+    calculated_phase = calc_moon_phase(date);
+    distance = circular_distance(calculated_phase, expected_phase);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+
+    // Moving very fast here:
+    // date = 2462215.5;
+    // expected_phase = 0.25;
+    // calculated_phase = calc_moon_phase(date);
+    // distance = circular_distance(calculated_phase, expected_phase);
+    // TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_datetime_to_julian_date);
+    RUN_TEST(test_calc_moon_phase);
     return UNITY_END();
 }

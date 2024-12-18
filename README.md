@@ -103,11 +103,12 @@ Run `meson test` within the build directory. To get a coverage report, subsequen
 
 Many thanks to the following resources, which were invaluable to the development of this project.
 
-- [Map Projections-A Working Manual By JOHN P. SNYDER](https://pubs.usgs.gov/pp/1395/report.pdf)
+- [Map Projections-A Working Manual By John P. Snyder](https://pubs.usgs.gov/pp/1395/report.pdf)
 - [Wikipedia](https://en.wikipedia.org)
 - [Atractor](https://www.atractor.pt/index-_en.html)
 - [Jon Voisey's Blog: Following Kepler](https://jonvoisey.net/blog/)
 - [Celestial Programming: Greg Miller's Astronomy Programming Page](https://astrogreg.com/convert_ra_dec_to_alt_az.html)
+- [Practical Astronomy with your Calculator by Peter Duffett-Smith](https://www.amazon.com/Practical-Astronomy-Calculator-Peter-Duffett-Smith/dp/0521356997)
 
 ---
 

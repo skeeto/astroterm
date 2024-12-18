@@ -333,16 +333,12 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
     return;
 }
 
-double calc_moon_phase(double sun_ecliptic_longitude,
-                       double moon_true_longitude)
-{
-    // Practical Astronomy with your Calculator, 3rd edition
-    // Peter Duffett-Smith, §67
+double calc_moon_phase(double julian_date) {
 
-    const double to_rad = M_PI / 180.0;
+    // A crude calculation for the phase of the moon
+    // https://en.wikipedia.org/wiki/Lunar_phase
 
-    double D = sun_ecliptic_longitude - moon_true_longitude;
-
-    double phase = 0.5 * (1.0 - cos(D * to_rad));
-    return phase;
+    double synodic_month = 29.53059;
+    double age = (julian_date - 2451550.1) / synodic_month;
+    return age - floor(age);
 }
