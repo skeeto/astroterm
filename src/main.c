@@ -24,7 +24,7 @@
 // Options
 static double longitude     = -71.057083;   // Boston, MA
 static double latitude      = 42.361145;    // Boston, MA
-static const char *dt_string_utc  = NULL;         // UTC Datetime in yyyy-mm-ddThh:mm:ss format
+static const char *dt_string_utc  = NULL;   // UTC Datetime in yyyy-mm-ddThh:mm:ss format
 static float threshold      = 3.0f;         // Stars brighter than this will be rendered
 static float label_thresh   = 0.5f;         // Stars brighter than this will have labels
 static int fps              = 24;           // Frames per second
@@ -197,7 +197,7 @@ void parse_options(int argc, char *argv[])
     struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
     struct arg_dbl *anim_arg = arg_dbl0("m", "animation-mult", "<float>", "Real time animation speed multiplier (default: 1.0)");
     struct arg_lit *color_arg = arg_lit0(NULL, "color", "Enable terminal colors");
-    struct arg_lit *constell_arg = arg_lit0(NULL, "constellations", "Draw constellations stick figures");
+    struct arg_lit *constell_arg = arg_lit0(NULL, "constellations", "Draw constellations stick figures. Note: a constellation is only drawn if all stars in the figure are visible (over the threshold).");
     struct arg_lit *grid_arg = arg_lit0(NULL, "grid", "Draw an azimuthal grid");
     struct arg_lit *ascii_arg = arg_lit0(NULL, "no-unicode", "Only use ASCII characters");
     struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
