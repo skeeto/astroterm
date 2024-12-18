@@ -3,3 +3,4 @@ data/bsc5
 build
 coverage
 build_coverage
+.DS_Store
