@@ -1,7 +1,5 @@
-
-
-#include "unity/unity.h"
-#include "../include/astro.h"
+#include "unity.h"
+#include "astro.h"
 #include <time.h>
 
 // Tolerance for floating-point comparison

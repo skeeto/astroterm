@@ -1,0 +1,3 @@
+ignore:
+  - "third_party/**/*"  # Ignore third party code
+  - "test/third_party/**/*"

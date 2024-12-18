@@ -1,5 +1,5 @@
-#include "unity/unity.h"
-#include "../include/coord.h"
+#include "unity.h"
+#include "coord.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846

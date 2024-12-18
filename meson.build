@@ -8,12 +8,15 @@ project('starsaver', 'c',
 # ------------------------------------------------------------------------------
 
 conf = configuration_data()
+
+# Build submodules
+project_dependencies = []
 project_source_files = []
 project_header_files = []
-project_dependencies = []
 project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
+    include_directories('third_party'),
 ]
 
 subdir('include')
@@ -21,6 +24,7 @@ subdir('src')
 subdir('data')
 subdir('third_party')
 
+# Get dependencies
 cc = meson.get_compiler('c')
 curses = dependency('curses', required : true)
 math = cc.find_library('m', required : true)
@@ -112,23 +116,22 @@ executable(
 # Testing
 # ------------------------------------------------------------------------------
 
-test_source_files = [] 
-unity_header_files = []
-unity_source_files = []
-
+test_files = []
+test_infra_source_files = []
+test_include_dirs = []
 subdir('test')
 
 # Compile test modules separately (this keeps things a bit cleaner, can call
 # main individually in each file.
-foreach test_file : test_source_files
+foreach test_file : test_files
     filepath = test_file[0].full_path()
     filename = filepath.split('/')[-1]
     test_name = filename.split('.')[0]
     test_exe = executable(
         test_name,
-        [test_file] + project_source_files + unity_source_files,
+        [test_file] + project_source_files + test_infra_source_files,
         dependencies: project_dependencies,
-        include_directories: project_include_dirs,
+        include_directories: project_include_dirs + test_include_dirs,
         c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
         install: false
     )

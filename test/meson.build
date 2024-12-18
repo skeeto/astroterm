@@ -1,12 +1,12 @@
-test_source_files += [
+test_files += [
     files('coord_test.c'),
     files('astro_test.c'),
 ]
 
-unity_source_files += [
-    files('unity/unity.c'),
+test_include_dirs += [
+    include_directories('third_party/unity'),
 ]
 
-unity_header_files += [
-    files('unity/unity.h'),
+test_infra_source_files += [
+    files('third_party/unity/unity.c')
 ]
