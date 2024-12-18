@@ -28,7 +28,7 @@ void render_moon_stereo(WINDOW *win, struct render_flags *rf,
  */
 void render_constells(WINDOW *win, struct render_flags *rf,
                       struct constell **constell_table, int num_const,
-                      struct star *star_table);
+                      struct star *star_table, float threshold);
 
 /* Render an azimuthal grid on a stereographic projection
  */

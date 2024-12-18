@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         render_stars_stereo(win, &rf, star_table, num_stars, num_by_mag, threshold);
         if (constell_flag != 0)
         {
-            render_constells(win, &rf, &constell_table, num_const, star_table);
+            render_constells(win, &rf, &constell_table, num_const, star_table, threshold);
         }
         render_planets_stereo(win, &rf, planet_table);
         render_moon_stereo(win, &rf, moon_object);

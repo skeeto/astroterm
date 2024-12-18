@@ -22,8 +22,6 @@ struct render_flags
 // All information pertinent to rendering a celestial body
 struct object_base
 {
-    int y;                  // Cache of last draw coordinates
-    int x;
     double azimuth;         // Coordinates used for rendering
     double altitude;
     int color_pair;         // 0 indicates no color pair
