@@ -2,33 +2,41 @@
 #include "core_position.h"
 #include "core_render.h"
 
-#include "parse_BSC5.h"
-#include "term.h"
-#include "stopwatch.h"
 #include "data/keplerian_elements.h"
+#include "parse_BSC5.h"
+#include "stopwatch.h"
+#include "term.h"
 
-#include <stdlib.h>
+// Embedded data generated during build
+#include "bsc5_constellations.h"
+#include "bsc5_data.h"
+#include "bsc5_names.h"
+
+// Third part libraries
+#include "argtable3.h"
+
 #include <getopt.h>
-#include <signal.h>
 #include <locale.h>
+#include <signal.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 // Options
-static double longitude     = -71.057083;   // Boston, MA
-static double latitude      = 42.361145;    // Boston, MA
-static char *dt_string_utc  = NULL;         // UTC Datetime in yyyy-mm-ddThh:mm:ss format
-static float threshold      = 3.0f;         // Stars brighter than this will be rendered
-static float label_thresh   = 0.5f;         // Stars brighter than this will have labels
-static int fps              = 24;           // Frames per second
-static float animation_mult = 1.0f;         // Real time animation speed mult (e.g. 2 is 2x real time)
+static double longitude = -71.057083;    // Boston, MA
+static double latitude = 42.361145;      // Boston, MA
+static const char *dt_string_utc = NULL; // UTC Datetime in yyyy-mm-ddThh:mm:ss format
+static float threshold = 3.0f;           // Stars brighter than this will be rendered
+static float label_thresh = 0.5f;        // Stars brighter than this will have labels
+static int fps = 24;                     // Frames per second
+static float animation_mult = 1.0f;      // Real time animation speed mult (e.g. 2 is 2x real time)
 
-static double julian_date   = 0.0;          // Defaults to the current time if dt_string_utc unspecified
+static double julian_date = 0.0; // Defaults to the current time if dt_string_utc unspecified
 
 // Flags
-static int unicode_flag     = TRUE;         // Only use ASCII characters
-static int color_flag       = FALSE;        // Do not use color
-static int grid_flag        = FALSE;        // Draw an azimuthal grid
-static int constell_flag    = FALSE;        // Draw constellation figures
+static int unicode_flag = TRUE;   // Only use ASCII characters
+static int color_flag = FALSE;    // Do not use color
+static int grid_flag = FALSE;     // Draw an azimuthal grid
+static int constell_flag = FALSE; // Draw constellation figures
 
 static volatile bool perform_resize = false;
 
@@ -36,7 +44,6 @@ static void catch_winch(int sig);
 static void handle_resize(WINDOW *win);
 static void parse_options(int argc, char *argv[]);
 static void convert_options(void);
-static void print_usage(void);
 
 int main(int argc, char *argv[])
 {
@@ -45,33 +52,37 @@ int main(int argc, char *argv[])
     convert_options();
 
     // Time for each frame in microseconds
-    unsigned long dt = (unsigned long) (1.0 / fps * 1.0E6);
+    unsigned long dt = (unsigned long)(1.0 / fps * 1.0E6);
 
     // Render flags
-    struct render_flags rf =
-    {
-        .unicode        = (unicode_flag != 0),
-        .color          = (color_flag != 0),
-        .label_thresh   = label_thresh,
+    struct render_flags rf = {
+        .unicode = (unicode_flag != 0),
+        .color = (color_flag != 0),
+        .label_thresh = label_thresh,
     };
 
     // Initialize data structs
     unsigned int num_stars, num_const;
 
-    struct entry        *BSC5_entries;
-    struct star_name    *name_table;
-    struct constell     *constell_table;
-    struct star         *star_table;
-    struct planet       *planet_table;
-    struct moon         moon_object;
-    int                 *num_by_mag;
+    struct entry *BSC5_entries;
+    struct star_name *name_table;
+    struct constell *constell_table;
+    struct star *star_table;
+    struct planet *planet_table;
+    struct moon moon_object;
+    int *num_by_mag;
 
     // Track success of functions
     bool s = true;
 
-    s = s && parse_entries(&BSC5_entries, "../data/BSC5", &num_stars);
-    s = s && generate_name_table(&name_table, "../data/BSC5_names.txt", num_stars);
-    s = s && generate_constell_table(&constell_table, "../data/BSC5_constellations.txt", &num_const);
+    // Generated BSC5 data during build in bsc5_xxx.h:
+    //
+    // uint8_t bsc5_xxx[];
+    // size_t bsc5_xxx_len;
+
+    s = s && parse_entries(bsc5_data, bsc5_data_len, &BSC5_entries, &num_stars);
+    s = s && generate_name_table(bsc5_names, bsc5_names_len, &name_table, num_stars);
+    s = s && generate_constell_table(bsc5_constellations, bsc5_constellations_len, &constell_table, &num_const);
     s = s && generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
     s = s && generate_planet_table(&planet_table, planet_elements, planet_rates, planet_extras);
     s = s && generate_moon_object(&moon_object, &moon_elements, &moon_rates);
@@ -88,13 +99,13 @@ int main(int argc, char *argv[])
     free_star_names(name_table, num_stars);
 
     // Terminal/System settings
-    setlocale(LC_ALL, "");          // Required for unicode rendering
-    signal(SIGWINCH, catch_winch);  // Capture window resizes
+    setlocale(LC_ALL, "");         // Required for unicode rendering
+    signal(SIGWINCH, catch_winch); // Capture window resizes
 
     // Ncurses initialization
     ncurses_init(color_flag != 0);
     WINDOW *win = newwin(0, 0, 0, 0);
-    wtimeout(win, 0);   // Non-blocking read for wgetch
+    wtimeout(win, 0); // Non-blocking read for wgetch
     win_resize_square(win, get_cell_aspect_ratio());
     win_position_center(win);
 
@@ -116,13 +127,13 @@ int main(int argc, char *argv[])
         update_star_positions(star_table, num_stars, julian_date, latitude, longitude);
         update_planet_positions(planet_table, julian_date, latitude, longitude);
         update_moon_position(&moon_object, julian_date, latitude, longitude);
-        update_moon_phase(planet_table, &moon_object, julian_date);
+        update_moon_phase(&moon_object, julian_date, latitude);
 
         // Render
         render_stars_stereo(win, &rf, star_table, num_stars, num_by_mag, threshold);
         if (constell_flag != 0)
         {
-            render_constells(win, &rf, &constell_table, num_const, star_table);
+            render_constells(win, &rf, &constell_table, num_const, star_table, threshold);
         }
         render_planets_stereo(win, &rf, planet_table);
         render_moon_stereo(win, &rf, moon_object);
@@ -135,8 +146,9 @@ int main(int argc, char *argv[])
             render_cardinal_directions(win, &rf);
         }
 
-        // Exit if ESC is pressed
-        if ((wgetch(win)) == 27)
+        // Exit if ESC or q is pressed
+        int ch = wgetch(win);
+        if (ch == 27 || ch == 'q')
         {
             // Note: wgetch also calls wrefresh(win), so we want this at the
             // bottom after the virtual screen is updated
@@ -148,7 +160,7 @@ int main(int argc, char *argv[])
 
         // Increment "simulation" time
         const double microsec_per_day = 24.0 * 60.0 * 60.0 * 1.0E6;
-        julian_date += (double) dt / microsec_per_day * animation_mult;
+        julian_date += (double)dt / microsec_per_day * animation_mult;
 
         // Determine time it took to update positions and render to screen
         struct sw_timestamp frame_end;
@@ -175,122 +187,129 @@ int main(int argc, char *argv[])
 
 void parse_options(int argc, char *argv[])
 {
-    // https://azrael.digipen.edu/~mmead/www/mg/getopt/index.html
-    int c;
-    while (true)
+    // Define Argtable3 option structures
+    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 42.361145)");
+    struct arg_dbl *longitude_arg =
+        arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: -71.057083)");
+    struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation time in UTC");
+    struct arg_dbl *threshold_arg =
+        arg_dbl0("t", "threshold", "<float>", "Stars brighter than this will be drawn (default: 3.0)");
+    struct arg_dbl *label_arg =
+        arg_dbl0("l", "label-thresh", "<float>", "Stars brighter than this will have labels (default: 0.5)");
+    struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
+    struct arg_dbl *anim_arg =
+        arg_dbl0("m", "animation-mult", "<float>", "Real time animation speed multiplier (default: 1.0)");
+    struct arg_lit *color_arg = arg_lit0(NULL, "color", "Enable terminal colors");
+    struct arg_lit *constell_arg = arg_lit0(NULL, "constellations",
+                                            "Draw constellations stick figures. Note: a constellation is only "
+                                            "drawn if all stars in the figure are visible (over the threshold).");
+    struct arg_lit *grid_arg = arg_lit0(NULL, "grid", "Draw an azimuthal grid");
+    struct arg_lit *ascii_arg = arg_lit0(NULL, "no-unicode", "Only use ASCII characters");
+    struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
+    struct arg_end *end = arg_end(20);
+
+    // Create argtable array
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg, anim_arg,
+                        color_arg,    constell_arg,  grid_arg,     ascii_arg,     help_arg,  end};
+
+    // Parse the arguments
+    int nerrors = arg_parse(argc, argv, argtable);
+
+    if (help_arg->count > 0)
     {
-        int option_index = 0;
-        static struct option long_options[] =
+        printf("View stars, planets, and more, right in your terminal! ✨🪐\n\n");
+        printf("Usage: starsaver [OPTION]...\n\n");
+        arg_print_glossary(stdout, argtable, "  %-20s %s\n");
+        exit(EXIT_SUCCESS);
+    }
+
+    if (nerrors > 0)
+    {
+        arg_print_errors(stderr, end, argv[0]);
+        printf("Try '--help' for more information.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Assign parsed values to global variables
+    if (latitude_arg->count > 0)
+    {
+        latitude = latitude_arg->dval[0];
+        if (latitude < -90 || latitude > 90)
         {
-            {"latitude",        required_argument,  NULL,               'a'},
-            {"datetime",        required_argument,  NULL,               'd'},
-            {"fps",             required_argument,  NULL,               'f'},
-            {"help",            no_argument,        NULL,               'h'},
-            {"label-thresh",    required_argument,  NULL,               'l'},
-            {"animation-mult",  required_argument,  NULL,               'm'},
-            {"longitude",       required_argument,  NULL,               'o'},
-            {"threshold",       required_argument,  NULL,               't'},
-            {"color",           no_argument,        &color_flag,       TRUE},
-            {"constellations",  no_argument,        &constell_flag,    TRUE},
-            {"grid",            no_argument,        &grid_flag,        TRUE},
-            {"no-unicode",      no_argument,        &unicode_flag,    FALSE},
-            {NULL,              0,                  NULL,                 0}
-        };
-
-        c = getopt_long(argc, argv, "-:a:d:f:hl:m:o:t:", long_options, &option_index);
-        if (c == -1)
-            break;
-
-        switch (c)
-        {
-        case 0:
-            break;
-
-        case 1:
-            printf("Unrecognized regular argument '%s'\n", optarg);
+            fprintf(stderr, "ERROR: Latitude out of range [-90°, 90°]\n");
             exit(EXIT_FAILURE);
-            break;
-
-        case 'a':
-            latitude = atof(optarg);
-            if (latitude < -90 || latitude > 90)
-            {
-                printf("Latitude out of range [-90°, 90°]\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-
-        case 'd':
-            dt_string_utc = optarg;
-            break;
-
-        case 'f':
-            fps = atoi(optarg);
-            if (fps < 1)
-            {
-                printf("fps must be greater than or equal to 1\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-
-        case 'h':
-            print_usage();
-            exit(EXIT_SUCCESS);
-            break;
-
-        case 'l':
-            label_thresh = (float) atof(optarg);
-            break;
-
-        case 'm':
-            animation_mult = (float) atof(optarg);
-            break;
-
-        case 'o':
-            longitude = atof(optarg);
-            if (longitude < -180 || longitude > 180)
-            {
-                printf("Longitude out of range [-180°, 180°]\n");
-                exit(EXIT_FAILURE);
-            }
-            break;
-
-        case 't':
-            threshold = (float) atof(optarg);
-            break;
-
-        case '?':
-            if (optopt == 0)
-            {
-                printf("Unrecognized long option\n");
-            }
-            else
-            {
-                printf("Unrecognized option '%c'\n", optopt);
-            }
-            exit(EXIT_FAILURE);
-            break;
-
-        case ':':
-            printf("Missing option for '%c'\n", optopt);
-            exit(EXIT_FAILURE);
-            break;
-
-        default:
-            printf("?? getopt returned character code 0%d ??\n", c);
-            exit(EXIT_FAILURE);
-            break;
         }
     }
 
-    return ;
+    if (longitude_arg->count > 0)
+    {
+        longitude = longitude_arg->dval[0];
+        if (longitude < -180 || longitude > 180)
+        {
+            fprintf(stderr, "ERROR: Longitude out of range [-180°, 180°]\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (datetime_arg->count > 0)
+    {
+        dt_string_utc = datetime_arg->sval[0];
+    }
+
+    if (threshold_arg->count > 0)
+    {
+        threshold = (float)threshold_arg->dval[0];
+    }
+
+    if (label_arg->count > 0)
+    {
+        label_thresh = (float)label_arg->dval[0];
+    }
+
+    if (fps_arg->count > 0)
+    {
+        fps = fps_arg->ival[0];
+        if (fps < 1)
+        {
+            fprintf(stderr, "ERROR: FPS must be greater than or equal to 1\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    if (anim_arg->count > 0)
+    {
+        animation_mult = (float)anim_arg->dval[0];
+    }
+
+    if (color_arg->count > 0)
+    {
+        color_flag = TRUE;
+    }
+
+    if (constell_arg->count > 0)
+    {
+        constell_flag = TRUE;
+    }
+
+    if (grid_arg->count > 0)
+    {
+        grid_flag = TRUE;
+    }
+
+    if (ascii_arg->count > 0)
+    {
+        unicode_flag = FALSE;
+    }
+
+    // Free Argtable resources
+    arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 }
 
 void convert_options(void)
 {
-    #ifndef M_PI
-        #define M_PI 3.14159265358979323846
-    #endif
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
     // Convert longitude and latitude to radians
     longitude *= M_PI / 180.0;
@@ -308,7 +327,9 @@ void convert_options(void)
         bool parse_success = string_to_time(dt_string_utc, &datetime);
         if (!parse_success)
         {
-            printf("Unable to parse datetime string '%s'\n", dt_string_utc);
+            printf("ERROR: Unable to parse datetime string '%s'\nDatetimes "
+                   "must be in form <yyyy-mm-ddThh:mm:ss>",
+                   dt_string_utc);
             exit(EXIT_FAILURE);
         }
         julian_date = datetime_to_julian_date(&datetime);
@@ -342,31 +363,4 @@ void handle_resize(WINDOW *win)
     win_position_center(win);
 
     perform_resize = false;
-}
-
-void print_usage(void)
-{
-    printf("View stars, planets, and more, right in your terminal! ✨🪐\n");
-    printf("\n");
-    printf("Usage: starsaver [OPTION]...\n");
-    printf("\n");
-    printf("Exit: ESC\n");
-    printf("\n");
-    printf("Options:\n");
-    printf(" -a, --latitude         [latitude]              Observer latitude in degrees. Positive North of the equator and negative South. Defaults to that of Boston, MA\n");
-    printf(" -d, --datetime         [yyyy-mm-ddThh:mm:ss]   Observation time in UTC\n");
-    printf(" -f, --fps              [fps]                   Frames per second. Defaults to 24\n");
-    printf(" -h, --help                                     Print command line usage and exit\n");
-    printf(" -l, --label-thresh     [threshold]             Stars with a brighter or equal magnitude to this threshold will be labeled (if a name is found). Defaults to 0.5\n");
-    printf(" -m, --animation-mult   [multiplier]            Real time animation speed multiplier. Defaults to 1.0\n");
-    printf(" -o, --longitude        [longitude]             Observer longitude in degrees. Positive East of the Prime Meridian and negative West.  Defaults to that of Boston, MA\n");
-    printf(" -t, --threshold        [threshold]             Stars with a brighter or equal magnitude to this threshold will be drawn. Defaults to 3.0\n");
-    printf("     --color                                    Draw planets with terminal colors\n");
-    printf("     --constellations                           Draw constellations stick figures\n");
-    printf("     --grid                                     Draw an azimuthal grid\n");
-    printf("     --no-unicode                               Only render with ASCII characters\n");
-    printf("\n");
-    printf("Tips and tricks:\n");
-    printf(" - Increasing performance: try using the no-unicode flag or increasing the fps to make movement appear smoother\n");
-    printf(" - Decreasing CPU usage: try using the no-unicode flag, not rendering constellations, rendering fewer stars, and most of all, decreasing the fps\n");
 }

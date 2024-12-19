@@ -6,8 +6,9 @@ project_source_files += [
     files('core_position.c'),
     files('core_render.c'),
     files('drawing.c'),
-    files('main.c'),
     files('parse_BSC5.c'),
     files('stopwatch.c'),
     files('term.c'),
 ]
+
+# NOTE:  We add main separately in the main Meson.build file to avoid duplicate "mains" when testing

@@ -1,27 +1,38 @@
 project('starsaver', 'c',
     default_options : ['warning_level=3', 'c_std=c99', 'buildtype=debugoptimized'],
+    meson_version: '>=1.4.0',
 )
 
+# ------------------------------------------------------------------------------
+# Dependencies
+# ------------------------------------------------------------------------------
+
+conf = configuration_data()
+
+# Build submodules
+project_dependencies = []
 project_source_files = []
 project_header_files = []
-project_dependencies = []
 project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
+    include_directories('third_party'),
 ]
-conf = configuration_data()
 
 subdir('include')
 subdir('src')
 subdir('data')
+subdir('third_party')
 
+# Get dependencies
 cc = meson.get_compiler('c')
-
-# FIXME: Using the 'system' method for finding curses breaks time.h header...
 curses = dependency('curses', required : true)
 math = cc.find_library('m', required : true)
-
 project_dependencies += [curses, math]
+
+# ------------------------------------------------------------------------------
+# Curses info
+# ------------------------------------------------------------------------------
 
 # Define some curses preprocessor symbols
 if curses.found()
@@ -61,11 +72,69 @@ else
     endif
 endif
 
+# ------------------------------------------------------------------------------
+# Embed data
+# ------------------------------------------------------------------------------
+
+bsc5_data = configure_file(
+    input: 'data/bsc5',
+    output: 'bsc5_data.h',
+    command: [
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+bsc5_constellations = configure_file(
+    input: 'data/bsc5_constellations.txt',
+    output: 'bsc5_constellations.h',
+    command: [
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+bsc5_names = configure_file(
+    input: 'data/bsc5_names.txt',
+    output: 'bsc5_names.h',
+    command: [
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
+
+# ------------------------------------------------------------------------------
+# Application executable
+# ------------------------------------------------------------------------------
+
 executable(
     meson.project_name(),
-    project_source_files,
+    project_source_files + 'src/main.c',
     dependencies        : project_dependencies,
     include_directories : project_include_dirs,
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
     install             : true,
 )
+
+# ------------------------------------------------------------------------------
+# Testing
+# ------------------------------------------------------------------------------
+
+test_files = []
+test_infra_source_files = []
+test_include_dirs = []
+subdir('test')
+
+# Compile test modules separately (this keeps things a bit cleaner, can call
+# main individually in each file.
+foreach test_file : test_files
+    filepath = test_file[0].full_path()
+    filename = filepath.split('/')[-1]
+    test_name = filename.split('.')[0]
+    test_exe = executable(
+        test_name,
+        [test_file] + project_source_files + test_infra_source_files,
+        dependencies: project_dependencies,
+        include_directories: project_include_dirs + test_include_dirs,
+        c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+        install: false
+    )
+
+    test(test_name, test_exe)
+endforeach

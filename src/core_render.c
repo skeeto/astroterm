@@ -1,37 +1,36 @@
 #include "core_render.h"
 
-#include "core.h"
 #include "coord.h"
+#include "core.h"
 #include "drawing.h"
 
-#include <stdlib.h>
 #include <math.h>
 #include <ncurses.h>
+#include <stdlib.h>
 
 #ifndef M_PI
-    #define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
+
+void horizontal_to_polar(double azimuth, double altitude, double *radius, double *theta)
+{
+    double theta_sphere, phi_sphere;
+    horizontal_to_spherical(azimuth, altitude, &theta_sphere, &phi_sphere);
+
+    project_stereographic_north(1.0, theta_sphere, phi_sphere, radius, theta);
+
+    return;
+}
 
 void render_object_stereo(WINDOW *win, struct object_base *object, struct render_flags *rf)
 {
-    double theta_sphere, phi_sphere;
-    horizontal_to_spherical(object->azimuth, object->altitude,
-                            &theta_sphere, &phi_sphere);
-
     double radius_polar, theta_polar;
-    project_stereographic_north(1.0, theta_sphere, phi_sphere,
-                                &radius_polar, &theta_polar);
+    horizontal_to_polar(object->azimuth, object->altitude, &radius_polar, &theta_polar);
 
     int y, x;
     int height, width;
     getmaxyx(win, height, width);
-    polar_to_win(radius_polar, theta_polar,
-                 height, width,
-                 &y, &x);
-
-    // Cache object coordinates
-    object->y = y;
-    object->x = x;
+    polar_to_win(radius_polar, theta_polar, height, width, &y, &x);
 
     // If outside projection, ignore
     if (fabs(radius_polar) > 1)
@@ -71,9 +70,8 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
     return;
 }
 
-void render_stars_stereo(WINDOW *win, struct render_flags *rf,
-                         struct star *star_table, int num_stars,
-                         int *num_by_mag, float threshold)
+void render_stars_stereo(WINDOW *win, struct render_flags *rf, struct star *star_table, int num_stars, int *num_by_mag,
+                         float threshold)
 {
     int i;
     for (i = 0; i < num_stars; ++i)
@@ -100,62 +98,110 @@ void render_stars_stereo(WINDOW *win, struct render_flags *rf,
     return;
 }
 
-void render_constells(WINDOW *win, struct render_flags *rf,
-                      struct constell **constell_table, int num_const,
-                      struct star *star_table)
+void render_constellation(WINDOW *win, struct render_flags *rf, struct constell *constellation, struct star *star_table,
+                          float threshold)
 {
-    int i;
-    for (i = 0; i < num_const; ++i)
+    unsigned int num_segments = constellation->num_segments;
+
+    // Only render if all stars are visible
+    for (unsigned int i = 0; i < num_segments * 2; i += 1)
     {
-        struct constell constellation = (*constell_table)[i];
-        unsigned int num_segments = constellation.num_segments;
-
-        unsigned int j;
-        for (j = 0; j < num_segments * 2; j += 2)
+        int catalog_num = constellation->star_numbers[i];
+        int table_index = catalog_num - 1;
+        struct star star = star_table[table_index];
+        if (star.magnitude > threshold)
         {
+            return;
+        }
+    }
 
-            int catalog_num_a = constellation.star_numbers[j];
-            int catalog_num_b = constellation.star_numbers[j + 1];
+    for (unsigned int i = 0; i < num_segments * 2; i += 2)
+    {
+        int catalog_num_a = constellation->star_numbers[i];
+        int catalog_num_b = constellation->star_numbers[i + 1];
 
-            int table_index_a = catalog_num_a - 1;
-            int table_index_b = catalog_num_b - 1;
+        int table_index_a = catalog_num_a - 1;
+        int table_index_b = catalog_num_b - 1;
 
-            struct star star_a = star_table[table_index_a];
-            struct star star_b = star_table[table_index_b];
+        struct star star_a = star_table[table_index_a];
+        struct star star_b = star_table[table_index_b];
 
-            int ya = (int)star_a.base.y;
-            int xa = (int)star_a.base.x;
-            int yb = (int)star_b.base.y;
-            int xb = (int)star_b.base.x;
+        // TODO: Same code as in render_object_stereo... perhaps refactor this
+        // or cache coordinates
+        double radius_a, theta_a;
+        double radius_b, theta_b;
+        horizontal_to_polar(star_a.base.azimuth, star_a.base.altitude, &radius_a, &theta_a);
+        horizontal_to_polar(star_b.base.azimuth, star_b.base.altitude, &radius_b, &theta_b);
 
-            // This implies the star is not being drawn due to it's magnitude
-            // FIXME: this is hacky...
-            if ((ya == 0 && xa == 0) || (yb == 0 && xb == 0))
+        // Clip to edge of screen
+        if (fabs(radius_a) > 1 && fabs(radius_b) > 1)
+        {
+            // Segment lies outside of screen
+            continue;
+        }
+
+        bool a_clipped = false;
+        bool b_clipped = false;
+
+        // Clip the segment
+        if (fabs(radius_a) > 1)
+        {
+            a_clipped = true;
+            radius_a = 1.0;
+        }
+        else if (fabs(radius_b) > 1)
+        {
+            b_clipped = true;
+            radius_b = 1.0;
+        }
+
+        int height, width;
+        getmaxyx(win, height, width);
+
+        int ya, xa;
+        int yb, xb;
+        polar_to_win(radius_a, theta_a, height, width, &ya, &xa);
+
+        polar_to_win(radius_b, theta_b, height, width, &yb, &xb);
+
+        // TODO: In old version, constrained line length for some reason... not
+        // sure why?
+        // FIXME: this logic is super verbose/long (any way to cut it down?)
+        // FIXME: this clipping doesn't seem to work or no-unicode for some reason?
+        if (rf->unicode)
+        {
+            draw_line_smooth(win, ya, xa, yb, xb);
+            if (!a_clipped)
             {
-                continue;
+                mvwaddstr(win, ya, xa, "\u25CB"); // Unicode circle symbol
             }
-
-            // Draw line if reasonable length (avoid printing crazy long lines)
-            // TODO: is there a cleaner way to do this (perhaps if checking if
-            // one of the stars is in the window?)
-            // FIXME: this is too nested
-            double line_length = sqrt(pow(ya - yb, 2) + pow(xa - xb, 2));
-            if (line_length < 10000)
+            if (!b_clipped)
             {
-                if (rf->unicode)
-                {
-                    draw_line_smooth(win, ya, xa, yb, xb);
-                    mvwaddstr(win, ya, xa, "○");
-                    mvwaddstr(win, yb, xb, "○");
-                }
-                else
-                {
-                    draw_line_ASCII(win, ya, xa, yb, xb);
-                    mvwaddch(win, ya, xa, '+');
-                    mvwaddch(win, yb, xb, '+');
-                }
+                mvwaddstr(win, yb, xb, "\u25CB");
             }
         }
+        else
+        {
+            draw_line_ASCII(win, ya, xa, yb, xb);
+            if (!a_clipped)
+            {
+                mvwaddch(win, ya, xa, '+');
+            }
+            if (!b_clipped)
+            {
+                mvwaddch(win, yb, xb, '+');
+            }
+        }
+    }
+}
+
+void render_constells(WINDOW *win, struct render_flags *rf, struct constell **constell_table, int num_const,
+                      struct star *star_table, float threshold)
+{
+    for (int i = 0; i < num_const; ++i)
+    {
+        struct constell *constellation = &((*constell_table)[i]);
+        render_constellation(win, rf, constellation, star_table, threshold);
     }
 }
 
@@ -290,8 +336,8 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
     // {
     //     int rad_x = rad_horizontal * angle / 90.0;
     //     int rad_x = rad_vertical * angle / 90.0;
-    //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20, unicode_flag);
-    //     angle += inc;
+    //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20,
+    //     unicode_flag); angle += inc;
     // }
 }
 
