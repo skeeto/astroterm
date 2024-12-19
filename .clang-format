@@ -1,0 +1,5 @@
+BasedOnStyle: Microsoft
+IndentWidth: 4
+ColumnLimit: 128
+UseTab: Never
+SortIncludes: true

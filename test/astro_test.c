@@ -1,13 +1,17 @@
-#include "unity.h"
 #include "astro.h"
-#include <time.h>
+#include "unity.h"
 #include <math.h>
+#include <time.h>
 
 // Tolerance for floating-point comparison
 #define EPSILON 0.0001
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 // -----------------------------------------------------------------------------
 // datetime_to_julian_date
@@ -66,7 +70,8 @@ void test_datetime_to_julian_date(void)
 #define EPSILON_PHASE 0.05
 
 // Account for wrapping around the 0-1 boundary of moon phase
-double circular_distance(double phase1, double phase2) {
+double circular_distance(double phase1, double phase2)
+{
     double diff = fabs(phase1 - phase2);
     return fmin(diff, 1.0 - diff);
 }

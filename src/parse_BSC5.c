@@ -15,13 +15,13 @@ static struct header parse_header(uint8_t *buffer)
 {
     struct header header_data;
 
-    header_data.STAR0   = (int) bytes_to_int32_LE(&buffer[0]);
-    header_data.STAR1   = (int) bytes_to_int32_LE(&buffer[4]);
-    header_data.STARN   = (int) bytes_to_int32_LE(&buffer[8]);
-    header_data.STNUM   = (int) bytes_to_int32_LE(&buffer[12]);
-    header_data.MPROP   =       bytes_to_bool32_LE(&buffer[16]);
-    header_data.NMAG    = (int) bytes_to_int32_LE(&buffer[20]);
-    header_data.NBENT   = (int) bytes_to_int32_LE(&buffer[24]);
+    header_data.STAR0 = (int)bytes_to_int32_LE(&buffer[0]);
+    header_data.STAR1 = (int)bytes_to_int32_LE(&buffer[4]);
+    header_data.STARN = (int)bytes_to_int32_LE(&buffer[8]);
+    header_data.STNUM = (int)bytes_to_int32_LE(&buffer[12]);
+    header_data.MPROP = bytes_to_bool32_LE(&buffer[16]);
+    header_data.NMAG = (int)bytes_to_int32_LE(&buffer[20]);
+    header_data.NBENT = (int)bytes_to_int32_LE(&buffer[24]);
 
     return header_data;
 }
@@ -30,14 +30,14 @@ static struct entry parse_entry(uint8_t *buffer)
 {
     struct entry entry_data;
 
-    entry_data.XNO      =           bytes_to_float32_LE(&buffer[0]);
-    entry_data.SRA0     =           bytes_to_double64_LE(&buffer[4]);
-    entry_data.SDEC0    =           bytes_to_double64_LE(&buffer[12]);
-    entry_data.IS[0]    =           byte_to_char(buffer[20]);
-    entry_data.IS[1]    =           byte_to_char(buffer[21]);
-    entry_data.MAG      = (float)   bytes_to_int16_LE(&buffer[22]);
-    entry_data.XRPM     =           bytes_to_float32_LE(&buffer[24]);
-    entry_data.XDPM     =           bytes_to_float32_LE(&buffer[28]);
+    entry_data.XNO = bytes_to_float32_LE(&buffer[0]);
+    entry_data.SRA0 = bytes_to_double64_LE(&buffer[4]);
+    entry_data.SDEC0 = bytes_to_double64_LE(&buffer[12]);
+    entry_data.IS[0] = byte_to_char(buffer[20]);
+    entry_data.IS[1] = byte_to_char(buffer[21]);
+    entry_data.MAG = (float)bytes_to_int16_LE(&buffer[22]);
+    entry_data.XRPM = bytes_to_float32_LE(&buffer[24]);
+    entry_data.XDPM = bytes_to_float32_LE(&buffer[28]);
 
     return entry_data;
 }
@@ -60,7 +60,7 @@ bool parse_entries(uint8_t *data, size_t data_size, struct entry **entries_out, 
 
     // STARN is negative if coordinates are J2000 (which they are in BSC5)
     // http://tdc-www.harvard.edu/catalogs/catalogsb.html
-    unsigned int num_entries = (unsigned int) abs(header_data.STARN);
+    unsigned int num_entries = (unsigned int)abs(header_data.STARN);
 
     // Allocate memory for the entries
     *entries_out = malloc(num_entries * sizeof(struct entry));

@@ -2,5 +2,9 @@
     "mesonbuild.configureOnOpen": false,
     "cSpell.words": [
         "starsaver"
-    ]
+    ],
+    // Some weird clang-format bug: https://stackoverflow.com/questions/71481390/clang-format-file-not-working-in-visual-studio-code
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": true,
 }

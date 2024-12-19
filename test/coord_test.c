@@ -1,12 +1,16 @@
-#include "unity.h"
 #include "coord.h"
+#include "unity.h"
 
 #ifndef M_PI
-    #define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
-void setUp(void) {}
-void tearDown(void) {}
+void setUp(void)
+{
+}
+void tearDown(void)
+{
+}
 
 void test_project_stereographic_top(void)
 {

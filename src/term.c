@@ -1,11 +1,11 @@
 #include "term.h"
 
-#include <sys/ioctl.h>
-#include <unistd.h>
+#include <math.h>
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <math.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 void ncurses_init(bool color_flag)
 {
@@ -29,14 +29,14 @@ void ncurses_init(bool color_flag)
         use_default_colors(); // Use terminal colors (fg and bg for pair 0)
 
         // Colors with default backgrounds
-        init_pair(1, COLOR_BLACK,   -1);
-        init_pair(2, COLOR_RED,     -1);
-        init_pair(3, COLOR_GREEN,   -1);
-        init_pair(4, COLOR_YELLOW,  -1);
-        init_pair(5, COLOR_BLUE,    -1);
+        init_pair(1, COLOR_BLACK, -1);
+        init_pair(2, COLOR_RED, -1);
+        init_pair(3, COLOR_GREEN, -1);
+        init_pair(4, COLOR_YELLOW, -1);
+        init_pair(5, COLOR_BLUE, -1);
         init_pair(6, COLOR_MAGENTA, -1);
-        init_pair(7, COLOR_CYAN,    -1);
-        init_pair(8, COLOR_WHITE,   -1);
+        init_pair(7, COLOR_CYAN, -1);
+        init_pair(8, COLOR_WHITE, -1);
     }
 }
 
@@ -100,8 +100,8 @@ void term_size(int *y, int *x)
 
     struct winsize ws;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-    *y = (int) ws.ws_row;
-    *x = (int) ws.ws_col;
+    *y = (int)ws.ws_row;
+    *x = (int)ws.ws_col;
 
 #endif // _WIN32
 }
@@ -120,7 +120,7 @@ bool stdout_directed_to_console(void)
 
     return (isatty(fileno(stdout)) != 0);
 
-#endif  // _WIN32
+#endif // _WIN32
 }
 
 float get_cell_aspect_ratio(void)
@@ -130,7 +130,6 @@ float get_cell_aspect_ratio(void)
     // Attempt to get aspect ratio only if stdout writing to console
     if (stdout_directed_to_console())
     {
-
 #if defined(_WIN32)
 
         static const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -151,12 +150,12 @@ float get_cell_aspect_ratio(void)
             return default_height;
         }
 
-        float cell_height = (float) ws.ws_ypixel / ws.ws_row;
-        float cell_width = (float) ws.ws_xpixel / ws.ws_col;
+        float cell_height = (float)ws.ws_ypixel / ws.ws_row;
+        float cell_width = (float)ws.ws_xpixel / ws.ws_col;
 
         return cell_height / cell_width;
 
-#endif  // _WIN32
+#endif // _WIN32
     }
 
     return default_height;
