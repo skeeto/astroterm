@@ -38,9 +38,7 @@ jobs:
 
     - name: Check Formatting
       run: |
-        # Find all C/C++ source files and check formatting
-        # --dry-run ensures no changes are made, and --Werror treats warnings as errors
-        clang-format -style=file --dry-run --Werror $(find . -name '*.c' -o -name '*.h')
+        sh format.sh --check
 
     - name: Generate Code Coverage Reports
       run: |
