@@ -9,6 +9,10 @@ for dir in $EXCLUDES; do
   EXCLUDE_ARGS="$EXCLUDE_ARGS ! -path \"$dir\" ! -path \"$dir/*\""
 done
 
+# Output clang-format version
+echo "Using clang-format version:"
+clang-format --version
+
 # Check if --check flag is provided
 CHECK_MODE=0
 if [ "$1" = "--check" ]; then
@@ -21,7 +25,7 @@ FILES=$(eval "find . \( -name '*.c' -o -name '*.h' \) $EXCLUDE_ARGS")
 if [ $CHECK_MODE -eq 1 ]; then
   echo "Running clang-format in check mode..."
   # Dry-run and error on unformatted files
-  clang-format --dry-run --Werror --style=file $FILES
+  clang-format --dry-run --Werror --style=file --verbose $FILES
   if [ $? -ne 0 ]; then
     echo "Some files are not properly formatted. Please fix the formatting."
     exit 1
@@ -31,6 +35,6 @@ if [ $CHECK_MODE -eq 1 ]; then
 else
   echo "Running clang-format to fix formatting..."
   # Apply formatting in-place
-  clang-format --style=file -i $FILES
+  clang-format --style=file -i --verbose $FILES
   echo "Formatting complete."
 fi
