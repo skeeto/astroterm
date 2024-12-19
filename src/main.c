@@ -209,7 +209,7 @@ void parse_options(int argc, char *argv[], struct conf *config)
     if (help_arg->count > 0)
     {
         printf("View stars, planets, and more, right in your terminal! ✨🪐\n\n");
-        printf("Usage: starsaver [OPTION]...\n\n");
+        printf("Usage: astroterm [OPTION]...\n\n");
         arg_print_glossary_gnu(stdout, argtable);
         exit(EXIT_SUCCESS);
     }

@@ -1,10 +1,10 @@
-# ✨ starsaver
+# 🌌 astroterm
 
-![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
+![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)
 
-`starsaver` is a terminal-based celestial viewer written in `C` using `ncurses`. It renders the live positions of stars, planets, constellations, and more directly in your terminal—no telescope required!. Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
+`astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It renders the live positions of stars, planets, constellations, and more directly in your terminal—no telescope required!. Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
-`starsaver` is constantly improving, and we’d love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
+`astroterm` is constantly improving, and we’d love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
 <p align="center">
   <img src="./assets/moving.gif" alt="Image 1" width="45%" style="display:inline-block; margin-right: 10px;">
@@ -46,7 +46,7 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 Clone the repository and enter the project directory:
 
 ```sh
-git clone https://github.com/da-luce/starsaver && cd starsaver
+git clone https://github.com/da-luce/astroterm && cd astroterm
 ```
 
 Run the install script:
@@ -55,7 +55,7 @@ Run the install script:
 sh install.sh
 ```
 
-You may now run the generated `./build/starsaver` binary or add the `starsaver` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
+You may now run the generated `./build/astroterm` binary or add the `astroterm` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
 ## Usage
 
@@ -64,7 +64,7 @@ You may now run the generated `./build/starsaver` binary or add the `starsaver` 
 The `--help` flag displays all supported options:
 
 ```text
-Usage: starsaver [OPTION]...
+Usage: astroterm [OPTION]...
 
   -a, --latitude=<degrees>  Observer latitude [-90°, 90°] (default: 42.361145)
   -o, --longitude=<degrees> Observer longitude [-180°, 180°] (default:
@@ -93,17 +93,17 @@ Say we wanted to view the sky at 5:00 AM (Eastern) on July 16, 1969—the mornin
 of the Apollo 11 launch at the Kennedy Space Center in Florida. We would run:
 
 ```sh
-starsaver --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:32:00
+astroterm --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:32:00
 ```
 
 If we then wanted to display all stars with a magnitude brighter than or equal
 to 5.0 and add color, we would add `--threshold 5.0 --color` as options.
 
 If you simply want the current time, don't specify the `--datetime` option and
-_starsaver_ will use the system time. For your current location, you will still
+_astroterm_ will use the system time. For your current location, you will still
 have to specify the `--lat` and `--long` options.
 
-For more options and help run `starsaver -h` or `starsaver --help`.
+For more options and help run `astroterm -h` or `astroterm --help`.
 
 > ℹ️ Use a tool like [LatLong](https://www.latlong.net/) to get your latitude and longitude.
 
