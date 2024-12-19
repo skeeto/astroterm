@@ -21,7 +21,7 @@ FILES=$(eval "find . \( -name '*.c' -o -name '*.h' \) $EXCLUDE_ARGS")
 if [ $CHECK_MODE -eq 1 ]; then
   echo "Running clang-format in check mode..."
   # Dry-run and error on unformatted files
-  clang-format --dry-run --Werror $FILES
+  clang-format --dry-run --Werror --style=file $FILES
   if [ $? -ne 0 ]; then
     echo "Some files are not properly formatted. Please fix the formatting."
     exit 1
@@ -31,6 +31,6 @@ if [ $CHECK_MODE -eq 1 ]; then
 else
   echo "Running clang-format to fix formatting..."
   # Apply formatting in-place
-  clang-format -i $FILES
+  clang-format --style=file -i $FILES
   echo "Formatting complete."
 fi
