@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Directories to exclude
 EXCLUDES="third_party/* tests/third_party/* data/* build/*"
@@ -10,19 +10,19 @@ for dir in $EXCLUDES; do
 done
 
 # Check if --check flag is provided
-CHECK_MODE=false
-if [[ $1 == "--check" ]]; then
-  CHECK_MODE=true
+CHECK_MODE=0
+if [ "$1" = "--check" ]; then
+  CHECK_MODE=1
 fi
 
 # Find all C and header files while excluding specified directories
 FILES=$(eval "find . -name '*.c' -o -name '*.h' $EXCLUDE_ARGS")
 
-if $CHECK_MODE; then
+if [ $CHECK_MODE -eq 1 ]; then
   echo "Running clang-format in check mode..."
   # Dry-run and error on unformatted files
   clang-format --dry-run --Werror $FILES
-  if [[ $? -ne 0 ]]; then
+  if [ $? -ne 0 ]; then
     echo "Some files are not properly formatted. Please fix the formatting."
     exit 1
   else
