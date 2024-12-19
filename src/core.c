@@ -49,7 +49,10 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
         temp_star.magnitude         =           entries[i].MAG / 100.0f;
 
         // Star magnitude mapping
-        const char *mag_map_unicode_round[10] = {"⬤", "●", "⦁", "•", "🞄", "∙", "⋅", "⋅", "⋅", "⋅"};
+        // FIXME: some of these characters render on WSL while not on macOS
+        // (system wide, not just this project). I haven't gotten to the bottom of this yet...
+        // TODO: add CLI option to choose between these
+        const char *mag_map_unicode_round[10] = {"⬤", "●", "⦁", "•", "•", "∙", "⋅", "⋅", "⋅", "⋅"};
         // const char *mag_map_unicode_diamond[10] = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
         // const char *mag_map_unicode_open[10]    = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
         // const char *mag_map_unicode_filled[10]  = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
