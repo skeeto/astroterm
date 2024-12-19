@@ -1,12 +1,12 @@
 #!/bin/sh
 
 # Directories to exclude
-EXCLUDES="third_party/* tests/third_party/* data/* build/*"
+EXCLUDES="./third_party ./tests/third_party ./data ./build"
 
 # Build the exclude arguments for find
 EXCLUDE_ARGS=""
 for dir in $EXCLUDES; do
-  EXCLUDE_ARGS="$EXCLUDE_ARGS ! -path './$dir'"
+  EXCLUDE_ARGS="$EXCLUDE_ARGS ! -path \"$dir\" ! -path \"$dir/*\""
 done
 
 # Check if --check flag is provided
@@ -16,7 +16,7 @@ if [ "$1" = "--check" ]; then
 fi
 
 # Find all C and header files while excluding specified directories
-FILES=$(eval "find . -name '*.c' -o -name '*.h' $EXCLUDE_ARGS")
+FILES=$(eval "find . \( -name '*.c' -o -name '*.h' \) $EXCLUDE_ARGS")
 
 if [ $CHECK_MODE -eq 1 ]; then
   echo "Running clang-format in check mode..."
