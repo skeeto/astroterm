@@ -167,6 +167,7 @@ void render_constellation(WINDOW *win, struct render_flags *rf, struct constell 
         // TODO: In old version, constrained line length for some reason... not
         // sure why?
         // FIXME: this logic is super verbose/long (any way to cut it down?)
+        // FIXME: this clipping doesn't seem to work or no-unicode for some reason?
         if (rf->unicode)
         {
             draw_line_smooth(win, ya, xa, yb, xb);
