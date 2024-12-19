@@ -22,7 +22,7 @@ struct conf
     int fps;
     float animation_mult;
     double julian_date;
-    bool unicode_flag;
+    bool ascii;
     bool color_flag;
     bool grid_flag;
     bool constell_flag;

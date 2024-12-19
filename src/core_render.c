@@ -46,7 +46,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
     }
 
     // Draw object
-    if (config->unicode_flag)
+    if (config->ascii)
     {
         mvwaddstr(win, y, x, object->symbol_unicode);
     }
@@ -166,7 +166,7 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
         // sure why?
         // FIXME: this logic is super verbose/long (any way to cut it down?)
         // FIXME: this clipping doesn't seem to work or no-unicode for some reason?
-        if (config->unicode_flag)
+        if (config->ascii)
         {
             draw_line_smooth(win, ya, xa, yb, xb);
             if (!a_clipped)
@@ -306,7 +306,7 @@ void render_azimuthal_grid(WINDOW *win, struct conf *config)
             int y = rad_vertical - round(rad_vertical * sin(angle * to_rad));
             int x = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
 
-            if (config->unicode_flag)
+            if (config->ascii)
             {
                 draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
             }
@@ -335,7 +335,7 @@ void render_azimuthal_grid(WINDOW *win, struct conf *config)
     //     int rad_x = rad_horizontal * angle / 90.0;
     //     int rad_x = rad_vertical * angle / 90.0;
     //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20,
-    //     unicode_flag); angle += inc;
+    //     ascii); angle += inc;
     // }
 }
 

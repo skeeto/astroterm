@@ -2,7 +2,9 @@
 
 ![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
 
-Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required!
+`starsaver` is a terminal-based celestial viewer written in `C` using `ncurses`. It renders the live positions of stars, planets, constellations, and more directly in your terminal—no telescope required!. Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
+
+`starsaver` is constantly improving, and we’d love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
 <p align="center">
   <img src="./assets/moving.gif" alt="Image 1" width="45%" style="display:inline-block; margin-right: 10px;">
@@ -11,27 +13,23 @@ Stellar magic, now in your terminal! ✨🪐 View the live position stars, plane
 
 _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 
-- [✨ starsaver](#-starsaver)
-  - [Building](#building)
-    - [Requirements](#requirements)
-    - [Installation](#installation)
-  - [Usage](#usage)
-    - [Features](#features)
-    - [Options](#options)
-    - [Example](#example)
-  - [Development](#development)
-    - [Known issues](#known-issues)
-    - [Testing](#testing)
-  - [Citations](#citations)
-  - [Data Sources](#data-sources)
+### Features
 
-## Building
+- 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
+- 🎯 **Accurate Rendering:** Displays moon, stars, and planets as precisely as ASCII allows
+- 🌘 **Moon Phases:** Displays precise lunar phases in real-time
+- 🌌 **Constellation Figures:** Renders detailed constellation shapes
+- ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
+
+## Installation
+
+### Building from Source
 
 > Ncurses detection is spotty on some systems, and you may need to install
 > [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order
 > for Meson to find it. You may install it via [Homebrew](https://formulae.brew.sh/formula/ncurses) on macOS.
 
-### Requirements
+#### Requirements
 
 - Unix-like environment (Linux, macOS, WSL, etc.)
 - C compiler
@@ -43,7 +41,7 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
   - [`xxd`](https://linux.die.net/man/1/xxd)
   - [`sed`](https://www.gnu.org/software/sed/manual/sed.html)
 
-### Installation
+#### Install
 
 Clone the repository and enter the project directory:
 
@@ -61,17 +59,33 @@ You may now run the generated `./build/starsaver` binary or add the `starsaver` 
 
 ## Usage
 
-### Features
-
-- 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
-- 🎯 **Accurate Sky Rendering:** Displays moon, stars, and planets as precisely as ASCII allows
-- 🌘 **Moon Phases:** Displays precise lunar phases in real-time
-- 🌌 **Constellation Figures:** Renders detailed constellation shapes
-- ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
-
 ### Options
 
-The `--help` flag displays all supported options.
+The `--help` flag displays all supported options:
+
+```text
+Usage: starsaver [OPTION]...
+
+  -a, --latitude=<degrees>  Observer latitude [-90°, 90°] (default: 42.361145)
+  -o, --longitude=<degrees> Observer longitude [-180°, 180°] (default:
+                            -71.057083)
+  -d, --datetime=<yyyy-mm-ddThh:mm:ss> 
+                            Observation datetime in UTC
+  -t, --threshold=<float>   Only render stars brighter than this magnitude
+                            (default: 3.0)
+  -l, --label-thresh=<float> 
+                            Label stars brighter than this magnitude (default:
+                            0.5)
+  -f, --fps=<int>           Frames per second (default: 24)
+  -s, --speed=<float>       Animation speed multiplier (default: 1.0)
+      --color               Enable terminal colors
+      --constellations      Draw constellations stick figures. Note: a
+                            constellation is only drawn if all stars in the
+                            figure are over the threshold
+      --grid                Draw an azimuthal grid
+      --ascii               Only use ASCII characters
+  -h, --help                Print this help message
+```
 
 ### Example
 
@@ -97,8 +111,6 @@ For more options and help run `starsaver -h` or `starsaver --help`.
 
 ## Development
 
-### [Known issues](https://github.com/da-luce/starsaver/issues)
-
 ### Testing
 
 Run `meson test` within the build directory. To get a coverage report, subsequently run `ninja coverage`.
@@ -113,6 +125,12 @@ Many thanks to the following resources, which were invaluable to the development
 - [Jon Voisey's Blog: Following Kepler](https://jonvoisey.net/blog/)
 - [Celestial Programming: Greg Miller's Astronomy Programming Page](https://astrogreg.com/convert_ra_dec_to_alt_az.html)
 - [Practical Astronomy with your Calculator by Peter Duffett-Smith](https://www.amazon.com/Practical-Astronomy-Calculator-Peter-Duffett-Smith/dp/0521356997)
+- [NASA Jet Propulsion Laboratory](https://ssd.jpl.nasa.gov/planets/approx_pos.html)
+- [Paul Schlyter's "How to compute planetary positions"](https://stjarnhimlen.se/comp/ppcomp.html)
+- [Dan Smith's "Meeus Solar Position Calculations"](https://observablehq.com/@danleesmith/meeus-solar-position-calculations)
+- [Bryan Weber's "Orbital Mechanics Notes"](https://github.com/bryanwweber/orbital-mechanics-notes)
+- [ASCOM](https://ascom-standards.org/Help/Developer/html/72A95B28-BBE2-4C7D-BC03-2D6AB324B6F7.htm)
+- [A Fast Bresenham Type Algorithm For Drawing Ellipses](https://dai.fmph.uniba.sk/upload/0/01/Ellipse.pdf)
 
 ## Data Sources
 

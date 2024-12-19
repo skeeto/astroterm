@@ -30,6 +30,7 @@ static void convert_options(struct conf *config);
 
 int main(int argc, char *argv[])
 {
+    // Default config
     struct conf config = {
         .longitude = -71.057083, // Boston, MA
         .latitude = 42.361145,
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
         .fps = 24,
         .animation_mult = 1.0f,
         .julian_date = 0.0,
-        .unicode_flag = true,
+        .ascii = true,
         .color_flag = false,
         .grid_flag = false,
         .constell_flag = false,
@@ -182,20 +183,19 @@ void parse_options(int argc, char *argv[], struct conf *config)
     struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 42.361145)");
     struct arg_dbl *longitude_arg =
         arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: -71.057083)");
-    struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation time in UTC");
+    struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
     struct arg_dbl *threshold_arg =
-        arg_dbl0("t", "threshold", "<float>", "Stars brighter than this will be drawn (default: 3.0)");
+        arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 3.0)");
     struct arg_dbl *label_arg =
-        arg_dbl0("l", "label-thresh", "<float>", "Stars brighter than this will have labels (default: 0.5)");
+        arg_dbl0("l", "label-thresh", "<float>", "Label stars brighter than this magnitude (default: 0.5)");
     struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
-    struct arg_dbl *anim_arg =
-        arg_dbl0("m", "animation-mult", "<float>", "Real time animation speed multiplier (default: 1.0)");
+    struct arg_dbl *anim_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
     struct arg_lit *color_arg = arg_lit0(NULL, "color", "Enable terminal colors");
     struct arg_lit *constell_arg = arg_lit0(NULL, "constellations",
                                             "Draw constellations stick figures. Note: a constellation is only "
-                                            "drawn if all stars in the figure are visible (over the threshold).");
+                                            "drawn if all stars in the figure are over the threshold");
     struct arg_lit *grid_arg = arg_lit0(NULL, "grid", "Draw an azimuthal grid");
-    struct arg_lit *ascii_arg = arg_lit0(NULL, "no-unicode", "Only use ASCII characters");
+    struct arg_lit *ascii_arg = arg_lit0(NULL, "ascii", "Only use ASCII characters");
     struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
     struct arg_end *end = arg_end(20);
 
@@ -289,7 +289,7 @@ void parse_options(int argc, char *argv[], struct conf *config)
 
     if (ascii_arg->count > 0)
     {
-        config->unicode_flag = FALSE;
+        config->ascii = FALSE;
     }
 
     // Free Argtable resources
