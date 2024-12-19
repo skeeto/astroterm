@@ -105,7 +105,10 @@ void update_moon_phase(struct moon *moon_object, double julian_date, double lati
 
     // Moon phases throughout the synodic month *as seen from the Northern
     // hemisphere*
+    // FIXME: clang-format on CI fails on this line for some reason
+    // clang-format off
     static const char *moon_phases[NUM_PHASES] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
+    // clang-format on
     double phase = calc_moon_phase(julian_date);
 
     // If we are in the Southern hemisphere, negate the phase to move in the
