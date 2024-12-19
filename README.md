@@ -3,7 +3,7 @@
 ![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
 ![Codecov App](https://private-user-images.githubusercontent.com/152432831/340411587-e90313f4-9d3a-4b63-8b54-cfe14e7ec20d.svg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzQ1NjYyNjEsIm5iZiI6MTczNDU2NTk2MSwicGF0aCI6Ii8xNTI0MzI4MzEvMzQwNDExNTg3LWU5MDMxM2Y0LTlkM2EtNGI2My04YjU0LWNmZTE0ZTdlYzIwZC5zdmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQxMjE4JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MTIxOFQyMzUyNDFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1iNmM0ZWNjNzA5ZDdmM2M5OGFjZGI4NDIyODM5MmYxN2M3NWY5MDAzN2QwNGNiZGRkMDM2MjVlNjI3Yjk2NmEwJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.kPnqrMGue2upMZ2ZSnpc76vHX1OMzXP-a70-Bjm4feo)
 
-Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required! 🌌
+Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required!
 
 ![Screenshot of Starsaver](/assets/screenshot.png)
 
@@ -14,6 +14,7 @@ _<p align="center">Stars above Boston around 2 PM on December 17, 2024</p>_
     - [Requirements](#requirements)
     - [Installation](#installation)
   - [Usage](#usage)
+    - [Features](#features)
     - [Options](#options)
     - [Example](#example)
   - [Development](#development)
@@ -21,8 +22,6 @@ _<p align="center">Stars above Boston around 2 PM on December 17, 2024</p>_
     - [Testing](#testing)
   - [Citations](#citations)
   - [Data Sources](#data-sources)
-
----
 
 ## Building
 
@@ -58,9 +57,16 @@ sh install.sh
 
 You may now run the generated `./build/starsaver` binary or add the `starsaver` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
----
 
 ## Usage
+
+### Features
+
+- 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
+- 🎯 **Accurate Sky Rendering:** Displays moon, stars, and planets as precisely as ASCII allows
+- 🌘 **Moon Phases:** Displays precise lunar phases in real-time
+- 🌌 **Constellation Figures:** Renders detailed constellation shapes
+- ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
 
 ### Options
 
@@ -88,8 +94,6 @@ For more options and help run `starsaver -h` or `starsaver --help`.
 
 > ℹ️ Star magnitudes decrease as apparent brightness increases, i.e. to show more stars, increase the threshold.
 
----
-
 ## Development
 
 ### [Known issues](https://github.com/da-luce/starsaver/issues)
@@ -98,19 +102,16 @@ For more options and help run `starsaver -h` or `starsaver --help`.
 
 Run `meson test` within the build directory. To get a coverage report, subsequently run `ninja coverage`.
 
----
-
 ## Citations
 
 Many thanks to the following resources, which were invaluable to the development of this project.
 
-- [Map Projections-A Working Manual By JOHN P. SNYDER](https://pubs.usgs.gov/pp/1395/report.pdf)
+- [Map Projections-A Working Manual By John P. Snyder](https://pubs.usgs.gov/pp/1395/report.pdf)
 - [Wikipedia](https://en.wikipedia.org)
 - [Atractor](https://www.atractor.pt/index-_en.html)
 - [Jon Voisey's Blog: Following Kepler](https://jonvoisey.net/blog/)
 - [Celestial Programming: Greg Miller's Astronomy Programming Page](https://astrogreg.com/convert_ra_dec_to_alt_az.html)
-
----
+- [Practical Astronomy with your Calculator by Peter Duffett-Smith](https://www.amazon.com/Practical-Astronomy-Calculator-Peter-Duffett-Smith/dp/0521356997)
 
 ## Data Sources
 

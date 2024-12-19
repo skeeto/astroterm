@@ -120,10 +120,9 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
 
 
 /* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and
- * 1 is a Full Moon. TODO: fix this
+ * 1 is a Full Moon. I.e. the age of the moon within the synodic month.
  */
-double calc_moon_phase(double sun_ecliptic_longitude,
-                       double moon_true_longitude);
+double calc_moon_phase(double julian_date);
 
 /* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
  * from the celestial intermediate origin to the terrestrial intermediate origin

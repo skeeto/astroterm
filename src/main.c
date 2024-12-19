@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
         update_star_positions(star_table, num_stars, julian_date, latitude, longitude);
         update_planet_positions(planet_table, julian_date, latitude, longitude);
         update_moon_position(&moon_object, julian_date, latitude, longitude);
-        update_moon_phase(planet_table, &moon_object, julian_date);
+        update_moon_phase(&moon_object, julian_date, latitude);
 
         // Render
         render_stars_stereo(win, &rf, star_table, num_stars, num_by_mag, threshold);
