@@ -36,10 +36,6 @@ struct entry
  * allocates memory which must be freed by the caller. Returns false in event
  * of a file error
  */
-bool parse_entries(uint8_t *data,
-                size_t data_size,
-                struct entry **entries_out,
-                unsigned int *num_entries_out
-);
+bool parse_entries(uint8_t *data, size_t data_size, struct entry **entries_out, unsigned int *num_entries_out);
 
-#endif  // PARSE_BSC5_H
+#endif // PARSE_BSC5_H

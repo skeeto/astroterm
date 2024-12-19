@@ -1,12 +1,12 @@
 #include "stopwatch.h"
 
-#include <time.h>
 #include <string.h>
+#include <time.h>
 
 // UNIX headers
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
 #include <sys/time.h>
-#include <unistd.h>     // Needed for _POSIX_TIMERS definintion & usleep()
+#include <unistd.h> // Needed for _POSIX_TIMERS definintion & usleep()
 #endif
 
 // Windows headers
@@ -23,7 +23,10 @@ int sw_gettime(struct sw_timestamp *stamp)
 
     LARGE_INTEGER tick;
     int check = QueryPerformanceCounter(&tick);
-    if (check == 0) { return -1; } // QueryPerformanceCounter() returns 0 on failure
+    if (check == 0)
+    {
+        return -1;
+    } // QueryPerformanceCounter() returns 0 on failure
 
     stamp->val.tick_windows = tick;
     stamp->val_member = TICK_WIN;
@@ -32,7 +35,10 @@ int sw_gettime(struct sw_timestamp *stamp)
     // Apple OSX and iOS (Darwin)
 
     unsigned long long tick = clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW);
-    if (tick == 0) { return -1; } // clock_gettime_nsec_np() returns 0 on failure
+    if (tick == 0)
+    {
+        return -1;
+    } // clock_gettime_nsec_np() returns 0 on failure
 
     stamp->val.tick_apple = tick;
     stamp->val_member = TICK_APPLE;
@@ -42,7 +48,10 @@ int sw_gettime(struct sw_timestamp *stamp)
 
     struct timespec tick;
     int check = clock_gettime(CLOCK_MONOTONIC_RAW, &tick);
-    if (check == -1) { return -1; } // clock_gettime() returns -1 on failure
+    if (check == -1)
+    {
+        return -1;
+    } // clock_gettime() returns -1 on failure
 
     stamp->val.tick_spec = tick;
     stamp->val_member = TICK_SPEC;
@@ -52,7 +61,10 @@ int sw_gettime(struct sw_timestamp *stamp)
 
     struct timeval tick;
     int check = gettimeofday(&tick, NULL);
-    if (check != 0) { return -1; } // gettimeofday() returns non-zero on failure
+    if (check != 0)
+    {
+        return -1;
+    } // gettimeofday() returns non-zero on failure
 
     stamp->val.tick_val = tick;
     stamp->val_member = TICK_VAL;
@@ -66,47 +78,44 @@ int sw_gettime(struct sw_timestamp *stamp)
     return 0;
 }
 
-
-int sw_timediff_usec(struct sw_timestamp end,
-                     struct sw_timestamp begin,
-                     unsigned long long *diff)
+int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin, unsigned long long *diff)
 {
     *diff = 0;
 
     // Ensure unions have same member set
-    if (end.val_member != begin.val_member) { return -1; }
+    if (end.val_member != begin.val_member)
+    {
+        return -1;
+    }
 
 #if defined(_WIN32)
-// Microsoft Windows (32-bit or 64-bit)
+    // Microsoft Windows (32-bit or 64-bit)
 
     LARGE_INTEGER frequency; // ticks per second
     int check = QueryPerformanceFrequency(&frequency);
-    if (check == 0) { return -1; } // QueryPerformanceFrequency() returns 0 on failure
+    if (check == 0)
+    {
+        return -1;
+    } // QueryPerformanceFrequency() returns 0 on failure
 
-    *diff = (unsigned long long) (end.val.tick_win.QuadPart -
-                                  begin.val.tick_win.QuadPart)
-                                  * 1.0E6 / frequency.QuadPart;
+    *diff = (unsigned long long)(end.val.tick_win.QuadPart - begin.val.tick_win.QuadPart) * 1.0E6 / frequency.QuadPart;
 
 #elif defined(__APPLE__) && defined(__MACH__)
     // Apple OSX and iOS (Darwin)
 
-    *diff = (end.val.tick_apple - begin.val.tick_apple) / 1.0E3;            // ns to us
+    *diff = (end.val.tick_apple - begin.val.tick_apple) / 1.0E3; // ns to us
 
 #elif defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
     // Some POSIX systems
 
-    *diff = (unsigned long long) (end.val.tick_spec.tv_sec -
-                                  begin.val.tick_spec.tv_sec) * 1.0E6;      // sec to us
-    *diff += (unsigned long long) (end.val.tick_spec.tv_nsec -
-                                   begin.val.tick_spec.tv_nsec) / 1.0E3;    // ns to us
+    *diff = (unsigned long long)(end.val.tick_spec.tv_sec - begin.val.tick_spec.tv_sec) * 1.0E6;    // sec to us
+    *diff += (unsigned long long)(end.val.tick_spec.tv_nsec - begin.val.tick_spec.tv_nsec) / 1.0E3; // ns to us
 
 #elif defined(__unix__)
     // Almost all Unix systems
 
-    *diff = (unsigned long long) (end.val.tick_val.tv_sec -
-                                  begin.val.tick_val.tv_sec) * 1.0E6;       // sec to us
-    *diff += (unsigned long long) (end.val.tick_val.tv_usec -
-                                   begin.val.tick_val.tv_usec);
+    *diff = (unsigned long long)(end.val.tick_val.tv_sec - begin.val.tick_val.tv_sec) * 1.0E6; // sec to us
+    *diff += (unsigned long long)(end.val.tick_val.tv_usec - begin.val.tick_val.tv_usec);
 
 #else
 
@@ -117,20 +126,22 @@ int sw_timediff_usec(struct sw_timestamp end,
     return 0;
 }
 
-
 int sw_sleep(unsigned long long microseconds)
 {
 #if defined(_WIN32)
     // Microsoft Windows (32-bit or 64-bit)
 
-    unsigned long milliseconds = (unsigned long) ((double) microseconds / 1.0E3);
+    unsigned long milliseconds = (unsigned long)((double)microseconds / 1.0E3);
     Sleep(milliseconds);
 
 #else
     // Everything else. usleep() should be fairly portable
 
     int check = usleep(microseconds);
-    if (check == -1) { return -1; } // usleep() returns -1 on failure
+    if (check == -1)
+    {
+        return -1;
+    } // usleep() returns -1 on failure
 
 #endif
 

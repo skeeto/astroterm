@@ -26,7 +26,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        sudo apt-get install -y pkg-config libncurses-dev
+        sudo apt-get install -y pkg-config libncurses-dev clang-format
 
     - name: Build
       run: |
@@ -35,6 +35,12 @@ jobs:
     - name: Test
       run: |
         meson test -C build
+
+    - name: Check Formatting
+      run: |
+        # Find all C/C++ source files and check formatting
+        # --dry-run ensures no changes are made, and --Werror treats warnings as errors
+        clang-format -style=file --dry-run --Werror $(find . -name '*.c' -o -name '*.h')
 
     - name: Generate Code Coverage Reports
       run: |

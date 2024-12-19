@@ -13,8 +13,9 @@
  * - West:  corresponds with negative x-axis on cartesian grid
  *
  * GEOGRAPHIC (longitude, latitude)
- * - Longitude      : positive East & negative West of the Prime Meridian   [-π, π]
- * - Latitude       : positive North & negative South of the Equator        [-π/2, π/2]
+ * - Longitude      : positive East & negative West of the Prime Meridian   [-π,
+ * π]
+ * - Latitude       : positive North & negative South of the Equator [-π/2, π/2]
  *
  * POLAR (r, θ)
  *  - Radius    (r)
@@ -27,12 +28,14 @@
  *
  * HORIZONTAL (azimuth, altitude)
  * - Azimuth        : measured East of North
- * - Altitude       : measured from equator to the zenith (complement of spherical phi)
+ * - Altitude       : measured from equator to the zenith (complement of
+ * spherical phi)
  *
  * EQUATORIAL-SPHERICAL (right ascension, declination)
- * - Right ascension    : measured East of the Vernal Equinox along the Celestial Equator
- * - Declination        : measured North of the Celestial Equator, along the hour circle
- *                        passing through the point in question
+ * - Right ascension    : measured East of the Vernal Equinox along the
+ * Celestial Equator
+ * - Declination        : measured North of the Celestial Equator, along the
+ * hour circle passing through the point in question
  *
  * See: https://en.wikipedia.org/wiki/Equatorial_coordinate_system
  */
@@ -44,23 +47,21 @@
 
 /* Converts equatorial coordinates (global) to horizontal coordinates (local)
  *
- * Reference:   https://jonvoisey.net/blog/2018/07/data-converting-alt-az-to-ra-dec-derivation/
+ * Reference:
+ * https://jonvoisey.net/blog/2018/07/data-converting-alt-az-to-ra-dec-derivation/
  *              https://astrogreg.com/convert_ra_dec_to_alt_az.html
  */
-void equatorial_to_horizontal(double right_ascension, double declination,
-                              double gmst, double latitude, double longitude,
+void equatorial_to_horizontal(double right_ascension, double declination, double gmst, double latitude, double longitude,
                               double *azimuth, double *altitude);
 
 /* Converts rectangular equatorial coordinates to spherical rectangular
  * coordinates
  */
-void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq,
-                                         double *right_ascension, double *declination);
+void equatorial_rectangular_to_spherical(double xeq, double yeq, double zeq, double *right_ascension, double *declination);
 
 /* Converts horizontal coordinates to spherical coordinates
  */
-void horizontal_to_spherical(double azimuth, double altitude,
-                             double *theta_sphere, double *phi_sphere);
+void horizontal_to_spherical(double azimuth, double altitude, double *theta_sphere, double *phi_sphere);
 
 // MAP PROJECTIONS
 
@@ -71,12 +72,12 @@ void horizontal_to_spherical(double azimuth, double altitude,
  * Maps a point on a sphere with radius R to the plane containing the center of
  * the sphere and orthogonal to the radius to the center point.
  *
- * Reference:   https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
+ * Reference:
+ * https://www.atractor.pt/mat/loxodromica/saber_estereografica1-_en.html
  *              https://en.wikipedia.org/wiki/Stereographic_projection
  *              https://pubs.usgs.gov/pp/1395/report.pdf
  */
-void project_stereographic(double sphere_radius, double point_theta, double point_phi,
-                           double center_theta, double center_phi,
+void project_stereographic(double sphere_radius, double point_theta, double point_phi, double center_theta, double center_phi,
                            double *radius_polar, double *theta_polar);
 
 /* Stereographic projection centered on the south pole
@@ -88,8 +89,8 @@ void project_stereographic(double sphere_radius, double point_theta, double poin
  * lie within the "equatorial orthodrome" (circle with radius R) if
  * π/2 < Φ < 3π/2.
  */
-void project_stereographic_south(double radius_sphere, double theta_sphere, double phi_sphere,
-                                 double *r_polar, double *theta_polar);
+void project_stereographic_south(double radius_sphere, double theta_sphere, double phi_sphere, double *r_polar,
+                                 double *theta_polar);
 
 /* Stereographic projection centered on the north pole
  *
@@ -100,24 +101,19 @@ void project_stereographic_south(double radius_sphere, double theta_sphere, doub
  * lie within the "equatorial orthodrome" (circle with radius R) if
  * -π/2 < Φ < π/2.
  */
-void project_stereographic_north(double radius_sphere, double theta_sphere, double phi_sphere,
-                                 double *r_polar, double *theta_polar);
+void project_stereographic_north(double radius_sphere, double theta_sphere, double phi_sphere, double *r_polar,
+                                 double *theta_polar);
 
 // SCREEN SPACE MAPPING
 
 /* Maps point a point (r, θ) on the unit circle to screen space
  */
-void polar_to_win(double r, double theta,
-                  int win_height, int win_width,
-                  int *row, int *col);
+void polar_to_win(double r, double theta, int win_height, int win_width, int *row, int *col);
 
 /* Maps a "partial spherical frustum" defined by the angle of view(s) and the
  * perspective angle to screen space
  */
-void perspective_to_win(double aov_phi, double aov_theta,
-                        double perspective_phi, double perspective_theta,
-                        double object_phi, double object_theta,
-                        int win_height, int win_width,
-                        int *row, int *col);
+void perspective_to_win(double aov_phi, double aov_theta, double perspective_phi, double perspective_theta, double object_phi,
+                        double object_theta, int win_height, int win_width, int *row, int *col);
 
-#endif  // COORD_H
+#endif // COORD_H

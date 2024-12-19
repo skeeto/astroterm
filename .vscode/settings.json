@@ -2,5 +2,8 @@
     "mesonbuild.configureOnOpen": false,
     "cSpell.words": [
         "starsaver"
-    ]
+    ],
+    "editor.defaultFormatter": "xaver.clang-format",
+    "editor.formatOnPaste": false,
+    "editor.formatOnSave": true,
 }

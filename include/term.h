@@ -29,7 +29,6 @@ void win_resize_full(WINDOW *win);
  */
 void win_position_center(WINDOW *win);
 
-
 /* Get the number of rows and columns in the terminal buffer
  */
 void term_size(int *y, int *x);
@@ -39,4 +38,4 @@ void term_size(int *y, int *x);
  */
 float get_cell_aspect_ratio(void);
 
-#endif  // TERM_H
+#endif // TERM_H

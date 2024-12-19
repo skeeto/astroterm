@@ -1,12 +1,12 @@
 #include "core.h"
 
-#include "parse_BSC5.h"
 #include "astro.h"
+#include "parse_BSC5.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <time.h>
 
 /* Count number of lines in file
@@ -26,9 +26,8 @@ unsigned int count_lines_from_data(const uint8_t *data, size_t data_len)
 
 // Data generation
 
-
-bool generate_star_table(struct star **star_table_out, struct entry *entries,
-                         struct star_name *name_table, unsigned int num_stars)
+bool generate_star_table(struct star **star_table_out, struct entry *entries, struct star_name *name_table,
+                         unsigned int num_stars)
 {
     *star_table_out = malloc(num_stars * sizeof(struct star));
     if (*star_table_out == NULL)
@@ -41,28 +40,30 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
     {
         struct star temp_star;
 
-        temp_star.catalog_number    = (int)     entries[i].XNO;
-        temp_star.right_ascension   =           entries[i].SRA0;
-        temp_star.declination       =           entries[i].SDEC0;
-        temp_star.ra_motion         = (double)  entries[i].XRPM;
-        temp_star.ra_motion         = (double)  entries[i].XDPM;
-        temp_star.magnitude         =           entries[i].MAG / 100.0f;
+        temp_star.catalog_number = (int)entries[i].XNO;
+        temp_star.right_ascension = entries[i].SRA0;
+        temp_star.declination = entries[i].SDEC0;
+        temp_star.ra_motion = (double)entries[i].XRPM;
+        temp_star.ra_motion = (double)entries[i].XDPM;
+        temp_star.magnitude = entries[i].MAG / 100.0f;
 
         // Star magnitude mapping
         // FIXME: some of these characters render on WSL while not on macOS
-        // (system wide, not just this project). I haven't gotten to the bottom of this yet...
+        // (system wide, not just this project). I haven't gotten to the bottom
+        // of this yet...
         // TODO: add CLI option to choose between these
         const char *mag_map_unicode_round[10] = {"⬤", "●", "⦁", "•", "•", "∙", "⋅", "⋅", "⋅", "⋅"};
-        // const char *mag_map_unicode_diamond[10] = {"⯁", "◇", "⬥", "⬦", "⬩", "🞘", "🞗", "🞗", "🞗", "🞗"};
-        // const char *mag_map_unicode_open[10]    = {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
-        // const char *mag_map_unicode_filled[10]  = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"};
+        // const char *mag_map_unicode_diamond[10] = {"⯁", "◇", "⬥", "⬦", "⬩",
+        // "🞘", "🞗", "🞗", "🞗", "🞗"}; const char *mag_map_unicode_open[10]    =
+        // {"✩", "✧", "⋄", "⭒", "🞝", "🞝", "🞝", "🞝", "🞝", "🞝"}; const char
+        // *mag_map_unicode_filled[10]  = {"★", "✦", "⬩", "⭑", "🞝", "🞝", "🞝",
+        // "🞝", "🞝", "🞝"};
         const char mag_map_round_ASCII[10] = {'0', '0', 'O', 'O', 'o', 'o', '.', '.', '.', '.'};
 
         const float min_magnitude = -1.46f;
         const float max_magnitude = 7.96f;
 
-        int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude,
-                                                  0, 9, temp_star.magnitude);
+        int symbol_index = map_float_to_int_range(min_magnitude, max_magnitude, 0, 9, temp_star.magnitude);
 
         temp_star.base = (struct object_base){
             .color_pair = 0,
@@ -101,10 +102,8 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries,
     return true;
 }
 
-bool generate_planet_table(struct planet **planet_table,
-                           const struct kep_elems *planet_elements,
-                           const struct kep_rates *planet_rates,
-                           const struct kep_extra *planet_extras)
+bool generate_planet_table(struct planet **planet_table, const struct kep_elems *planet_elements,
+                           const struct kep_rates *planet_rates, const struct kep_extra *planet_extras)
 {
     *planet_table = malloc(NUM_PLANETS * sizeof(struct planet));
     if (*planet_table == NULL)
@@ -112,82 +111,43 @@ bool generate_planet_table(struct planet **planet_table,
         return false;
     }
 
-    const char *planet_symbols_unicode[NUM_PLANETS] =
-        {
-            [SUN]       = "☉",
-            [MERCURY]   = "☿",
-            [VENUS]     = "♀",
-            [EARTH]     = "🜨",
-            [MARS]      = "♂",
-            [JUPITER]   = "♃",
-            [SATURN]    = "♄",
-            [URANUS]    = "⛢",
-            [NEPTUNE]   = "♆"};
+    const char *planet_symbols_unicode[NUM_PLANETS] = {
+        [SUN] = "☉",     [MERCURY] = "☿", [VENUS] = "♀",  [EARTH] = "🜨",  [MARS] = "♂",
+        [JUPITER] = "♃", [SATURN] = "♄",  [URANUS] = "⛢", [NEPTUNE] = "♆"};
 
-    const char planet_symbols_ASCII[NUM_PLANETS] =
-        {
-            [SUN]       = '@',
-            [MERCURY]   = '*',
-            [VENUS]     = '*',
-            [EARTH]     = '*',
-            [MARS]      = '*',
-            [JUPITER]   = '*',
-            [SATURN]    = '*',
-            [URANUS]    = '*',
-            [NEPTUNE]   = '*'};
+    const char planet_symbols_ASCII[NUM_PLANETS] = {
+        [SUN] = '@',     [MERCURY] = '*', [VENUS] = '*',  [EARTH] = '*',  [MARS] = '*',
+        [JUPITER] = '*', [SATURN] = '*',  [URANUS] = '*', [NEPTUNE] = '*'};
 
-    const char *planet_labels[NUM_PLANETS] =
-        {
-            [SUN]       = "Sun",
-            [MERCURY]   = "Mercury",
-            [VENUS]     = "Venus",
-            [EARTH]     = "Earth",
-            [MARS]      = "Mars",
-            [JUPITER]   = "Jupiter",
-            [SATURN]    = "Saturn",
-            [URANUS]    = "Uranus",
-            [NEPTUNE]   = "Neptune"};
+    const char *planet_labels[NUM_PLANETS] = {
+        [SUN] = "Sun",         [MERCURY] = "Mercury", [VENUS] = "Venus",   [EARTH] = "Earth",    [MARS] = "Mars",
+        [JUPITER] = "Jupiter", [SATURN] = "Saturn",   [URANUS] = "Uranus", [NEPTUNE] = "Neptune"};
 
     // TODO: find better way to map these values
-    const int planet_colors[NUM_PLANETS] =
-        {
-            [SUN]       = 4,
-            [MERCURY]   = 8,
-            [VENUS]     = 4,
-            [MARS]      = 2,
-            [JUPITER]   = 6,
-            [SATURN]    = 4,
-            [URANUS]    = 7,
-            [NEPTUNE]   = 5,
-        };
+    const int planet_colors[NUM_PLANETS] = {
+        [SUN] = 4, [MERCURY] = 8, [VENUS] = 4, [MARS] = 2, [JUPITER] = 6, [SATURN] = 4, [URANUS] = 7, [NEPTUNE] = 5,
+    };
 
     // TODO: compute these values...?
-    const float planet_mean_mags[NUM_PLANETS] =
-        {
-            [SUN]       = -26.832f,
-            [MERCURY]   = 0.23f,
-            [VENUS]     = -4.14f,
-            [MARS]      = 0.71f,
-            [JUPITER]   = -2.20f,
-            [SATURN]    = 0.46f,
-            [URANUS]    = 5.68f,
-            [NEPTUNE]   = 7.78f,
-        };
+    const float planet_mean_mags[NUM_PLANETS] = {
+        [SUN] = -26.832f,   [MERCURY] = 0.23f, [VENUS] = -4.14f, [MARS] = 0.71f,
+        [JUPITER] = -2.20f, [SATURN] = 0.46f,  [URANUS] = 5.68f, [NEPTUNE] = 7.78f,
+    };
 
     unsigned int i;
     for (i = 0; i < NUM_PLANETS; ++i)
     {
         struct planet temp_planet;
 
-        temp_planet.base    = (struct object_base){
-            .symbol_ASCII   = planet_symbols_ASCII[i],
+        temp_planet.base = (struct object_base){
+            .symbol_ASCII = planet_symbols_ASCII[i],
             .symbol_unicode = NULL,
-            .label          = NULL,
-            .color_pair     = planet_colors[i],
+            .label = NULL,
+            .color_pair = planet_colors[i],
         };
 
-        char *unicode_temp  = (char *) planet_symbols_unicode[i];
-        char *label_temp    = (char *) planet_labels[i];
+        char *unicode_temp = (char *)planet_symbols_unicode[i];
+        char *label_temp = (char *)planet_labels[i];
 
         if (unicode_temp != NULL)
         {
@@ -209,9 +169,9 @@ bool generate_planet_table(struct planet **planet_table,
             strcpy(temp_planet.base.label, label_temp);
         }
 
-        temp_planet.elements    = &planet_elements[i];
-        temp_planet.rates       = &planet_rates[i];
-        temp_planet.magnitude   = planet_mean_mags[i];
+        temp_planet.elements = &planet_elements[i];
+        temp_planet.rates = &planet_rates[i];
+        temp_planet.magnitude = planet_mean_mags[i];
 
         if (JUPITER <= i && i <= NEPTUNE)
         {
@@ -228,15 +188,13 @@ bool generate_planet_table(struct planet **planet_table,
     return true;
 }
 
-bool generate_moon_object(struct moon *moon_data,
-                          const struct kep_elems *moon_elements,
-                          const struct kep_rates *moon_rates)
+bool generate_moon_object(struct moon *moon_data, const struct kep_elems *moon_elements, const struct kep_rates *moon_rates)
 {
     moon_data->base = (struct object_base){
-        .symbol_ASCII   = 'M',
+        .symbol_ASCII = 'M',
         .symbol_unicode = "🌝︎︎",
-        .label          = "Moon",
-        .color_pair     = 0,
+        .label = "Moon",
+        .color_pair = 0,
     };
 
     moon_data->elements = moon_elements;
@@ -317,7 +275,7 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct star_name 
  * num_segments=1
  * int *star_numbers=[4915, 4785]
  * };
- * 
+ *
  * NOTE: line numbers are 0-indexed
  */
 bool parse_line(const uint8_t *data, struct constell **constell_table_out, int line_start, int line_end, int line_number)
@@ -401,16 +359,15 @@ bool parse_line(const uint8_t *data, struct constell **constell_table_out, int l
     }
 
     // Store the parsed constellation in the correct table location
-    struct constell temp_constell = {
-        .num_segments = num_segments,
-        .star_numbers = star_numbers};
+    struct constell temp_constell = {.num_segments = num_segments, .star_numbers = star_numbers};
 
     (*constell_table_out)[line_number] = temp_constell;
 
     return true;
 }
 
-bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out, unsigned int *num_constell_out)
+bool generate_constell_table(const uint8_t *data, size_t data_len, struct constell **constell_table_out,
+                             unsigned int *num_constell_out)
 {
     // Validate input
     if (data == NULL || constell_table_out == NULL || num_constell_out == NULL || data_len == 0)
@@ -477,7 +434,6 @@ bool generate_constell_table(const uint8_t *data, size_t data_len, struct conste
 }
 
 // Memory freeing
-
 
 static void free_base_members(struct object_base base)
 {
@@ -556,14 +512,12 @@ void free_star_names(struct star_name *name_table, unsigned int size)
     return;
 }
 
-
 // Miscellaneous
-
 
 int star_magnitude_comparator(const void *v1, const void *v2)
 {
-    const struct star *p1 = (struct star *) v1;
-    const struct star *p2 = (struct star *) v2;
+    const struct star *p1 = (struct star *)v1;
+    const struct star *p2 = (struct star *)v2;
 
     // Lower magnitudes are brighter
     if (p1->magnitude < p2->magnitude)
@@ -574,8 +528,7 @@ int star_magnitude_comparator(const void *v1, const void *v2)
         return 0;
 }
 
-bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table,
-                               unsigned int num_stars)
+bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table, unsigned int num_stars)
 {
     // Create and sort a copy of the star table
     struct star *table_copy = malloc(num_stars * sizeof(struct star));
@@ -606,11 +559,10 @@ bool star_numbers_by_magnitude(int **num_by_mag, struct star *star_table,
     return true;
 }
 
-int map_float_to_int_range(double min_float, double max_float,
-                           int min_int, int max_int, double input)
+int map_float_to_int_range(double min_float, double max_float, int min_int, int max_int, double input)
 {
     double percent = (input - min_float) / (max_float - min_float);
-    return min_int + (int) round((max_int - min_int) * percent);
+    return min_int + (int)round((max_int - min_int) * percent);
 }
 
 bool string_to_time(const char *string, struct tm *time)

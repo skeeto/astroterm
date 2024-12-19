@@ -1,7 +1,7 @@
 /* ASCII and Unicode ncruses rendering functions. These functions aim to provide
- * a balance of performance, readability, and style of the resulting render, with
- * more emphasis placed on the latter two objectives. Here, we forgo many of the
- * micro-optimizations (e.g. precomputing frequently used values) of the
+ * a balance of performance, readability, and style of the resulting render,
+ * with more emphasis placed on the latter two objectives. Here, we forgo many
+ * of the micro-optimizations (e.g. precomputing frequently used values) of the
  * inspiring/underlying algorithms, as the runtime of these functions will
  * largely be dominated by slow nature of drawing characters to a terminal, as
  * opposed to CPU arithmetic.
@@ -44,7 +44,6 @@ void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb);
 /* Draw an ellipse. By taking advantage of knowing the cell aspect ratio,
  * this function can generate an "apparent" circle.
  */
-void draw_ellipse(WINDOW *win, int centerRow, int centerCol,
-                  int radiusY, int radiusX, bool no_unicode);
+void draw_ellipse(WINDOW *win, int centerRow, int centerCol, int radiusY, int radiusX, bool no_unicode);
 
-#endif  // DRAWING_H
+#endif // DRAWING_H

@@ -1,6 +1,7 @@
 /* An attempt at relatively portable & accurate timing library
  *
- * Very helpful reference: https://stackoverflow.com/questions/12392278/measure-time-in-linux-time-vs-clock-vs-getrusage-vs-clock-gettime-vs-gettimeof
+ * Very helpful reference:
+ * https://stackoverflow.com/questions/12392278/measure-time-in-linux-time-vs-clock-vs-getrusage-vs-clock-gettime-vs-gettimeof
  */
 
 #ifndef STOPWATCH_H
@@ -17,12 +18,10 @@
 #include <windows.h>
 #endif
 
-
 struct sw_timestamp
 {
     // Timestamp value
-    union
-    {
+    union {
 #ifdef _WIN32
         LARGE_INTEGER tick_win;
 #endif
@@ -41,7 +40,6 @@ struct sw_timestamp
     } val_member;
 };
 
-
 /* Set a timestamp. Returns 0 on success and -1 on failure
  */
 int sw_gettime(struct sw_timestamp *stamp);
@@ -49,12 +47,11 @@ int sw_gettime(struct sw_timestamp *stamp);
 /* Set the difference between two timestamps in microseconds. Returns 0 on
  * success -1 on failure
  */
-int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin,
-                     unsigned long long *diff);
+int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin, unsigned long long *diff);
 
 /* Sleep for the specified number of microseconds. Returns 0 on success and -1
  * on failure
  */
 int sw_sleep(unsigned long long microseconds);
 
-#endif  // STOPWATCH_H
+#endif // STOPWATCH_H

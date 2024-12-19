@@ -1,15 +1,15 @@
 #include "astro.h"
 
 #include <math.h>
-#include <time.h>
 #include <stdio.h>
+#include <time.h>
 
 #ifndef M_PI
-    #define M_PI 3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #endif
 
 #ifndef AU
-    #define AU 149597870.691
+#define AU 149597870.691
 #endif
 
 /* Normalize a radian angle to [0, 2π]
@@ -21,13 +21,11 @@ static double norm_rad(double rad)
     return rem;
 }
 
-void calc_star_position(double right_ascension, double ra_motion,
-                        double declination, double dec_motion,
-                        double julian_date,
+void calc_star_position(double right_ascension, double ra_motion, double declination, double dec_motion, double julian_date,
                         double *ITRF_right_ascension, double *ITRF_declination)
 {
-    double J2000 = 2451545.0;           // J2000 epoch in julian days
-    double days_per_year = 365.2425;    // Average number of days per year
+    double J2000 = 2451545.0;        // J2000 epoch in julian days
+    double days_per_year = 365.2425; // Average number of days per year
     double years_from_epoch = (julian_date - J2000) / days_per_year;
 
     *ITRF_right_ascension = right_ascension + ra_motion * years_from_epoch;
@@ -57,13 +55,11 @@ double greenwich_mean_sidereal_time_rad(double jd)
 
     // This isn't explicitly stated, but I believe this gives the accumulated
     // precession as described in https://en.wikipedia.org/wiki/Sidereal_time
-    double acc_precession_sec = -0.014506 - 4612.156534 * t - 1.3915817 *
-                                pow(t, 2) + 0.00000044 * pow(t, 3) +
-                                0.000029956 * pow(t, 4) + 0.0000000368 *
-                                pow(t, 5);
+    double acc_precession_sec = -0.014506 - 4612.156534 * t - 1.3915817 * pow(t, 2) + 0.00000044 * pow(t, 3) +
+                                0.000029956 * pow(t, 4) + 0.0000000368 * pow(t, 5);
 
     // Convert to degrees then radians
-    double acc_precession_rad = acc_precession_sec / 3600.0 *  M_PI / 180.0;
+    double acc_precession_rad = acc_precession_sec / 3600.0 * M_PI / 180.0;
 
     double gmst = earth_rotation_angle_rad(jd) - acc_precession_rad;
     gmst = norm_rad(gmst);
@@ -74,12 +70,12 @@ double greenwich_mean_sidereal_time_rad(double jd)
 double datetime_to_julian_date(struct tm *time)
 {
     // Convert ISO C tm struct to Gregorian datetime format
-    int second  = time->tm_sec;
-    int minute  = time->tm_min;
-    int hour    = time->tm_hour;
-    int day     = time->tm_mday;
-    int month   = time->tm_mon + 1;
-    int year    = time->tm_year + 1900;
+    int second = time->tm_sec;
+    int minute = time->tm_min;
+    int hour = time->tm_hour;
+    int day = time->tm_mday;
+    int month = time->tm_mon + 1;
+    int year = time->tm_year + 1900;
 
     // https://orbital-mechanics.space/reference/julian-date.html
     int a = (month - 14) / 12;          // eq 436
@@ -90,9 +86,7 @@ double datetime_to_julian_date(struct tm *time)
     int julian_day_num = b / 4 + c / 12 - (3 * e) / 4 + day - 32075; // eq 437
 
     // Determine fraction of seconds that have passed in one day
-    double julian_day_frac = (hour - 12) / 24.0 +
-                             minute / (24.0 * 60.0) +
-                             second / (24.0 * 60.0 * 60.0);
+    double julian_day_frac = (hour - 12) / 24.0 + minute / (24.0 * 60.0) + second / (24.0 * 60.0 * 60.0);
 
     return julian_day_num + julian_day_frac;
 }
@@ -100,7 +94,7 @@ double datetime_to_julian_date(struct tm *time)
 struct tm julian_date_to_datetime(double julian_date)
 {
     // https://orbital-mechanics.space/reference/julian-date.html
-    int julian_day_num = (int) julian_date;
+    int julian_day_num = (int)julian_date;
 
     int l = julian_day_num + 68569;
     int n = 4 * l / 146097;
@@ -116,19 +110,18 @@ struct tm julian_date_to_datetime(double julian_date)
 
     double julian_day_frac = julian_date - julian_day_num;
 
-    double hour_d   = julian_day_frac * 24.0 + 12; // add twelve because of weird offset
+    double hour_d = julian_day_frac * 24.0 + 12; // add twelve because of weird offset
     double minute_d = (hour_d - floor(hour_d)) * 60.0;
     double second_d = (minute_d - floor(minute_d)) * 60.0;
 
     // Convert Gregorian datetime format to ISO C tm struct
-    struct tm time =
-    {
-        .tm_sec    = floor(second_d),
-        .tm_min    = floor(minute_d),
-        .tm_hour   = floor(hour_d),
-        .tm_mday   = day,
-        .tm_mon    = month - 1,
-        .tm_year   = year - 1900,
+    struct tm time = {
+        .tm_sec = floor(second_d),
+        .tm_min = floor(minute_d),
+        .tm_hour = floor(hour_d),
+        .tm_mday = day,
+        .tm_mon = month - 1,
+        .tm_year = year - 1900,
     };
 
     // Adjust all fields to usual range
@@ -157,9 +150,8 @@ static double solve_kepler(double M, double e, double E)
 /* Calculate the heliocentric ICRF position of a planet in rectangular
  * equatorial coordinates
  */
-void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates,
-                            const struct kep_extra *extras, double julian_date,
-                            double *xh, double *yh, double *zh)
+void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates, const struct kep_extra *extras,
+                            double julian_date, double *xh, double *yh, double *zh)
 {
     // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
 
@@ -217,7 +209,12 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
 
     // 5.
 
-    a *= to_rad; e *= to_rad; I *= to_rad; L *= to_rad; w *= to_rad; O *= to_rad;
+    a *= to_rad;
+    e *= to_rad;
+    I *= to_rad;
+    L *= to_rad;
+    w *= to_rad;
+    O *= to_rad;
     double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
     double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
     double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
@@ -249,16 +246,13 @@ void ICRF_to_ITRF(double *x, double *y, double *z)
     *z = *z;
 }
 
-void calc_planet_geo_ICRF(double xe, double ye, double ze,
-                          const struct kep_elems *planet_elements, const struct kep_rates *planet_rates,
-                          const struct kep_extra *planet_extras,
-                          double julian_date,
+void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct kep_elems *planet_elements,
+                          const struct kep_rates *planet_rates, const struct kep_extra *planet_extras, double julian_date,
                           double *xg, double *yg, double *zg)
 {
     // Coordinates of desired planet
     double xh, yh, zh;
-    calc_planet_helio_ICRF(planet_elements, planet_rates, planet_extras,
-                           julian_date, &xh, &yh, &zh);
+    calc_planet_helio_ICRF(planet_elements, planet_rates, planet_extras, julian_date, &xh, &yh, &zh);
 
     // Obtain geocentric coordinates by subtracting Earth's coordinates
     *xg = xh - xe;
@@ -268,14 +262,14 @@ void calc_planet_geo_ICRF(double xe, double ye, double ze,
     return;
 }
 
-void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
-                        const struct kep_rates *moon_rates, double julian_date,
+void calc_moon_geo_ICRF(const struct kep_elems *moon_elements, const struct kep_rates *moon_rates, double julian_date,
                         double *xg, double *yg, double *zg)
 {
-    // Algorithm taken from Paul Schlyter's page "How to compute planetary positions"
-    // https://stjarnhimlen.se/comp/ppcomp.html#6 (modified)
+    // Algorithm taken from Paul Schlyter's page "How to compute planetary
+    // positions" https://stjarnhimlen.se/comp/ppcomp.html#6 (modified)
 
-    // https: // astronomy.stackexchange.com/questions/29522/moon-equatorial-coordinates
+    // https: //
+    // astronomy.stackexchange.com/questions/29522/moon-equatorial-coordinates
 
     const double to_rad = M_PI / 180.0;
 
@@ -317,7 +311,10 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
     double zp = 0.0;
 
     // Compute the moon's position in 3-dimensional space in ecliptic coords
-    I *= to_rad; w *= to_rad; O *= to_rad; M *= to_rad;
+    I *= to_rad;
+    w *= to_rad;
+    O *= to_rad;
+    M *= to_rad;
     double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
     double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
     double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
@@ -333,8 +330,8 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
     return;
 }
 
-double calc_moon_phase(double julian_date) {
-
+double calc_moon_phase(double julian_date)
+{
     // A crude calculation for the phase of the moon
     // https://en.wikipedia.org/wiki/Lunar_phase
 

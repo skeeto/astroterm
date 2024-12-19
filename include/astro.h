@@ -10,7 +10,6 @@
 
 #include <time.h>
 
-
 // For our purposes, the Sun is treated the same as a planet
 enum planets
 {
@@ -26,9 +25,7 @@ enum planets
     NUM_PLANETS
 };
 
-
 // Keplerian/orbital elements
-
 
 struct kep_elems
 {
@@ -60,9 +57,7 @@ struct kep_extra
     double f;
 };
 
-
 // Dates and times
-
 
 /* Calculate the greenwich mean sidereal time in radians given a julian date.
  * TODO: some angles may need normalizing
@@ -81,43 +76,33 @@ struct tm julian_date_to_datetime(double julian_date);
  */
 double current_julian_date(void);
 
-
 // Celestial body positioning
-
 
 /* Calculate the relative position of a star
  */
-void calc_star_position(double right_ascension, double ra_motion,
-                        double declination, double dec_motion,
-                        double julian_date,
+void calc_star_position(double right_ascension, double ra_motion, double declination, double dec_motion, double julian_date,
                         double *ITRF_right_ascension, double *ITRF_declination);
 
 /* Calculate the heliocentric ICRF position of a planet in rectangular
  * equatorial coordinates
  */
-void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates,
-                            const struct kep_extra *extras, double julian_date,
-                            double *xh, double *yh, double *zh);
+void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates, const struct kep_extra *extras,
+                            double julian_date, double *xh, double *yh, double *zh);
 
 /* Calculate the geocentric ICRF position of a planet in rectangular
  * equatorial coordinates
  */
-void calc_planet_geo_ICRF(double xe, double ye, double ze,
-                          const struct kep_elems *planet_elements, const struct kep_rates *planet_rates,
-                          const struct kep_extra *planet_extras,
-                          double julian_date,
+void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct kep_elems *planet_elements,
+                          const struct kep_rates *planet_rates, const struct kep_extra *planet_extras, double julian_date,
                           double *xg, double *yg, double *zg);
 
 /* Calculate the geocentric ICRF position of the Moon in rectangular
  * equatorial coordinates
  */
-void calc_moon_geo_ICRF(const struct kep_elems *moon_elements,
-                        const struct kep_rates *moon_rates, double julian_date,
+void calc_moon_geo_ICRF(const struct kep_elems *moon_elements, const struct kep_rates *moon_rates, double julian_date,
                         double *xg, double *yg, double *zg);
 
-
 // Miscellaneous
-
 
 /* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and
  * 1 is a Full Moon. I.e. the age of the moon within the synodic month.
@@ -130,4 +115,4 @@ double calc_moon_phase(double julian_date);
  */
 double earth_rotation_angle_rad(double jd);
 
-#endif  // ASTRO_H
+#endif // ASTRO_H
