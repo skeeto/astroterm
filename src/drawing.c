@@ -112,10 +112,10 @@ void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb)
         }
     }
 
-    // Add asterisks at beginning and end of segment to "prettify"
-
-    mvwaddch(win, ya, xa, '*');
-    mvwaddch(win, yb, xb, '*');
+    // Could add asterisks at beginning and end of segment to "prettify",
+    // but not for this application
+    // mvwaddch(win, ya, xa, '*');
+    // mvwaddch(win, yb, xb, '*');
 }
 
 void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)

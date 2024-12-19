@@ -7,7 +7,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-void ncurses_init(bool color_flag)
+void ncurses_init(bool color)
 {
     initscr();
     clear();
@@ -17,7 +17,7 @@ void ncurses_init(bool color_flag)
     timeout(0);  // Non-blocking read for getch
 
     // Initialize colors
-    if (color_flag)
+    if (color)
     {
         if (!has_colors())
         {

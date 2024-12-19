@@ -41,9 +41,9 @@ int main(int argc, char *argv[])
         .animation_mult = 1.0f,
         .julian_date = 0.0,
         .ascii = true,
-        .color_flag = false,
-        .grid_flag = false,
-        .constell_flag = false,
+        .color = false,
+        .grid = false,
+        .constell = false,
     };
 
     // Parse command line args and convert to internal representations
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     signal(SIGWINCH, catch_winch); // Capture window resizes
 
     // Ncurses initialization
-    ncurses_init(config.color_flag != 0);
+    ncurses_init(config.color != 0);
     WINDOW *win = newwin(0, 0, 0, 0);
     wtimeout(win, 0); // Non-blocking read for wgetch
     win_resize_square(win, get_cell_aspect_ratio());
@@ -123,13 +123,13 @@ int main(int argc, char *argv[])
 
         // Render
         render_stars_stereo(win, &config, star_table, num_stars, num_by_mag);
-        if (config.constell_flag != 0)
+        if (config.constell != 0)
         {
             render_constells(win, &config, &constell_table, num_const, star_table);
         }
         render_planets_stereo(win, &config, planet_table);
         render_moon_stereo(win, &config, moon_object);
-        if (config.grid_flag != 0)
+        if (config.grid != 0)
         {
             render_azimuthal_grid(win, &config);
         }
@@ -274,17 +274,17 @@ void parse_options(int argc, char *argv[], struct conf *config)
 
     if (color_arg->count > 0)
     {
-        config->color_flag = TRUE;
+        config->color = TRUE;
     }
 
     if (constell_arg->count > 0)
     {
-        config->constell_flag = TRUE;
+        config->constell = TRUE;
     }
 
     if (grid_arg->count > 0)
     {
-        config->grid_flag = TRUE;
+        config->grid = TRUE;
     }
 
     if (ascii_arg->count > 0)

@@ -8,7 +8,7 @@
 
 /* Initialize ncurses.
  */
-void ncurses_init(bool color_flag);
+void ncurses_init(bool color);
 
 /* Kill ncurses
  */

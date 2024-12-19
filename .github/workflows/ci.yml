@@ -38,7 +38,7 @@ jobs:
 
     - name: Check Formatting
       run: |
-        sh format.sh --check
+        sh ./scripts/format.sh --check
 
     - name: Generate Code Coverage Reports
       run: |

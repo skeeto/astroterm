@@ -38,7 +38,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
         return;
     }
 
-    bool use_color = config->color_flag && object->color_pair != 0;
+    bool use_color = config->color && object->color_pair != 0;
 
     if (use_color)
     {
@@ -343,7 +343,7 @@ void render_cardinal_directions(WINDOW *win, struct conf *config)
 {
     // Render horizon directions
 
-    if (config->color_flag)
+    if (config->color)
     {
         wattron(win, COLOR_PAIR(5));
     }
@@ -361,7 +361,7 @@ void render_cardinal_directions(WINDOW *win, struct conf *config)
     mvwaddch(win, height - 1, half_maxx, 'S');
     mvwaddch(win, half_maxy, 0, 'E');
 
-    if (config->color_flag)
+    if (config->color)
     {
         wattroff(win, COLOR_PAIR(5));
     }

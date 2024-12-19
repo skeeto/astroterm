@@ -23,9 +23,9 @@ struct conf
     float animation_mult;
     double julian_date;
     bool ascii;
-    bool color_flag;
-    bool grid_flag;
-    bool constell_flag;
+    bool color;
+    bool grid;
+    bool constell;
 };
 
 // All information pertinent to rendering a celestial body
