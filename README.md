@@ -4,9 +4,12 @@
 
 Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required!
 
-![Screenshot of Starsaver](/assets/screenshot.png)
+<p align="center">
+  <img src="./assets/moving.gif" alt="Image 1" width="45%" style="display:inline-block; margin-right: 10px;">
+  <img src="./assets/screenshot.png" alt="Image 2" width="45%" style="display:inline-block;">
+</p>
 
-_<p align="center">Stars above Boston around 2 PM on December 17, 2024</p>_
+_<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 
 - [✨ starsaver](#-starsaver)
   - [Building](#building)
