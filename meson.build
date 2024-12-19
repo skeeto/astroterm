@@ -1,4 +1,4 @@
-project('starsaver', 'c',
+project('astroterm', 'c',
     default_options : ['warning_level=3', 'c_std=c99', 'buildtype=debugoptimized'],
     meson_version: '>=1.4.0',
 )

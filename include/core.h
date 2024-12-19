@@ -12,11 +12,20 @@
 
 /* Describes how objects should be rendered
  */
-struct render_flags
+struct conf
 {
-    bool unicode;
-    bool color;
+    double longitude;
+    double latitude;
+    const char *dt_string_utc;
+    float threshold;
     float label_thresh;
+    int fps;
+    float animation_mult;
+    double julian_date;
+    bool ascii;
+    bool color_flag;
+    bool grid_flag;
+    bool constell_flag;
 };
 
 // All information pertinent to rendering a celestial body

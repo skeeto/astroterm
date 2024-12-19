@@ -22,7 +22,7 @@ void horizontal_to_polar(double azimuth, double altitude, double *radius, double
     return;
 }
 
-void render_object_stereo(WINDOW *win, struct object_base *object, struct render_flags *rf)
+void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *config)
 {
     double radius_polar, theta_polar;
     horizontal_to_polar(object->azimuth, object->altitude, &radius_polar, &theta_polar);
@@ -38,7 +38,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
         return;
     }
 
-    bool use_color = rf->color && object->color_pair != 0;
+    bool use_color = config->color_flag && object->color_pair != 0;
 
     if (use_color)
     {
@@ -46,7 +46,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
     }
 
     // Draw object
-    if (rf->unicode)
+    if (config->ascii)
     {
         mvwaddstr(win, y, x, object->symbol_unicode);
     }
@@ -70,8 +70,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct render
     return;
 }
 
-void render_stars_stereo(WINDOW *win, struct render_flags *rf, struct star *star_table, int num_stars, int *num_by_mag,
-                         float threshold)
+void render_stars_stereo(WINDOW *win, struct conf *config, struct star *star_table, int num_stars, int *num_by_mag)
 {
     int i;
     for (i = 0; i < num_stars; ++i)
@@ -81,25 +80,24 @@ void render_stars_stereo(WINDOW *win, struct render_flags *rf, struct star *star
 
         struct star *star = &star_table[table_index];
 
-        if (star->magnitude > threshold)
+        if (star->magnitude > config->threshold)
         {
             continue;
         }
 
         // FIXME: this is hacky
-        if (star->magnitude > rf->label_thresh)
+        if (star->magnitude > config->label_thresh)
         {
             star->base.label = NULL;
         }
 
-        render_object_stereo(win, &star->base, rf);
+        render_object_stereo(win, &star->base, config);
     }
 
     return;
 }
 
-void render_constellation(WINDOW *win, struct render_flags *rf, struct constell *constellation, struct star *star_table,
-                          float threshold)
+void render_constellation(WINDOW *win, struct conf *config, struct constell *constellation, struct star *star_table)
 {
     unsigned int num_segments = constellation->num_segments;
 
@@ -109,7 +107,7 @@ void render_constellation(WINDOW *win, struct render_flags *rf, struct constell 
         int catalog_num = constellation->star_numbers[i];
         int table_index = catalog_num - 1;
         struct star star = star_table[table_index];
-        if (star.magnitude > threshold)
+        if (star.magnitude > config->threshold)
         {
             return;
         }
@@ -168,7 +166,7 @@ void render_constellation(WINDOW *win, struct render_flags *rf, struct constell 
         // sure why?
         // FIXME: this logic is super verbose/long (any way to cut it down?)
         // FIXME: this clipping doesn't seem to work or no-unicode for some reason?
-        if (rf->unicode)
+        if (config->ascii)
         {
             draw_line_smooth(win, ya, xa, yb, xb);
             if (!a_clipped)
@@ -195,17 +193,17 @@ void render_constellation(WINDOW *win, struct render_flags *rf, struct constell 
     }
 }
 
-void render_constells(WINDOW *win, struct render_flags *rf, struct constell **constell_table, int num_const,
-                      struct star *star_table, float threshold)
+void render_constells(WINDOW *win, struct conf *config, struct constell **constell_table, int num_const,
+                      struct star *star_table)
 {
     for (int i = 0; i < num_const; ++i)
     {
         struct constell *constellation = &((*constell_table)[i]);
-        render_constellation(win, rf, constellation, star_table, threshold);
+        render_constellation(win, config, constellation, star_table);
     }
 }
 
-void render_planets_stereo(WINDOW *win, struct render_flags *rf, struct planet *planet_table)
+void render_planets_stereo(WINDOW *win, struct conf *config, struct planet *planet_table)
 {
     // Render planets so that closest are drawn on top
     int i;
@@ -220,15 +218,15 @@ void render_planets_stereo(WINDOW *win, struct render_flags *rf, struct planet *
         }
 
         struct planet planet_data = planet_table[i];
-        render_object_stereo(win, &planet_data.base, rf);
+        render_object_stereo(win, &planet_data.base, config);
     }
 
     return;
 }
 
-void render_moon_stereo(WINDOW *win, struct render_flags *rf, struct moon moon_object)
+void render_moon_stereo(WINDOW *win, struct conf *config, struct moon moon_object)
 {
-    render_object_stereo(win, &moon_object.base, rf);
+    render_object_stereo(win, &moon_object.base, config);
 
     return;
 }
@@ -253,7 +251,7 @@ int compare_angles(const void *a, const void *b)
     return (90 / gcd(x, 90)) < (90 / gcd(y, 90));
 }
 
-void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
+void render_azimuthal_grid(WINDOW *win, struct conf *config)
 {
     const double to_rad = M_PI / 180.0;
 
@@ -308,7 +306,7 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
             int y = rad_vertical - round(rad_vertical * sin(angle * to_rad));
             int x = rad_horizontal + round(rad_horizontal * cos(angle * to_rad));
 
-            if (rf->unicode)
+            if (config->ascii)
             {
                 draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
             }
@@ -337,15 +335,15 @@ void render_azimuthal_grid(WINDOW *win, struct render_flags *rf)
     //     int rad_x = rad_horizontal * angle / 90.0;
     //     int rad_x = rad_vertical * angle / 90.0;
     //     // draw_ellipse(win, win->_maxy/2, win->_maxx/2, 20, 20,
-    //     unicode_flag); angle += inc;
+    //     ascii); angle += inc;
     // }
 }
 
-void render_cardinal_directions(WINDOW *win, struct render_flags *rf)
+void render_cardinal_directions(WINDOW *win, struct conf *config)
 {
     // Render horizon directions
 
-    if (rf->color)
+    if (config->color_flag)
     {
         wattron(win, COLOR_PAIR(5));
     }
@@ -363,7 +361,7 @@ void render_cardinal_directions(WINDOW *win, struct render_flags *rf)
     mvwaddch(win, height - 1, half_maxx, 'S');
     mvwaddch(win, half_maxy, 0, 'E');
 
-    if (rf->color)
+    if (config->color_flag)
     {
         wattroff(win, COLOR_PAIR(5));
     }
