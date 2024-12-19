@@ -1,4 +1,4 @@
-name: CI and Code Coverage
+name: CI
 
 on:
   push:

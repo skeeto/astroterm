@@ -2,7 +2,7 @@
 
 ![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
 
-Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required! 🌌
+Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required!
 
 ![Screenshot of Starsaver](/assets/screenshot.png)
 
@@ -13,6 +13,7 @@ _<p align="center">Stars above Boston around 2 PM on December 17, 2024</p>_
     - [Requirements](#requirements)
     - [Installation](#installation)
   - [Usage](#usage)
+    - [Features](#features)
     - [Options](#options)
     - [Example](#example)
   - [Development](#development)
@@ -20,8 +21,6 @@ _<p align="center">Stars above Boston around 2 PM on December 17, 2024</p>_
     - [Testing](#testing)
   - [Citations](#citations)
   - [Data Sources](#data-sources)
-
----
 
 ## Building
 
@@ -57,9 +56,16 @@ sh install.sh
 
 You may now run the generated `./build/starsaver` binary or add the `starsaver` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
----
 
 ## Usage
+
+### Features
+
+- 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
+- 🎯 **Accurate Sky Rendering:** Displays moon, stars, and planets as precisely as ASCII allows
+- 🌘 **Moon Phases:** Displays precise lunar phases in real-time
+- 🌌 **Constellation Figures:** Renders detailed constellation shapes
+- ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
 
 ### Options
 
@@ -87,8 +93,6 @@ For more options and help run `starsaver -h` or `starsaver --help`.
 
 > ℹ️ Star magnitudes decrease as apparent brightness increases, i.e. to show more stars, increase the threshold.
 
----
-
 ## Development
 
 ### [Known issues](https://github.com/da-luce/starsaver/issues)
@@ -96,8 +100,6 @@ For more options and help run `starsaver -h` or `starsaver --help`.
 ### Testing
 
 Run `meson test` within the build directory. To get a coverage report, subsequently run `ninja coverage`.
-
----
 
 ## Citations
 
@@ -109,8 +111,6 @@ Many thanks to the following resources, which were invaluable to the development
 - [Jon Voisey's Blog: Following Kepler](https://jonvoisey.net/blog/)
 - [Celestial Programming: Greg Miller's Astronomy Programming Page](https://astrogreg.com/convert_ra_dec_to_alt_az.html)
 - [Practical Astronomy with your Calculator by Peter Duffett-Smith](https://www.amazon.com/Practical-Astronomy-Calculator-Peter-Duffett-Smith/dp/0521356997)
-
----
 
 ## Data Sources
 
