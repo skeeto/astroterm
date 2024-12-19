@@ -1,7 +1,6 @@
 # ✨ starsaver
 
 ![Test Status](https://github.com/da-luce/starsaver/actions/workflows/ci.yml/badge.svg)
-![Codecov App](https://private-user-images.githubusercontent.com/152432831/340411587-e90313f4-9d3a-4b63-8b54-cfe14e7ec20d.svg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MzQ1NjYyNjEsIm5iZiI6MTczNDU2NTk2MSwicGF0aCI6Ii8xNTI0MzI4MzEvMzQwNDExNTg3LWU5MDMxM2Y0LTlkM2EtNGI2My04YjU0LWNmZTE0ZTdlYzIwZC5zdmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQxMjE4JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MTIxOFQyMzUyNDFaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT1iNmM0ZWNjNzA5ZDdmM2M5OGFjZGI4NDIyODM5MmYxN2M3NWY5MDAzN2QwNGNiZGRkMDM2MjVlNjI3Yjk2NmEwJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.kPnqrMGue2upMZ2ZSnpc76vHX1OMzXP-a70-Bjm4feo)
 
 Stellar magic, now in your terminal! ✨🪐 View the live position stars, planets, constellations, and more, all rendered right the command line—no telescope required!
 
@@ -56,7 +55,6 @@ sh install.sh
 ```
 
 You may now run the generated `./build/starsaver` binary or add the `starsaver` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
-
 
 ## Usage
 
