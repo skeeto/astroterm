@@ -28,6 +28,10 @@ static void handle_resize(WINDOW *win);
 static void parse_options(int argc, char *argv[], struct conf *config);
 static void convert_options(struct conf *config);
 
+// Track current simulation time
+// Default to current time in dt_string_utc is NULL
+double julian_date = 0.0;
+
 int main(int argc, char *argv[])
 {
     // Default config
@@ -39,7 +43,6 @@ int main(int argc, char *argv[])
         .label_thresh = 0.5f,
         .fps = 24,
         .animation_mult = 1.0f,
-        .julian_date = 0.0,
         .ascii = true,
         .color = false,
         .grid = false,
@@ -116,10 +119,10 @@ int main(int argc, char *argv[])
         }
 
         // Update object positions
-        update_star_positions(star_table, num_stars, config.julian_date, config.latitude, config.longitude);
-        update_planet_positions(planet_table, config.julian_date, config.latitude, config.longitude);
-        update_moon_position(&moon_object, config.julian_date, config.latitude, config.longitude);
-        update_moon_phase(&moon_object, config.julian_date, config.latitude);
+        update_star_positions(star_table, num_stars, julian_date, config.latitude, config.longitude);
+        update_planet_positions(planet_table, julian_date, config.latitude, config.longitude);
+        update_moon_position(&moon_object, julian_date, config.latitude, config.longitude);
+        update_moon_phase(&moon_object, julian_date, config.latitude);
 
         // Render
         render_stars_stereo(win, &config, star_table, num_stars, num_by_mag);
@@ -152,7 +155,7 @@ int main(int argc, char *argv[])
 
         // Increment "simulation" time
         const double microsec_per_day = 24.0 * 60.0 * 60.0 * 1.0E6;
-        config.julian_date += (double)dt / microsec_per_day * config.animation_mult;
+        julian_date += (double)dt / microsec_per_day * config.animation_mult;
 
         // Determine time it took to update positions and render to screen
         struct sw_timestamp frame_end;
@@ -310,7 +313,7 @@ void convert_options(struct conf *config)
     if (config->dt_string_utc == NULL)
     {
         // Set julian date to current time
-        config->julian_date = current_julian_date();
+        julian_date = current_julian_date();
     }
     else
     {
@@ -323,7 +326,7 @@ void convert_options(struct conf *config)
                    config->dt_string_utc);
             exit(EXIT_FAILURE);
         }
-        config->julian_date = datetime_to_julian_date(&datetime);
+        julian_date = datetime_to_julian_date(&datetime);
     }
 
     return;

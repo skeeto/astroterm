@@ -4,7 +4,7 @@
 
 `astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It renders the live positions of stars, planets, constellations, and more directly in your terminal—no telescope required!. Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
-`astroterm` is constantly improving, and we’d love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
+`astroterm` is constantly improving, and we'd love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
 <p align="center">
   <img src="./assets/moving.gif" alt="Image 1" width="45%" style="display:inline-block; margin-right: 10px;">
