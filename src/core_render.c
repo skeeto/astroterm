@@ -3,6 +3,7 @@
 #include "coord.h"
 #include "core.h"
 #include "drawing.h"
+#include "term.h"
 
 #include <math.h>
 #include <ncurses.h>
@@ -59,7 +60,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
     // FIXME: labels wrap around side, cause flickering
     if (object->label != NULL)
     {
-        mvwaddstr(win, y - 1, x + 1, object->label);
+        mvwaddstr_truncate(win, y - 1, x + 1, object->label);
     }
 
     if (use_color)

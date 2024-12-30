@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -159,4 +160,21 @@ float get_cell_aspect_ratio(void)
     }
 
     return default_height;
+}
+
+void mvwaddstr_truncate(WINDOW *win, int y, int x, const char *str)
+{
+    // Remaining space on the current line
+    int max_x = getmaxx(win);
+    int space_left = max_x - x;
+
+    // Don't write beyond the line
+    if (space_left > 0)
+    {
+        // Truncate if necessary
+        char truncated[space_left + 1]; // +1 for the null terminator
+        strncpy(truncated, str, space_left);
+        truncated[space_left] = '\0';
+        mvwaddstr(win, y, x, truncated);
+    }
 }

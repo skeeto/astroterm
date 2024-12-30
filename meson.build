@@ -1,5 +1,5 @@
 project('astroterm', 'c',
-    default_options : ['warning_level=3', 'c_std=c99', 'buildtype=debugoptimized'],
+    default_options : ['warning_level=3', 'buildtype=debugoptimized'],
     meson_version: '>=1.4.0',
 )
 
@@ -27,7 +27,6 @@ cc = meson.get_compiler('c')
 curses = dependency('curses', required : true)
 argtable2 = dependency('argtable2', required: true)
 math = cc.find_library('m', required : true)
-project_dependencies += [curses, math, argtable2]
 
 # ------------------------------------------------------------------------------
 # Curses info
@@ -99,13 +98,26 @@ bsc5_names = configure_file(
 project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
 
 # ------------------------------------------------------------------------------
+# Application library (for reusability)
+# ------------------------------------------------------------------------------
+
+project_lib = static_library(
+    'astroterm_lib',
+    project_source_files,
+    dependencies        : [curses, math],
+    include_directories : project_include_dirs,
+    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+)
+
+# ------------------------------------------------------------------------------
 # Application executable
 # ------------------------------------------------------------------------------
 
 executable(
     meson.project_name(),
-    project_source_files + 'src/main.c',
-    dependencies        : project_dependencies,
+    'src/main.c',
+    link_with           : project_lib,
+    dependencies        : [argtable2],
     include_directories : project_include_dirs,
     c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
     install             : true,
@@ -128,8 +140,8 @@ foreach test_file : test_files
     test_name = filename.split('.')[0]
     test_exe = executable(
         test_name,
-        [test_file] + project_source_files + test_infra_source_files,
-        dependencies: project_dependencies,
+        [test_file] + test_infra_source_files,
+        link_with: project_lib,
         include_directories: project_include_dirs + test_include_dirs,
         c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
         install: false

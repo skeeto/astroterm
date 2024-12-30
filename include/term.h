@@ -43,4 +43,9 @@ void term_size(int *y, int *x);
  */
 float get_cell_aspect_ratio(void);
 
+/* Add string via mvwaddstr, but truncate text that does not fit in the window,
+ * instead of having it wrap
+ */
+void mvwaddstr_truncate(WINDOW *win, int y, int x, const char *str);
+
 #endif // TERM_H
