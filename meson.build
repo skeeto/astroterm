@@ -16,19 +16,18 @@ project_header_files = []
 project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
-    include_directories('third_party'),
 ]
 
 subdir('include')
 subdir('src')
 subdir('data')
-subdir('third_party')
 
 # Get dependencies
 cc = meson.get_compiler('c')
 curses = dependency('curses', required : true)
+argtable2 = dependency('argtable2', required: true)
 math = cc.find_library('m', required : true)
-project_dependencies += [curses, math]
+project_dependencies += [curses, math, argtable2]
 
 # ------------------------------------------------------------------------------
 # Curses info

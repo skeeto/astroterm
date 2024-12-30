@@ -36,6 +36,7 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 - [`ncurses`](https://invisible-island.net/ncurses/announce.html) library
 - [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer
 - [`ninja`](https://github.com/ninja-build/ninja) 1.8.2 or newer
+- [`argtable`](https://argtable.sourceforge.io/)
 - Some common CLI tools (_these are checked for automatically during install_)
   - [`wget`](https://www.gnu.org/software/wget/) or [`curl`](https://curl.se/)
   - [`xxd`](https://linux.die.net/man/1/xxd)

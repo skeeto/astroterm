@@ -13,7 +13,7 @@
 #include "bsc5_names.h"
 
 // Third part libraries
-#include "argtable3.h"
+#include <argtable2.h>
 
 #include <getopt.h>
 #include <locale.h>
