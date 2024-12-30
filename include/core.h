@@ -22,10 +22,12 @@ struct conf
     int fps;
     float animation_mult;
     double julian_date;
+    double aspect_ratio;
     bool ascii;
     bool color;
     bool grid;
     bool constell;
+    bool metadata;
 };
 
 // All information pertinent to rendering a celestial body
@@ -141,5 +143,11 @@ int map_float_to_int_range(double min_float, double max_float, int min_int, int 
  * upon error during conversion
  */
 bool string_to_time(const char *string, struct tm *time);
+
+/* Convert elapsed time in days into years, days, hours, minutes, and seconds.
+ * The input represents total elapsed time as a double (in days), and the
+ * results are stored in the provided integer pointers.
+ */
+void elapsed_time_to_components(double elapsed_days, int *years, int *days, int *hours, int *minutes, int *seconds);
 
 #endif // CORE_H

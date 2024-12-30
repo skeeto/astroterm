@@ -51,14 +51,30 @@ build_with_meson() {
         MESON_FLAGS=""
     fi
 
-    # Run Meson configure step
-    echo "Configuring project with Meson..."
-    meson setup $MESON_FLAGS "$BUILD_DIR" "$SCRIPT_DIR" --wipe
+    # Create logs directory for capturing output
+    LOG_DIR="$SCRIPT_DIR/log"
+    mkdir -p "$LOG_DIR"
 
-    # Run Meson build step
+    CONFIGURE_LOG="$LOG_DIR/meson_configure.log"
+    BUILD_LOG="$LOG_DIR/meson_build.log"
+
+    # Run Meson configure step and capture errors
+    echo "Configuring project with Meson..."
+    if ! meson setup $MESON_FLAGS "$BUILD_DIR" "$SCRIPT_DIR" --wipe; then
+        echo "Error: Meson configuration failed." >&2
+        exit 1
+    fi
+
+    # Build step
     echo "Building project with Ninja..."
-    meson compile -C "$BUILD_DIR"
+    if ! meson compile -C "$BUILD_DIR"; then
+        echo "Error: Meson build failed." >&2
+        exit 1
+    fi
+
+    echo "Build completed successfully!"
 }
+
 
 check_dependencies
 download_bsc5
