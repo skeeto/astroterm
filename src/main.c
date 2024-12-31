@@ -241,7 +241,7 @@ void parse_options(int argc, char *argv[], struct conf *config)
     struct arg_dbl *anim_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
     struct arg_lit *color_arg = arg_lit0("c", "color", "Enable terminal colors");
     struct arg_lit *constell_arg = arg_lit0("C", "constellations",
-                                            "Draw constellations stick figures. Note: a constellation is only "
+                                            "Draw constellation stick figures. Note: a constellation is only "
                                             "drawn if all stars in the figure are over the threshold");
     struct arg_lit *grid_arg = arg_lit0("g", "grid", "Draw an azimuthal grid");
     struct arg_lit *ascii_arg = arg_lit0("A", "ascii", "Only use ASCII characters");
@@ -327,27 +327,27 @@ void parse_options(int argc, char *argv[], struct conf *config)
 
     if (color_arg->count > 0)
     {
-        config->color = TRUE;
+        config->color = true;
     }
 
     if (constell_arg->count > 0)
     {
-        config->constell = TRUE;
+        config->constell = true;
     }
 
     if (meta_arg->count > 0)
     {
-        config->metadata = TRUE;
+        config->metadata = true;
     }
 
     if (grid_arg->count > 0)
     {
-        config->grid = TRUE;
+        config->grid = true;
     }
 
     if (ascii_arg->count > 0)
     {
-        config->ascii = FALSE;
+        config->ascii = true;
     }
 
     if (ratio_arg->count > 0)

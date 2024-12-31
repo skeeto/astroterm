@@ -57,7 +57,6 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
     }
 
     // Draw label
-    // FIXME: labels wrap around side, cause flickering
     if (object->label != NULL)
     {
         mvwaddstr_truncate(win, y - 1, x + 1, object->label);

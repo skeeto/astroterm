@@ -1,8 +1,6 @@
-# 🌌 astroterm
+# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)
 
-![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)
-
-`astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It renders the live positions of stars, planets, constellations, and more directly in your terminal—no telescope required!. Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
+`astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It displays the real-time positions of stars, planets, constellations, and more, all within your terminal—no telescope required! Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
 `astroterm` is constantly improving, and we'd love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
@@ -13,10 +11,10 @@
 
 _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 
-### Features
+## Features
 
 - 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
-- 📐 **Accurate Rendering:** Displays moon, stars, and planets as much precision as terminal graphics allow.
+- 📐 **Accurate Rendering:** Displays the moon, stars, and planets with as much precision as terminal graphics allow.
 - 🌘 **Moon Phases:** Displays precise lunar phases in real-time
 - 🌌 **Constellation Figures:** Renders detailed constellation shapes
 - ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
@@ -25,22 +23,26 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 
 ### Building from Source
 
-> `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
-> [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order
-> for Meson to find them.
-
 #### Requirements
+
+> [!IMPORTANT]
+> When building, you must install the _development_ version of the runtime requirements, which provide the headers and libraries necessary for compiling and linking. These packages are typically marked with a `-dev` or `-devel` suffix.
 
 - Unix-like environment (Linux, macOS, WSL, etc.)
 - C compiler
-- [`ncurses`](https://invisible-island.net/ncurses/announce.html) library
-- [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer
-- [`ninja`](https://github.com/ninja-build/ninja) 1.8.2 or newer
-- [`argtable`](https://argtable.sourceforge.io/)
+- [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer ([installation via python](https://mesonbuild.com/Quick-guide.html#installation-using-python) is recommended)
+- [`ninja`](https://repology.org/project/ninja/versions) 1.8.2 or newer
+- [`ncurses`](https://repology.org/project/ncurses/versions) library
+- [`argtable2/3`](https://repology.org/project/argtable2/versions)
 - Some common CLI tools (_these are checked for automatically during install_)
-  - [`wget`](https://www.gnu.org/software/wget/) or [`curl`](https://curl.se/)
-  - [`xxd`](https://linux.die.net/man/1/xxd)
-  - [`sed`](https://www.gnu.org/software/sed/manual/sed.html)
+  - [`wget`](https://repology.org/project/wget/versions) or [`curl`](https://repology.org/project/curl/versions)
+  - [`xxd`](https://repology.org/project/xxd/versions) (is also commonly packaged with [`vim`](https://repology.org/project/vim/versions))
+  - [`sed`](https://www.gnu.org/software/sed/manual/sed.html) (should be available on all Unix versions)
+
+> [!WARNING]
+> `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
+> [`pkg-config`](https://repology.org/project/pkg-config/versions) in order
+> for Meson to find them.
 
 #### Install
 
@@ -56,7 +58,7 @@ Run the install script:
 sh install.sh
 ```
 
-You may now run the generated `./build/astroterm` binary or add the `astroterm` command system wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
+You may now run the generated `./build/astroterm` binary or add the `astroterm` command system-wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
 ## Usage
 
@@ -80,7 +82,7 @@ Usage: astroterm [OPTION]...
   -f, --fps=<int>           Frames per second (default: 24)
   -s, --speed=<float>       Animation speed multiplier (default: 1.0)
   -c, --color               Enable terminal colors
-  -C, --constellations      Draw constellations stick figures. Note: a
+  -C, --constellations      Draw constellation stick figures. Note: a
                             constellation is only drawn if all stars in the
                             figure are over the threshold
   -g, --grid                Draw an azimuthal grid
@@ -98,7 +100,7 @@ of the Apollo 11 launch at the Kennedy Space Center in Florida. We would run:
 astroterm --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:00:00
 ```
 
-Since timetravel hasn't been invented yet, we can use [Stellarium](https://stellarium-web.org/skysource/UpsPeg?fov=185.00&date=1969-07-19T09:00:00Z&lat=28.47&lng=-80.56&elev=0) to confirm that this aligns with realty.
+Since time travel hasn't been invented yet, we can use [Stellarium](https://stellarium-web.org/skysource/UpsPeg?fov=185.00&date=1969-07-19T09:00:00Z&lat=28.47&lng=-80.56&elev=0) to confirm that this aligns with reality.
 
 If we then wanted to display all stars with a magnitude brighter than or equal
 to 5.0 and add color, we would add `--threshold 5.0 --color` as options.
@@ -107,11 +109,11 @@ If you simply want the current time, don't specify the `--datetime` option and
 _astroterm_ will use the system time. For your current location, you will still
 have to specify the `--lat` and `--long` options.
 
-For more options and help run `astroterm -h` or `astroterm --help`.
+For more options and help, run `astroterm -h` or `astroterm --help`.
 
 > ℹ️ Use a tool like [LatLong](https://www.latlong.net/) to get your latitude and longitude.
 
-> ℹ️ Star magnitudes decrease as apparent brightness increases, i.e. to show more stars, increase the threshold.
+> ℹ️ Star magnitudes decrease as apparent brightness increases, i.e., to show more stars, increase the threshold.
 
 ## Development
 
@@ -123,7 +125,7 @@ Run `meson test` within the build directory. To get a coverage report, subsequen
 
 Many thanks to the following resources, which were invaluable to the development of this project.
 
-- [Map Projections-A Working Manual By John P. Snyder](https://pubs.usgs.gov/pp/1395/report.pdf)
+- [Map Projections-A Working Manual by John P. Snyder](https://pubs.usgs.gov/pp/1395/report.pdf)
 - [Wikipedia](https://en.wikipedia.org)
 - [Atractor](https://www.atractor.pt/index-_en.html)
 - [Jon Voisey's Blog: Following Kepler](https://jonvoisey.net/blog/)

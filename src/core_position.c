@@ -101,7 +101,7 @@ void update_moon_position(struct moon *moon_object, double julian_date, double l
 // FIXME: this does not render the correct phase and angle
 void update_moon_phase(struct moon *moon_object, double julian_date, double latitude)
 {
-    moon_object->base.symbol_unicode = get_moon_phase_image(julian_date, latitude < 0);
+    moon_object->base.symbol_unicode = get_moon_phase_image(julian_date, latitude > 0);
 
     return;
 }
