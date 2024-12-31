@@ -8,6 +8,7 @@
 #ifndef ASTRO_H
 #define ASTRO_H
 
+#include <stdbool.h>
 #include <time.h>
 
 // For our purposes, the Sun is treated the same as a planet
@@ -104,10 +105,10 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements, const struct kep_
 
 // Miscellaneous
 
-/* Calculate the phase of the Moon, phase ∈ [0, 1], where 0 is a New Moon and
- * 1 is a Full Moon. I.e. the age of the moon within the synodic month.
+/* Calculate the age of the Moon, age ∈ [0, 1], where 0 is a New Moon and
+ * 0.5 is a Full Moon. I.e. the normalized age of the moon within the synodic month.
  */
-double calc_moon_phase(double julian_date);
+double calc_moon_age(double julian_date);
 
 /* Note: this is NOT the obliquity of the elliptic. Instead, it is the angle
  * from the celestial intermediate origin to the terrestrial intermediate origin
@@ -126,7 +127,11 @@ const char *get_zodiac_sign(int day, int month);
 /* Return the phase of the Moon as a descriptive string (e.g., "Full Moon",
  * "Waxing Crescent") based on the Moon's age within the synodic month.
  */
-const char *get_moon_phase_description(double julian_date);
+const char *get_moon_phase_name(double julian_date);
+
+/* Return an emoji representing the phase of the Moon. northern = true if in northern hemisphere, otherwise false;
+ */
+const char *get_moon_phase_image(double julian_date, bool northern);
 
 /* Put an angle in degrees, minutes, seconds format
  */

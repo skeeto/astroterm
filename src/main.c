@@ -450,7 +450,7 @@ void render_metadata(WINDOW *win, struct conf *config)
     mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac);
 
     // Lunar phase
-    const char *lunar_phase = get_moon_phase_description(julian_date);
+    const char *lunar_phase = get_moon_phase_name(julian_date);
     mvwprintw(win, 2, 0, "Lunar phase: \t%s", lunar_phase);
 
     // Lat and Lon (convert back to degrees)

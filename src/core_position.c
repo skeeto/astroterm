@@ -101,27 +101,7 @@ void update_moon_position(struct moon *moon_object, double julian_date, double l
 // FIXME: this does not render the correct phase and angle
 void update_moon_phase(struct moon *moon_object, double julian_date, double latitude)
 {
-#define NUM_PHASES 8
-
-    // Moon phases throughout the synodic month *as seen from the Northern
-    // hemisphere*
-    // FIXME: clang-format on CI fails on this line for some reason
-    // clang-format off
-    static const char *moon_phases[NUM_PHASES] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
-    // clang-format on
-    double phase = calc_moon_phase(julian_date);
-
-    // If we are in the Southern hemisphere, negate the phase to move in the
-    // opposite direction throughout the cycle
-    if (latitude < 0)
-    {
-        phase = 1 - phase;
-    }
-
-    int phase_index = map_float_to_int_range(0.0, 1.0, 0, NUM_PHASES - 1, phase);
-    char *moon_char = (char *)moon_phases[phase_index];
-
-    moon_object->base.symbol_unicode = moon_char;
+    moon_object->base.symbol_unicode = get_moon_phase_image(julian_date, latitude < 0);
 
     return;
 }

@@ -1,6 +1,7 @@
 #include "astro.h"
 
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -330,7 +331,7 @@ void calc_moon_geo_ICRF(const struct kep_elems *moon_elements, const struct kep_
     return;
 }
 
-double calc_moon_phase(double julian_date)
+double calc_moon_age(double julian_date)
 {
     // A crude calculation for the phase of the moon
     // https://en.wikipedia.org/wiki/Lunar_phase
@@ -370,46 +371,83 @@ const char *get_zodiac_sign(int day, int month)
 
     // Return the sign combined with its symbol
     static char result[50];
-    snprintf(result, sizeof(result), "%s %s", zodiac_symbols[index], zodiac_signs[index]);
+    snprintf(result, sizeof(result), "%s %s", zodiac_signs[index], zodiac_symbols[index]);
     return result;
 }
 
-const char *get_moon_phase_description(double julian_date)
+/* Takes the normalized age of the moon within the synodic month
+ * (phase ∈ [0, 1)), and returns the phase of the moon [0,1,...,7], where
+ * 0 : new moon
+ * 1 : waxing cresent
+ * ...
+ * 4 : full moon
+ * etc.
+ */
+int moon_age_to_phase(double age)
 {
-    double phase = calc_moon_phase(julian_date);
 
-    if (phase < 0.03 || phase > 0.97)
+    if (age < 0.03 || age > 0.97)
     {
-        return "New Moon";
+        return 0;
     }
-    else if (phase < 0.25)
+    else if (age < 0.25)
     {
-        return "Waxing Crescent";
+        return 1;
     }
-    else if (phase < 0.27)
+    else if (age < 0.27)
     {
-        return "First Quarter";
+        return 2;
     }
-    else if (phase < 0.50)
+    else if (age < 0.50)
     {
-        return "Waxing Gibbous";
+        return 3;
     }
-    else if (phase < 0.53)
+    else if (age < 0.53)
     {
-        return "Full Moon";
+        return 4;
     }
-    else if (phase < 0.75)
+    else if (age < 0.75)
     {
-        return "Waning Gibbous";
+        return 5;
     }
-    else if (phase < 0.77)
+    else if (age < 0.77)
     {
-        return "Last Quarter";
+        return 6;
     }
     else
     {
-        return "Waning Crescent";
+        return 7;
     }
+}
+
+const char *get_moon_phase_name(double julian_date)
+{
+    char *phase_names[] = {"New Moon",  "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                           "Full Moon", "Waning Gibbous",  "Last Quarter",  "Waning Crescent"};
+    double age = calc_moon_age(julian_date);
+    return phase_names[moon_age_to_phase(age)];
+}
+
+const char *get_moon_phase_image(double julian_date, bool northern)
+{
+    // Moon phases throughout the synodic month *as seen from the Northern
+    // hemisphere*
+    // FIXME: clang-format on CI fails on this line for some reason
+    // clang-format off
+    static const char *moon_phases[8] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
+    // clang-format on
+
+    double age = calc_moon_age(julian_date);
+
+    // If we are in the Southern hemisphere, negate the age to move in the
+    // opposite direction throughout the cycle
+    if (!northern)
+    {
+        age = 1 - age;
+    }
+
+    int phase_index = moon_age_to_phase(age);
+    return (char *)moon_phases[phase_index];
 }
 
 void decimal_to_dms(double decimal_value, int *degrees, int *minutes, double *seconds)

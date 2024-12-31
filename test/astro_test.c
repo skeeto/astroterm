@@ -64,10 +64,10 @@ void test_datetime_to_julian_date(void)
 }
 
 // -----------------------------------------------------------------------------
-// calc_moon_phase
+// calc_moon_age
 // -----------------------------------------------------------------------------
 
-#define EPSILON_PHASE 0.05
+#define EPSILON_AGE 0.05
 
 // Account for wrapping around the 0-1 boundary of moon phase
 double circular_distance(double phase1, double phase2)
@@ -76,52 +76,52 @@ double circular_distance(double phase1, double phase2)
     return fmin(diff, 1.0 - diff);
 }
 
-void test_calc_moon_phase(void)
+void test_calc_moon_age(void)
 {
     // Got actual phases using: https://www.moongiant.com/phase/3/20/2029/
     // Not sure how accurate that really is
 
     double date;
-    double calculated_phase;
-    double expected_phase;
+    double calculated_age;
+    double expected_age;
     double distance;
 
     date = 2451550.1;
-    expected_phase = 0.0;
-    calculated_phase = calc_moon_phase(date);
-    distance = circular_distance(calculated_phase, expected_phase);
-    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+    expected_age = 0.0;
+    calculated_age = calc_moon_age(date);
+    distance = circular_distance(calculated_age, expected_age);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_AGE, 0.0, distance);
 
     date = 2460645.5;
-    expected_phase = 0.0;
-    calculated_phase = calc_moon_phase(date);
-    distance = circular_distance(calculated_phase, expected_phase);
-    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+    expected_age = 0.0;
+    calculated_age = calc_moon_age(date);
+    distance = circular_distance(calculated_age, expected_age);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_AGE, 0.0, distance);
 
     date = 2459242.5;
-    expected_phase = 0.5;
-    calculated_phase = calc_moon_phase(date);
-    distance = circular_distance(calculated_phase, expected_phase);
-    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+    expected_age = 0.5;
+    calculated_age = calc_moon_age(date);
+    distance = circular_distance(calculated_age, expected_age);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_AGE, 0.0, distance);
 
     date = 2466447.5;
-    expected_phase = 0.5;
-    calculated_phase = calc_moon_phase(date);
-    distance = circular_distance(calculated_phase, expected_phase);
-    TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+    expected_age = 0.5;
+    calculated_age = calc_moon_age(date);
+    distance = circular_distance(calculated_age, expected_age);
+    TEST_ASSERT_FLOAT_WITHIN(EPSILON_AGE, 0.0, distance);
 
     // Moving very fast here:
     // date = 2462215.5;
-    // expected_phase = 0.25;
-    // calculated_phase = calc_moon_phase(date);
-    // distance = circular_distance(calculated_phase, expected_phase);
-    // TEST_ASSERT_FLOAT_WITHIN(EPSILON_PHASE, 0.0, distance);
+    // expected_age = 0.25;
+    // calculated_age = calc_moon_age(date);
+    // distance = circular_distance(calculated_age, expected_age);
+    // TEST_ASSERT_FLOAT_WITHIN(EPSILON_age, 0.0, distance);
 }
 
 int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_datetime_to_julian_date);
-    RUN_TEST(test_calc_moon_phase);
+    RUN_TEST(test_calc_moon_age);
     return UNITY_END();
 }

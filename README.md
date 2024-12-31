@@ -16,7 +16,7 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 ### Features
 
 - 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
-- 🎯 **Accurate Rendering:** Displays moon, stars, and planets as precisely as ASCII allows
+- 📐 **Accurate Rendering:** Displays moon, stars, and planets as much precision as terminal graphics allow.
 - 🌘 **Moon Phases:** Displays precise lunar phases in real-time
 - 🌌 **Constellation Figures:** Renders detailed constellation shapes
 - ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
@@ -25,9 +25,9 @@ _<p align="center">Stars above Boston around 9 PM on December 18, 2024</p>_
 
 ### Building from Source
 
-> Ncurses detection is spotty on some systems, and you may need to install
+> `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
 > [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) in order
-> for Meson to find it. You may install it via [Homebrew](https://formulae.brew.sh/formula/ncurses) on macOS.
+> for Meson to find them.
 
 #### Requirements
 
