@@ -37,8 +37,8 @@ struct object_base
     double altitude;
     int color_pair; // 0 indicates no color pair
     char symbol_ASCII;
-    char *symbol_unicode;
-    char *label;
+    const char *symbol_unicode;
+    const char *label;
 };
 
 struct star

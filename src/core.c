@@ -68,32 +68,9 @@ bool generate_star_table(struct star **star_table_out, struct entry *entries, st
         temp_star.base = (struct object_base){
             .color_pair = 0,
             .symbol_ASCII = (char)mag_map_round_ASCII[symbol_index],
+            .symbol_unicode = mag_map_unicode_round[symbol_index],
+            .label = name_table[i].name,
         };
-
-        // Allocate memory for unicode symbol
-        const char *unicode_temp = mag_map_unicode_round[symbol_index];
-
-        temp_star.base.symbol_unicode = malloc(strlen(unicode_temp) + 1);
-        if (temp_star.base.symbol_unicode == NULL)
-        {
-            printf("Allocation of memory for star struct symbol failed\n");
-            return false;
-        }
-        strcpy(temp_star.base.symbol_unicode, unicode_temp);
-
-        // Allocate memory for label
-        if (name_table[i].name != NULL)
-        {
-            char *label_temp = name_table[i].name;
-
-            temp_star.base.label = malloc(strlen(label_temp) + 1);
-            if (temp_star.base.label == NULL)
-            {
-                printf("Allocation of memory for star struct label failed\n");
-                return false;
-            }
-            strcpy(temp_star.base.label, label_temp);
-        }
 
         // Copy temp struct to table index
         (*star_table_out)[i] = temp_star;
@@ -141,33 +118,10 @@ bool generate_planet_table(struct planet **planet_table, const struct kep_elems 
 
         temp_planet.base = (struct object_base){
             .symbol_ASCII = planet_symbols_ASCII[i],
-            .symbol_unicode = NULL,
-            .label = NULL,
             .color_pair = planet_colors[i],
+            .symbol_unicode = planet_symbols_unicode[i],
+            .label = planet_labels[i],
         };
-
-        char *unicode_temp = (char *)planet_symbols_unicode[i];
-        char *label_temp = (char *)planet_labels[i];
-
-        if (unicode_temp != NULL)
-        {
-            temp_planet.base.symbol_unicode = malloc(strlen(unicode_temp) + 1);
-            if (temp_planet.base.symbol_unicode == NULL)
-            {
-                return false;
-            }
-            strcpy(temp_planet.base.symbol_unicode, unicode_temp);
-        }
-
-        if (label_temp != NULL)
-        {
-            temp_planet.base.label = malloc(strlen(label_temp) + 1);
-            if (temp_planet.base.label == NULL)
-            {
-                return false;
-            }
-            strcpy(temp_planet.base.label, label_temp);
-        }
 
         temp_planet.elements = &planet_elements[i];
         temp_planet.rates = &planet_rates[i];
@@ -435,19 +389,6 @@ bool generate_constell_table(const uint8_t *data, size_t data_len, struct conste
 
 // Memory freeing
 
-static void free_base_members(struct object_base base)
-{
-    if (base.symbol_unicode != NULL)
-    {
-        free(base.symbol_unicode);
-    }
-    if (base.label != NULL)
-    {
-        free(base.label);
-    }
-    return;
-}
-
 void free_constell_members(struct constell constell_data)
 {
     if (constell_data.star_numbers != NULL)
@@ -468,20 +409,12 @@ void free_star_name_members(struct star_name name_data)
 
 void free_stars(struct star *star_table, unsigned int size)
 {
-    for (unsigned int i = 0; i < size; ++i)
-    {
-        free_base_members(star_table[i].base);
-    }
     free(star_table);
     return;
 }
 
 void free_planets(struct planet *planets, unsigned int size)
 {
-    for (unsigned int i = 0; i < size; ++i)
-    {
-        free_base_members(planets[i].base);
-    }
     free(planets);
     return;
 }

@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 
     // This memory is no longer needed
     free(BSC5_entries);
-    free_star_names(name_table, num_stars);
+    // free_star_names(name_table, num_stars);
 
     // Terminal/System settings
     setlocale(LC_ALL, "");         // Required for unicode rendering
