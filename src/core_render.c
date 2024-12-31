@@ -49,11 +49,11 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
     // Draw object
     if (config->ascii)
     {
-        mvwaddstr(win, y, x, object->symbol_unicode);
+        mvwaddch(win, y, x, object->symbol_ASCII);
     }
     else
     {
-        mvwaddch(win, y, x, object->symbol_ASCII);
+        mvwaddstr(win, y, x, object->symbol_unicode);
     }
 
     // Draw label
@@ -168,18 +168,7 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
         // FIXME: this clipping doesn't seem to work or no-unicode for some reason?
         if (config->ascii)
         {
-            draw_line_smooth(win, ya, xa, yb, xb);
-            if (!a_clipped)
-            {
-                mvwaddstr(win, ya, xa, "\u25CB"); // Unicode circle symbol
-            }
-            if (!b_clipped)
-            {
-                mvwaddstr(win, yb, xb, "\u25CB");
-            }
-        }
-        else
-        {
+
             draw_line_ASCII(win, ya, xa, yb, xb);
             if (!a_clipped)
             {
@@ -188,6 +177,18 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
             if (!b_clipped)
             {
                 mvwaddch(win, yb, xb, '+');
+            }
+        }
+        else
+        {
+            draw_line_smooth(win, ya, xa, yb, xb);
+            if (!a_clipped)
+            {
+                mvwaddstr(win, ya, xa, "\u25CB"); // Unicode circle symbol
+            }
+            if (!b_clipped)
+            {
+                mvwaddstr(win, yb, xb, "\u25CB");
             }
         }
     }
@@ -308,11 +309,11 @@ void render_azimuthal_grid(WINDOW *win, struct conf *config)
 
             if (config->ascii)
             {
-                draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
+                draw_line_ASCII(win, y, x, rad_vertical, rad_horizontal);
             }
             else
             {
-                draw_line_ASCII(win, y, x, rad_vertical, rad_horizontal);
+                draw_line_smooth(win, y, x, rad_vertical, rad_horizontal);
             }
 
             int str_len = snprintf(NULL, 0, "%d", angle);

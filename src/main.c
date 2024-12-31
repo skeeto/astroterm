@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         .fps = 24,
         .animation_mult = 1.0f,
         .aspect_ratio = 0.0,
-        .ascii = true,
+        .ascii = false,
         .color = false,
         .grid = false,
         .constell = false,
@@ -104,7 +104,6 @@ int main(int argc, char *argv[])
 
     // This memory is no longer needed
     free(BSC5_entries);
-    // free_star_names(name_table, num_stars);
 
     // Terminal/System settings
     setlocale(LC_ALL, "");         // Required for unicode rendering
@@ -446,12 +445,20 @@ void render_metadata(WINDOW *win, struct conf *config)
     mvwprintw(win, 0, 0, "Date: \t\t%02d-%02d-%04d", day, month, year);
 
     // Zodiac
-    const char *zodiac = get_zodiac_sign(day, month);
-    mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac);
+    const char *zodiac_name = get_zodiac_sign(day, month);
+    const char *zodiac_symbol = get_zodiac_symbol(day, month);
+    if (config->ascii)
+    {
+        mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac_name);
+    }
+    else
+    {
+        mvwprintw(win, 1, 0, "Zodiac: \t%s %s", zodiac_name, zodiac_symbol);
+    }
 
     // Lunar phase
     const char *lunar_phase = get_moon_phase_name(julian_date);
-    mvwprintw(win, 2, 0, "Lunar phase: \t%s", lunar_phase);
+    mvwprintw(win, 2, 0, "Lunar Phase: \t%s", lunar_phase);
 
     // Lat and Lon (convert back to degrees)
     int deg, min;

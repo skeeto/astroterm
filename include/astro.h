@@ -124,6 +124,10 @@ void julian_to_gregorian(double jd, int *year, int *month, int *day);
  */
 const char *get_zodiac_sign(int day, int month);
 
+/* Get the zodiac symbol of a month and day
+ */
+const char *get_zodiac_symbol(int day, int month);
+
 /* Return the phase of the Moon as a descriptive string (e.g., "Full Moon",
  * "Waxing Crescent") based on the Moon's age within the synodic month.
  */

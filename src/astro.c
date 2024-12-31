@@ -363,16 +363,22 @@ const char *get_zodiac_sign(int day, int month)
     static const char *zodiac_signs[] = {"Capricorn", "Aquarius", "Pisces", "Aries",   "Taurus",      "Gemini",   "Cancer",
                                          "Leo",       "Virgo",    "Libra",  "Scorpio", "Sagittarius", "Capricorn"};
 
+    static const int zodiac_start_days[] = {20, 19, 21, 21, 21, 21, 23, 23, 23, 23, 23, 22, 31};
+
+    int index = (day < zodiac_start_days[month - 1]) ? (month - 1) : month;
+
+    return zodiac_signs[index];
+}
+
+const char *get_zodiac_symbol(int day, int month)
+{
     static const char *zodiac_symbols[] = {"♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑"};
 
     static const int zodiac_start_days[] = {20, 19, 21, 21, 21, 21, 23, 23, 23, 23, 23, 22, 31};
 
     int index = (day < zodiac_start_days[month - 1]) ? (month - 1) : month;
 
-    // Return the sign combined with its symbol
-    static char result[50];
-    snprintf(result, sizeof(result), "%s %s", zodiac_signs[index], zodiac_symbols[index]);
-    return result;
+    return zodiac_symbols[index];
 }
 
 /* Takes the normalized age of the moon within the synodic month
