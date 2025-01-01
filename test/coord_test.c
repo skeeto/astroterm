@@ -1,9 +1,6 @@
 #include "coord.h"
+#include "math_util.h"
 #include "unity.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 void setUp(void)
 {

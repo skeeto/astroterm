@@ -1,13 +1,10 @@
 #include "astro.h"
+#include "math_util.h"
 
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <time.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 #ifndef AU
 #define AU 149597870.691
@@ -389,40 +386,39 @@ const char *get_zodiac_symbol(int day, int month)
  * 4 : full moon
  * etc.
  */
-int moon_age_to_phase(double age)
+enum moon_phase moon_age_to_phase(double age)
 {
-
     if (age < 0.03 || age > 0.97)
     {
-        return 0;
+        return NEW_MOON;
     }
     else if (age < 0.25)
     {
-        return 1;
+        return WAXING_CRESCENT;
     }
     else if (age < 0.27)
     {
-        return 2;
+        return FIRST_QUARTER;
     }
     else if (age < 0.50)
     {
-        return 3;
+        return WAXING_GIBBOUS;
     }
     else if (age < 0.53)
     {
-        return 4;
+        return FULL_MOON;
     }
     else if (age < 0.75)
     {
-        return 5;
+        return WANING_GIBBOUS;
     }
     else if (age < 0.77)
     {
-        return 6;
+        return LAST_QUARTER;
     }
     else
     {
-        return 7;
+        return WANING_CRESCENT;
     }
 }
 

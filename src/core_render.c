@@ -1,4 +1,5 @@
 #include "core_render.h"
+#include "math_util.h"
 
 #include "coord.h"
 #include "core.h"
@@ -8,10 +9,6 @@
 #include <math.h>
 #include <ncurses.h>
 #include <stdlib.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 void horizontal_to_polar(double azimuth, double altitude, double *radius, double *theta)
 {

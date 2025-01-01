@@ -26,6 +26,18 @@ enum planets
     NUM_PLANETS
 };
 
+enum moon_phase
+{
+    NEW_MOON = 0,
+    WAXING_CRESCENT,
+    FIRST_QUARTER,
+    WAXING_GIBBOUS,
+    FULL_MOON,
+    WANING_GIBBOUS,
+    LAST_QUARTER,
+    WANING_CRESCENT
+};
+
 // Keplerian/orbital elements
 
 struct kep_elems

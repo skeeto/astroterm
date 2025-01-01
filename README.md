@@ -97,10 +97,10 @@ Say we wanted to view the sky at 5:00 AM (Eastern) on July 16, 1969—the mornin
 of the Apollo 11 launch at the Kennedy Space Center in Florida. We would run:
 
 ```sh
-astroterm --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T9:00:00
+astroterm --latitude 28.573469 --longitude -80.651070 --datetime 1969-7-16T8:00:00
 ```
 
-Since time travel hasn't been invented yet, we can use [Stellarium](https://stellarium-web.org/skysource/UpsPeg?fov=185.00&date=1969-07-19T09:00:00Z&lat=28.47&lng=-80.56&elev=0) to confirm that this aligns with reality.
+While we're still waiting for someone to invent time travel, we can cheat a little by using [Stellarium](https://stellarium-web.org/skysource/UpsPeg?fov=185.00&date=1969-07-19T09:00:00Z&lat=28.47&lng=-80.56&elev=0) to confirm that this aligns with reality.
 
 If we then wanted to display all stars with a magnitude brighter than or equal
 to 5.0 and add color, we would add `--threshold 5.0 --color` as options.

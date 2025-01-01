@@ -20,7 +20,7 @@ struct conf
     float threshold;
     float label_thresh;
     int fps;
-    float animation_mult;
+    float speed;
     double julian_date;
     double aspect_ratio;
     bool ascii;

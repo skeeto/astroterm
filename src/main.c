@@ -1,8 +1,8 @@
 #include "core.h"
 #include "core_position.h"
 #include "core_render.h"
-
 #include "data/keplerian_elements.h"
+#include "math_util.h"
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
@@ -12,16 +12,16 @@
 #include "bsc5_data.h"
 #include "bsc5_names.h"
 
-// Third part libraries
+// Third party libraries
 #include <argtable2.h>
+#include <ncurses.h>
 
 #include <getopt.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-static volatile bool perform_resize = false;
+#include <time.h>
 
 static void catch_winch(int sig);
 static void resize_ncurses(void);
@@ -31,17 +31,13 @@ static void parse_options(int argc, char *argv[], struct conf *config);
 static void convert_options(struct conf *config);
 static void render_metadata(WINDOW *win, struct conf *config);
 
-// Track current simulation time
+// Track if we need to resize the curses window
+static volatile bool perform_resize = false;
+
+// Track current simulation time (UTC)
 // Default to current time in dt_string_utc is NULL
-double julian_date = 0.0;
-double julian_date_start = 0.0; // Note of when we started
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
+static double julian_date = 0.0;
+static double julian_date_start = 0.0; // Note of when we started
 
 int main(int argc, char *argv[])
 {
@@ -53,7 +49,7 @@ int main(int argc, char *argv[])
         .threshold = 5.0f,
         .label_thresh = 0.25f,
         .fps = 24,
-        .animation_mult = 1.0f,
+        .speed = 1.0f,
         .aspect_ratio = 0.0,
         .ascii = false,
         .color = false,
@@ -98,8 +94,8 @@ int main(int argc, char *argv[])
 
     if (!s)
     {
-        // At least one of the above functions failed, abort
-        abort();
+        // At least one of the above functions failed, exit
+        exit(EXIT_FAILURE);
     }
 
     // This memory is no longer needed
@@ -108,6 +104,7 @@ int main(int argc, char *argv[])
     // Terminal/System settings
     setlocale(LC_ALL, "");         // Required for unicode rendering
     signal(SIGWINCH, catch_winch); // Capture window resizes
+    tzset();                       // Initialize timezone information
 
     // Ncurses initialization
     ncurses_init(config.color);
@@ -117,7 +114,7 @@ int main(int argc, char *argv[])
     resize_main(main_win, &config);
 
     // Metadata window
-    WINDOW *metadata_win = newwin(0, 0, 0, 0); // Position at top right
+    WINDOW *metadata_win = newwin(0, 0, 0, 0); // Position at top left
     if (config.metadata)
     {
         resize_meta(metadata_win);
@@ -131,7 +128,6 @@ int main(int argc, char *argv[])
 
         if (perform_resize)
         {
-            // Putting this after erasing the window reduces flickering
             resize_ncurses();
             resize_main(main_win, &config);
             if (config.metadata)
@@ -139,6 +135,7 @@ int main(int argc, char *argv[])
                 resize_meta(metadata_win);
             }
             doupdate();
+
             perform_resize = false;
         }
         else
@@ -153,7 +150,7 @@ int main(int argc, char *argv[])
         update_moon_position(&moon_object, julian_date, config.latitude, config.longitude);
         update_moon_phase(&moon_object, julian_date, config.latitude);
 
-        // Render
+        // Render objects
         render_stars_stereo(main_win, &config, star_table, num_stars, num_by_mag);
         if (config.constell)
         {
@@ -170,11 +167,7 @@ int main(int argc, char *argv[])
             render_cardinal_directions(main_win, &config);
         }
 
-        if (config.metadata)
-        {
-            werase(metadata_win);
-        }
-
+        // Render metadata
         if (config.metadata)
         {
             render_metadata(metadata_win, &config);
@@ -200,7 +193,7 @@ int main(int argc, char *argv[])
 
         // Increment "simulation" time
         const double microsec_per_day = 24.0 * 60.0 * 60.0 * 1.0E6;
-        julian_date += (double)dt / microsec_per_day * config.animation_mult;
+        julian_date += (double)dt / microsec_per_day * config.speed;
 
         // Determine time it took to update positions and render to screen
         struct sw_timestamp frame_end;
@@ -209,11 +202,15 @@ int main(int argc, char *argv[])
         unsigned long long frame_time;
         sw_timediff_usec(frame_end, frame_begin, &frame_time);
 
+        // If updating the frame took less time than the time between frames,
+        // wait the rest of the time
         if (frame_time < dt)
         {
             sw_sleep(dt - frame_time);
         }
     }
+
+    // Clean up
 
     ncurses_kill();
 
@@ -222,12 +219,11 @@ int main(int argc, char *argv[])
     free_planets(planet_table, NUM_PLANETS);
     free_moon_object(moon_object);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 void parse_options(int argc, char *argv[], struct conf *config)
 {
-    // Define Argtable3 option structures
     struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 42.361145)");
     struct arg_dbl *longitude_arg =
         arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: -71.057083)");
@@ -237,7 +233,7 @@ void parse_options(int argc, char *argv[], struct conf *config)
     struct arg_dbl *label_arg =
         arg_dbl0("l", "label-thresh", "<float>", "Label stars brighter than this magnitude (default: 0.25)");
     struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
-    struct arg_dbl *anim_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
+    struct arg_dbl *speed_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
     struct arg_lit *color_arg = arg_lit0("c", "color", "Enable terminal colors");
     struct arg_lit *constell_arg = arg_lit0("C", "constellations",
                                             "Draw constellation stick figures. Note: a constellation is only "
@@ -251,11 +247,9 @@ void parse_options(int argc, char *argv[], struct conf *config)
                                          "not 'square.' A value around 2.0 works well for most cases.");
     struct arg_end *end = arg_end(20);
 
-    // Create argtable array
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,  anim_arg, color_arg,
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,  speed_arg, color_arg,
                         constell_arg, grid_arg,      ascii_arg,    meta_arg,      ratio_arg, help_arg, end};
 
-    // Parse the arguments
     int nerrors = arg_parse(argc, argv, argtable);
 
     if (help_arg->count > 0)
@@ -273,7 +267,6 @@ void parse_options(int argc, char *argv[], struct conf *config)
         exit(EXIT_FAILURE);
     }
 
-    // Assign parsed values to global variables
     if (latitude_arg->count > 0)
     {
         config->latitude = latitude_arg->dval[0];
@@ -319,9 +312,9 @@ void parse_options(int argc, char *argv[], struct conf *config)
         }
     }
 
-    if (anim_arg->count > 0)
+    if (speed_arg->count > 0)
     {
-        config->animation_mult = (float)anim_arg->dval[0];
+        config->speed = (float)speed_arg->dval[0];
     }
 
     if (color_arg->count > 0)
@@ -405,7 +398,7 @@ void resize_ncurses(void)
 
 void resize_main(WINDOW *win, struct conf *config)
 {
-    // ???
+    // Clear the window before resizing
     werase(win);
     wnoutrefresh(win);
 
@@ -427,7 +420,7 @@ void resize_main(WINDOW *win, struct conf *config)
 
 void resize_meta(WINDOW *win)
 {
-    // ???
+    // Clear the window before resizing
     werase(win);
     wnoutrefresh(win);
 
@@ -439,10 +432,26 @@ void resize_meta(WINDOW *win)
 
 void render_metadata(WINDOW *win, struct conf *config)
 {
-    // Gregorian Date
-    int year, month, day;
-    julian_to_gregorian(julian_date, &year, &month, &day);
-    mvwprintw(win, 0, 0, "Date: \t\t%02d-%02d-%04d", day, month, year);
+    // Gregorian Date (local time)
+
+    // Convert sim julian date (UTC) to local time
+    const double JULIAN_DATE_EPOCH = 2440587.5;
+    time_t utc_time = (time_t)((julian_date - JULIAN_DATE_EPOCH) * 86400);
+    struct tm *local_time = localtime(&utc_time);
+    if (local_time == NULL)
+    {
+        // Default to UTC if conversion fails
+        local_time = gmtime(&utc_time);
+    }
+
+    int year = local_time->tm_year + 1900; // tm_year is years since 1900
+    int month = local_time->tm_mon + 1;    // tm_mon is months since January (0-11)
+    int day = local_time->tm_mday;         // Day of the month
+    int hour = local_time->tm_hour;        // Hour (0-23)
+    int minute = local_time->tm_min;       // Minute (0-59)
+
+    const char *timezone = local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+    mvwprintw(win, 0, 0, "Date (%s): \t%02d-%02d-%04d %02d:%02d", timezone, day, month, year, hour, minute);
 
     // Zodiac
     const char *zodiac_name = get_zodiac_sign(day, month);
