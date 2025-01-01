@@ -441,15 +441,17 @@ const char *get_moon_phase_image(double julian_date, bool northern)
 
     double age = calc_moon_age(julian_date);
 
-    // If we are in the Southern hemisphere, negate the age to move in the
+    int phase_index = moon_age_to_phase(age);
+
+    // If we are in the Southern hemisphere, negate the index to move in the
     // opposite direction throughout the cycle
-    if (!northern)
+    // FIXME: this is messy
+    if (!northern && phase_index != 0)
     {
-        age = 1 - age;
+        phase_index = 8 - phase_index;
     }
 
-    int phase_index = moon_age_to_phase(age);
-    return (char *)moon_phases[phase_index];
+    return moon_phases[phase_index];
 }
 
 void decimal_to_dms(double decimal_value, int *degrees, int *minutes, double *seconds)
