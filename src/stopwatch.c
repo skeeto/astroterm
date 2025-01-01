@@ -14,9 +14,9 @@
 #include <windows.h>
 #endif
 
-int sw_gettime(struct sw_timestamp *stamp)
+int sw_gettime(struct SwTimestamp *stamp)
 {
-    memset(stamp, 0, sizeof(struct sw_timestamp));
+    memset(stamp, 0, sizeof(struct SwTimestamp));
 
 #if defined(_WIN32)
     // Microsoft Windows (32-bit or 64-bit)
@@ -78,7 +78,7 @@ int sw_gettime(struct sw_timestamp *stamp)
     return 0;
 }
 
-int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin, unsigned long long *diff)
+int sw_timediff_usec(struct SwTimestamp end, struct SwTimestamp begin, unsigned long long *diff)
 {
     *diff = 0;
 

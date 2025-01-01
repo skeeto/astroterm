@@ -20,7 +20,7 @@ void horizontal_to_polar(double azimuth, double altitude, double *radius, double
     return;
 }
 
-void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *config)
+void render_object_stereo(WINDOW *win, struct ObjectBase *object, struct Conf *config)
 {
     double radius_polar, theta_polar;
     horizontal_to_polar(object->azimuth, object->altitude, &radius_polar, &theta_polar);
@@ -67,7 +67,7 @@ void render_object_stereo(WINDOW *win, struct object_base *object, struct conf *
     return;
 }
 
-void render_stars_stereo(WINDOW *win, struct conf *config, struct star *star_table, int num_stars, int *num_by_mag)
+void render_stars_stereo(WINDOW *win, struct Conf *config, struct Star *star_table, int num_stars, int *num_by_mag)
 {
     int i;
     for (i = 0; i < num_stars; ++i)
@@ -75,7 +75,7 @@ void render_stars_stereo(WINDOW *win, struct conf *config, struct star *star_tab
         int catalog_num = num_by_mag[i];
         int table_index = catalog_num - 1;
 
-        struct star *star = &star_table[table_index];
+        struct Star *star = &star_table[table_index];
 
         if (star->magnitude > config->threshold)
         {
@@ -94,7 +94,7 @@ void render_stars_stereo(WINDOW *win, struct conf *config, struct star *star_tab
     return;
 }
 
-void render_constellation(WINDOW *win, struct conf *config, struct constell *constellation, struct star *star_table)
+void render_constellation(WINDOW *win, struct Conf *config, struct Constell *constellation, struct Star *star_table)
 {
     unsigned int num_segments = constellation->num_segments;
 
@@ -103,7 +103,7 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
     {
         int catalog_num = constellation->star_numbers[i];
         int table_index = catalog_num - 1;
-        struct star star = star_table[table_index];
+        struct Star star = star_table[table_index];
         if (star.magnitude > config->threshold)
         {
             return;
@@ -118,8 +118,8 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
         int table_index_a = catalog_num_a - 1;
         int table_index_b = catalog_num_b - 1;
 
-        struct star star_a = star_table[table_index_a];
-        struct star star_b = star_table[table_index_b];
+        struct Star star_a = star_table[table_index_a];
+        struct Star star_b = star_table[table_index_b];
 
         // TODO: Same code as in render_object_stereo... perhaps refactor this
         // or cache coordinates
@@ -191,17 +191,17 @@ void render_constellation(WINDOW *win, struct conf *config, struct constell *con
     }
 }
 
-void render_constells(WINDOW *win, struct conf *config, struct constell **constell_table, int num_const,
-                      struct star *star_table)
+void render_constells(WINDOW *win, struct Conf *config, struct Constell **constell_table, int num_const,
+                      struct Star *star_table)
 {
     for (int i = 0; i < num_const; ++i)
     {
-        struct constell *constellation = &((*constell_table)[i]);
+        struct Constell *constellation = &((*constell_table)[i]);
         render_constellation(win, config, constellation, star_table);
     }
 }
 
-void render_planets_stereo(WINDOW *win, struct conf *config, struct planet *planet_table)
+void render_planets_stereo(WINDOW *win, struct Conf *config, struct Planet *planet_table)
 {
     // Render planets so that closest are drawn on top
     int i;
@@ -215,14 +215,14 @@ void render_planets_stereo(WINDOW *win, struct conf *config, struct planet *plan
             continue;
         }
 
-        struct planet planet_data = planet_table[i];
+        struct Planet planet_data = planet_table[i];
         render_object_stereo(win, &planet_data.base, config);
     }
 
     return;
 }
 
-void render_moon_stereo(WINDOW *win, struct conf *config, struct moon moon_object)
+void render_moon_stereo(WINDOW *win, struct Conf *config, struct Moon moon_object)
 {
     render_object_stereo(win, &moon_object.base, config);
 
@@ -249,7 +249,7 @@ int compare_angles(const void *a, const void *b)
     return (90 / gcd(x, 90)) < (90 / gcd(y, 90));
 }
 
-void render_azimuthal_grid(WINDOW *win, struct conf *config)
+void render_azimuthal_grid(WINDOW *win, struct Conf *config)
 {
     const double to_rad = M_PI / 180.0;
 
@@ -337,7 +337,7 @@ void render_azimuthal_grid(WINDOW *win, struct conf *config)
     // }
 }
 
-void render_cardinal_directions(WINDOW *win, struct conf *config)
+void render_cardinal_directions(WINDOW *win, struct Conf *config)
 {
     // Render horizon directions
 

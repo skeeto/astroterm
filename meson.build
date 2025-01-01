@@ -134,13 +134,28 @@ executable(
 # Testing
 # ------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------
+# Unity Static Library
+# ------------------------------------------------------------------------------
+
 test_files = []
 test_infra_source_files = []
 test_include_dirs = []
 subdir('test')
 
-# Compile test modules separately (this keeps things a bit cleaner, can call
-# main individually in each file.
+unity_lib = static_library(
+    'unity',
+    test_infra_source_files,
+    include_directories: test_include_dirs,
+    c_args: ['-Wall', '-Wextra', '-DUNITY_INCLUDE_CONFIG_H']
+)
+
+# ------------------------------------------------------------------------------
+# Tests
+# ------------------------------------------------------------------------------
+
+# Compile test modules separately
+# DUNITY_INCLUDE_CONFIG_H is necessary for testing doubles
 foreach test_file : test_files
     filepath = test_file[0].full_path()
     filename = filepath.split('/')[-1]
@@ -148,9 +163,9 @@ foreach test_file : test_files
     test_exe = executable(
         test_name,
         [test_file] + test_infra_source_files,
-        link_with: project_lib,
+        link_with: [project_lib, unity_lib],
         include_directories: project_include_dirs + test_include_dirs,
-        c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+        c_args: ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g', '-DUNITY_INCLUDE_CONFIG_H'],
         install: false
     )
 

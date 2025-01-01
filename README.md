@@ -41,6 +41,9 @@ _<p align="center">Stars above New York, NY around 5:00 PM on January 1, 2025</p
 > [`pkg-config`](https://repology.org/project/pkg-config/versions) in order
 > for Meson to find them.
 
+> [!TIP]
+> [`apt-packages.txt`](./apt-packages.txt) contains all [`apt`](https://wiki.debian.org/Apt) packages needed for building and testing on a Debian based distribution. See [`ci.yml`](./.github/workflows/ci.yml) for how `astroterm` is built and tested on Ubuntu via GitHub Actions.
+
 #### Install
 
 Clone the repository and enter the project directory:
@@ -121,7 +124,7 @@ While we're still waiting for someone to invent time travel, we can cheat a litt
 If we then wanted to display constellations and add color, we would add `--constellations --color` as options.
 
 If you simply want the current time, don't specify the `--datetime` option and
-_astroterm_ will use the system time. For your current location, you will still
+`astroterm` will use the system time. For your current location, you will still
 have to specify the `--lat` and `--long` options, or provide the nearest city with the `--city` option.
 
 For more options and help, run `astroterm -h` or `astroterm --help`.
