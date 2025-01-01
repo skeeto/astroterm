@@ -1,6 +1,7 @@
 test_files += [
     files('coord_test.c'),
     files('astro_test.c'),
+    files('city_test.c'),
 ]
 
 test_include_dirs += [

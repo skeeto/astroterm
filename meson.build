@@ -95,7 +95,14 @@ bsc5_names = configure_file(
         'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
     ]
 )
-project_source_files += [bsc5_data, bsc5_constellations, bsc5_names]
+city_data = configure_file(
+    input: 'data/cities100000.csv',
+    output: 'city_data.h',
+    command: [
+        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
+    ]
+)
+project_source_files += [bsc5_data, bsc5_constellations, bsc5_names, city_data]
 
 # ------------------------------------------------------------------------------
 # Application library (for reusability)

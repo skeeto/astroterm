@@ -1,3 +1,4 @@
+#include "city.h"
 #include "core.h"
 #include "core_position.h"
 #include "core_render.h"
@@ -43,8 +44,8 @@ int main(int argc, char *argv[])
 {
     // Default config
     struct conf config = {
-        .longitude = -71.057083, // Boston, MA
-        .latitude = 42.361145,
+        .longitude = 0.0,
+        .latitude = 0.0,
         .dt_string_utc = NULL,
         .threshold = 5.0f,
         .label_thresh = 0.25f,
@@ -224,9 +225,8 @@ int main(int argc, char *argv[])
 
 void parse_options(int argc, char *argv[], struct conf *config)
 {
-    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 42.361145)");
-    struct arg_dbl *longitude_arg =
-        arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: -71.057083)");
+    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
+    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (0.0)");
     struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
     struct arg_dbl *threshold_arg =
         arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 5.0)");
@@ -244,11 +244,16 @@ void parse_options(int argc, char *argv[], struct conf *config)
     struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
     struct arg_dbl *ratio_arg = arg_dbl0("r", "aspect-ratio", "<float>",
                                          "Override the calculated terminal cell aspect ratio. Use this if your projection is "
-                                         "not 'square.' A value around 2.0 works well for most cases.");
+                                         "not 'square.' A value around 2.0 works well for most cases");
+    struct arg_str *city_arg =
+        arg_str0("i", "city", "<city_name>",
+                 "Use the latitude and longitude of the provided city. If the name contains multiple words, "
+                 "enclose the name in single or double quotes. For a list of available cities, see: "
+                 "https://github.com/da-luce/astroterm/blob/main/data/cities100000.csv");
     struct arg_end *end = arg_end(20);
 
     void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,  speed_arg, color_arg,
-                        constell_arg, grid_arg,      ascii_arg,    meta_arg,      ratio_arg, help_arg, end};
+                        constell_arg, grid_arg,      ascii_arg,    meta_arg,      ratio_arg, help_arg, city_arg,  end};
 
     int nerrors = arg_parse(argc, argv, argtable);
 
@@ -347,6 +352,22 @@ void parse_options(int argc, char *argv[], struct conf *config)
         config->aspect_ratio = ratio_arg->dval[0];
     }
 
+    if (city_arg->count > 0)
+    {
+        const char *city_name = city_arg->sval[0];
+        CityData *city = get_city(city_name);
+
+        if (!city)
+        {
+            fprintf(stderr, "ERROR: Could not find city \"%s\"\n", city_name);
+            exit(EXIT_FAILURE);
+        }
+
+        config->latitude = city->latitude;
+        config->longitude = city->longitude;
+        free_city(city);
+    }
+
     // Free Argtable resources
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 }
@@ -371,7 +392,7 @@ void convert_options(struct conf *config)
         if (!parse_success)
         {
             printf("ERROR: Unable to parse datetime string '%s'\nDatetimes "
-                   "must be in form <yyyy-mm-ddThh:mm:ss>",
+                   "must be in form <yyyy-mm-ddThh:mm:ss>\n",
                    config->dt_string_utc);
             exit(EXIT_FAILURE);
         }
