@@ -113,7 +113,7 @@ project_lib = static_library(
     project_source_files,
     dependencies        : [curses, math],
     include_directories : project_include_dirs,
-    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-Wunused-function', '-g'],
 )
 
 # ------------------------------------------------------------------------------

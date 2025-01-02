@@ -9,21 +9,6 @@
 #include <string.h>
 #include <time.h>
 
-/* Count number of lines in file
- */
-unsigned int count_lines_from_data(const uint8_t *data, size_t data_len)
-{
-    unsigned int count = 0;
-    for (size_t i = 0; i < data_len; ++i)
-    {
-        if (data[i] == '\n')
-        {
-            ++count;
-        }
-    }
-    return count;
-}
-
 // Data generation
 
 bool generate_star_table(struct Star **star_table_out, struct Entry *entries, struct StarName *name_table,

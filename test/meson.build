@@ -5,6 +5,7 @@ test_files += [
     files('bit_test.c'),
     files('core_test.c'),
     files('stopwatch_test.c'),
+    files('drawing_test.c'),
 ]
 
 test_include_dirs += [

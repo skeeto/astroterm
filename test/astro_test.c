@@ -61,6 +61,54 @@ void test_datetime_to_julian_date(void)
     TEST_ASSERT_FLOAT_WITHIN(EPSILON, expected_jd, result);
 }
 
+// julian_date_to_datetime
+
+void test_julian_date_to_datetime(void)
+{
+    struct tm result;
+
+    result = julian_date_to_datetime(2451545.0); // January 1, 2000, 12:00 TT
+    TEST_ASSERT_EQUAL_INT(2000, result.tm_year + 1900);
+    TEST_ASSERT_EQUAL_INT(1, result.tm_mon + 1);
+    TEST_ASSERT_EQUAL_INT(1, result.tm_mday);
+    TEST_ASSERT_EQUAL_INT(12, result.tm_hour);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_min);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_sec);
+
+    result = julian_date_to_datetime(2440587.5); // January 1, 1970, 00:00 UTC
+    TEST_ASSERT_EQUAL_INT(1970, result.tm_year + 1900);
+    TEST_ASSERT_EQUAL_INT(1, result.tm_mon + 1);
+    TEST_ASSERT_EQUAL_INT(1, result.tm_mday);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_hour);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_min);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_sec);
+
+    result = julian_date_to_datetime(2460678.25); // 2025 January 2 18:00:00.0
+    TEST_ASSERT_EQUAL_INT(2025, result.tm_year + 1900);
+    TEST_ASSERT_EQUAL_INT(1, result.tm_mon + 1);
+    TEST_ASSERT_EQUAL_INT(2, result.tm_mday);
+    TEST_ASSERT_EQUAL_INT(18, result.tm_hour);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_min);
+    TEST_ASSERT_EQUAL_INT(0, result.tm_sec);
+}
+
+// julian_to_gregorian
+
+void test_julian_to_gregorian(void)
+{
+    int year, month, day;
+
+    julian_to_gregorian(2451545.0, &year, &month, &day); // January 1, 2000
+    TEST_ASSERT_EQUAL_INT(2000, year);
+    TEST_ASSERT_EQUAL_INT(1, month);
+    TEST_ASSERT_EQUAL_INT(1, day);
+
+    julian_to_gregorian(2440587.5, &year, &month, &day); // January 1, 1970
+    TEST_ASSERT_EQUAL_INT(1970, year);
+    TEST_ASSERT_EQUAL_INT(1, month);
+    TEST_ASSERT_EQUAL_INT(1, day);
+}
+
 // greenwich_mean_sidereal_time_rad
 
 // TODO: find proper reference
@@ -269,6 +317,8 @@ int main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(test_datetime_to_julian_date);
+    RUN_TEST(test_julian_date_to_datetime);
+    RUN_TEST(test_julian_to_gregorian);
     RUN_TEST(test_calc_moon_age);
     RUN_TEST(test_greenwich_mean_sidereal_time_rad);
     RUN_TEST(test_get_zodiac_sign);

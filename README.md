@@ -1,12 +1,12 @@
-# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)
+# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm)
 
 `astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It displays the real-time positions of stars, planets, constellations, and more, all within your terminal—no telescope required! Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
 `astroterm` is constantly improving, and we'd love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
-![Stars above New York, NY around 5:00 PM on January 1, 2025](./assets/NY_2025-01-01.gif)
+![Stars above Singapore on January 2, 2025](./assets/SG_2025-01-02.gif)
 
-_<p align="center">Stars above New York, NY around 5:00 PM on January 1, 2025</p>_
+_<p align="center">Stars above Singapore on January 2, 2025</p>_
 
 ## Features
 

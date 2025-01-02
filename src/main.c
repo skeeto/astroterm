@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
     free_stars(star_table, num_stars);
     free_planets(planet_table, NUM_PLANETS);
     free_moon_object(moon_object);
+    free_star_names(name_table, num_stars);
 
     return EXIT_SUCCESS;
 }

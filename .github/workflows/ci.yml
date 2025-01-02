@@ -33,6 +33,7 @@ jobs:
     - name: Build
       env:
         CC: ${{ matrix.compiler }}
+
       run: |
         sh install.sh
 
