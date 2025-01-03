@@ -42,7 +42,7 @@ _<p align="center">Stars above Singapore on January 2, 2025</p>_
 > for Meson to find them.
 
 > [!TIP]
-> [`apt-packages.txt`](./apt-packages.txt) contains all [`apt`](https://wiki.debian.org/Apt) packages needed for building and testing on a Debian based distribution. See [`ci.yml`](./.github/workflows/ci.yml) for how `astroterm` is built and tested on Ubuntu via GitHub Actions.
+> See [`ci.yml`](./.github/workflows/ci.yml) for how `astroterm` is built and tested on Ubuntu via GitHub Actions.
 
 #### Install
 
@@ -101,7 +101,7 @@ Usage: astroterm [OPTION]...
                             name in single or double quotes. For a list of avai
                             lable cities, see: https://github.com/da-luce/astro
                             term/blob/main/data/cities100000.csv
-
+  -v, --version             Display version info and exit
 ```
 
 ### Example

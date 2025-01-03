@@ -95,7 +95,7 @@ double greenwich_mean_sidereal_time_rad(double julian_date);
 
 /* Get the julian date from a given datetime
  */
-double datetime_to_julian_date(struct tm *time);
+double datetime_to_julian_date(const struct tm *time);
 
 /* Get the julian date from a given datetime
  */

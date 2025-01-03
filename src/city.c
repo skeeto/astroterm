@@ -62,7 +62,7 @@ static int compare_city(const void *key, const void *element)
     strncpy(temp_line, line, MAX_LINE_LENGTH);
     temp_line[MAX_LINE_LENGTH - 1] = '\0'; // Ensure null termination
 
-    char *token = strtok(temp_line, ","); // Extract the first token (city name)
+    const char *token = strtok(temp_line, ","); // Extract the first token (city name)
     if (token == NULL)
     {
         return -1;
@@ -116,7 +116,7 @@ CityData *get_city(const char *name)
     memcpy(data, city_data, city_data_len);
     data[city_data_len] = '\0';
 
-    char *line = strtok(data, "\n");
+    const char *line = strtok(data, "\n");
     while (line != NULL)
     {
         char *line_copy = strdup(line);
@@ -128,14 +128,20 @@ CityData *get_city(const char *name)
             return NULL;
         }
 
-        lines = realloc(lines, (line_count + 1) * sizeof(char *));
-        if (lines == NULL)
+        char **temp = realloc(lines, (line_count + 1) * sizeof(char *));
+        if (temp == NULL)
         {
             perror("Memory allocation failed");
             free(normalized_name);
             free(data);
+            for (size_t i = 0; i < line_count; i++)
+            {
+                free(lines[i]);
+            }
+            free(lines);
             return NULL;
         }
+        lines = temp;
 
         lines[line_count++] = line_copy;
         line = strtok(NULL, "\n");
@@ -148,10 +154,10 @@ CityData *get_city(const char *name)
     if (result != NULL)
     {
         // Parse the line for city data
-        char *line = *result;
-        char *city_name, *latitude_str, *longitude_str;
+        char *matched_line = *result;
+        const char *city_name, *latitude_str, *longitude_str;
 
-        city_name = strtok(line, ",");
+        city_name = strtok(matched_line, ",");
         strtok(NULL, ","); // Skip population
         strtok(NULL, ","); // Skip country code
         strtok(NULL, ","); // Skip timezone

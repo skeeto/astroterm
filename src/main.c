@@ -7,6 +7,7 @@
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
+#include "version.h"
 
 // Embedded data generated during build
 #include "bsc5_constellations.h"
@@ -27,10 +28,10 @@
 static void catch_winch(int sig);
 static void resize_ncurses(void);
 static void resize_meta(WINDOW *win);
-static void resize_main(WINDOW *win, struct Conf *config);
+static void resize_main(WINDOW *win, const struct Conf *config);
 static void parse_options(int argc, char *argv[], struct Conf *config);
 static void convert_options(struct Conf *config);
-static void render_metadata(WINDOW *win, struct Conf *config);
+static void render_metadata(WINDOW *win, const struct Conf *config);
 
 // Track if we need to resize the curses window
 static volatile bool perform_resize = false;
@@ -251,10 +252,13 @@ void parse_options(int argc, char *argv[], struct Conf *config)
                  "Use the latitude and longitude of the provided city. If the name contains multiple words, "
                  "enclose the name in single or double quotes. For a list of available cities, see: "
                  "https://github.com/da-luce/astroterm/blob/main/data/cities100000.csv");
+    struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
+
     struct arg_end *end = arg_end(20);
 
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,  speed_arg, color_arg,
-                        constell_arg, grid_arg,      ascii_arg,    meta_arg,      ratio_arg, help_arg, city_arg,  end};
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,
+                        speed_arg,    color_arg,     constell_arg, grid_arg,      ascii_arg, meta_arg,
+                        ratio_arg,    help_arg,      city_arg,     version_arg,   end};
 
     int nerrors = arg_parse(argc, argv, argtable);
 
@@ -271,6 +275,12 @@ void parse_options(int argc, char *argv[], struct Conf *config)
         arg_print_errors(stderr, end, argv[0]);
         printf("Try '--help' for more information.\n");
         exit(EXIT_FAILURE);
+    }
+
+    if (version_arg->count > 0)
+    {
+        printf("%s version: %s-%s\n", PROJ_NAME, PROJ_VERSION, PROJ_HASH);
+        exit(EXIT_SUCCESS);
     }
 
     if (latitude_arg->count > 0)
@@ -418,7 +428,7 @@ void resize_ncurses(void)
     resizeterm(y, x);
 }
 
-void resize_main(WINDOW *win, struct Conf *config)
+void resize_main(WINDOW *win, const struct Conf *config)
 {
     // Clear the window before resizing
     werase(win);
@@ -452,14 +462,14 @@ void resize_meta(WINDOW *win)
     wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
 }
 
-void render_metadata(WINDOW *win, struct Conf *config)
+void render_metadata(WINDOW *win, const struct Conf *config)
 {
     // Gregorian Date (local time)
 
     // Convert sim julian date (UTC) to local time
     const double JULIAN_DATE_EPOCH = 2440587.5;
     time_t utc_time = (time_t)((julian_date - JULIAN_DATE_EPOCH) * 86400);
-    struct tm *local_time = localtime(&utc_time);
+    const struct tm *local_time = localtime(&utc_time);
     if (local_time == NULL)
     {
         // Default to UTC if conversion fails

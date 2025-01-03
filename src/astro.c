@@ -66,7 +66,7 @@ double greenwich_mean_sidereal_time_rad(double jd)
     return gmst;
 }
 
-double datetime_to_julian_date(struct tm *time)
+double datetime_to_julian_date(const struct tm *time)
 {
     // Convert ISO C tm struct to Gregorian datetime format
     int second = time->tm_sec;
@@ -237,13 +237,10 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
  * elements but those are beyond the scope of this project
  * https://ascom-standards.org/Help/Developer/html/72A95B28-BBE2-4C7D-BC03-2D6AB324B6F7.htm
  */
-void ICRF_to_ITRF(double *x, double *y, double *z)
-{
-    // TODO: implement concise CIO/CEO based transformations
-    *x = *x;
-    *y = *y;
-    *z = *z;
-}
+// void ICRF_to_ITRF(double *x, double *y, double *z)
+// {
+// TODO: implement concise CIO/CEO based transformations
+// }
 
 void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct KepElems *planet_elements,
                           const struct KepRates *planet_rates, const struct KepExtra *planet_extras, double julian_date,

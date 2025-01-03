@@ -22,13 +22,27 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Dependencies
+    - name: Install Build Dependencies
       run: |
         sudo apt-get update
-        echo "Installing APT dependencies..."
-        xargs -a apt-packages.txt sudo apt-get install -y
-        echo "Installing Python dependencies..."
-        pip3 install meson gcovr
+        echo "Installing manual APT dependencies..."
+        sudo apt-get install -y \
+          python3-pip \
+          python3-setuptools \
+          ninja-build \
+          build-essential \
+          xxd \
+          wget \
+          pkg-config \
+          libncurses-dev \
+          libargtable2-dev
+        echo "Installing Meson via pip..."
+        pip3 install meson
+
+    - name: Install Code Quality Tools
+      run: |
+        sudo apt-get install -y cppcheck clang-format
+        pip3 install --upgrade gcovr
 
     - name: Build
       env:
@@ -40,6 +54,16 @@ jobs:
     - name: Test
       run: |
         meson test -v -C build
+
+    - name: Run Cppcheck
+      run: |
+        cppcheck \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --suppress=missingInclude \
+          --suppress=style \
+          --error-exitcode=1 \
+          src/
 
     - name: Check Formatting
       run: |

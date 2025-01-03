@@ -87,7 +87,8 @@ struct StarName
  * allocates memory which must be freed by the caller. Returns false upon memory
  * allocation error
  */
-bool generate_star_table(struct Star **star_table, struct Entry *entries, struct StarName *name_table, unsigned int num_stars);
+bool generate_star_table(struct Star **star_table, struct Entry *entries, const struct StarName *name_table,
+                         unsigned int num_stars);
 
 /* Parse data from bsc5_names.txt and return an array of names. Stars with
  * catalog number `n` are mapped to index `n-1`. This function allocates memory
@@ -132,7 +133,7 @@ int star_magnitude_comparator(const void *v1, const void *v2);
 /* Modify an array of star numbers sorted by increasing magnitude. Used in
  * rendering functions so brighter stars are always rendered on top
  */
-bool star_numbers_by_magnitude(int **num_by_mag, struct Star *star_table, unsigned int num_stars);
+bool star_numbers_by_magnitude(int **num_by_mag, const struct Star *star_table, unsigned int num_stars);
 
 /* Map a double `input` which lies in range [min_float, max_float]
  * to an integer which lies in range [min_int, max_int].

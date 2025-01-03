@@ -11,7 +11,7 @@
 
 // Data generation
 
-bool generate_star_table(struct Star **star_table_out, struct Entry *entries, struct StarName *name_table,
+bool generate_star_table(struct Star **star_table_out, struct Entry *entries, const struct StarName *name_table,
                          unsigned int num_stars)
 {
     *star_table_out = malloc(num_stars * sizeof(struct Star));
@@ -185,7 +185,7 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct StarName *
 
         // Split by delimiter (expecting the format "catalog_number,name")
         int catalog_number = atoi(strtok(buffer, ","));
-        char *name = strtok(NULL, ",\n");
+        const char *name = strtok(NULL, ",\n");
 
         int table_index = catalog_number - 1;
 
@@ -234,14 +234,14 @@ bool parse_line(const uint8_t *data, struct Constell **constell_table_out, int l
     buffer[line_length] = '\0';
 
     // Parse the line:
-    char *name = strtok(buffer, " "); // First token is the constellation name
+    const char *name = strtok(buffer, " "); // First token is the constellation name
     if (name == NULL)
     {
         return false; // Malformed line, no name found
     }
 
     // The next token is the number of segments
-    char *num_segments_str = strtok(NULL, " ");
+    const char *num_segments_str = strtok(NULL, " ");
     if (num_segments_str == NULL)
     {
         return false; // Malformed line, no number of segments
@@ -262,7 +262,7 @@ bool parse_line(const uint8_t *data, struct Constell **constell_table_out, int l
 
     // Parse the star numbers (expecting num_segments * 2 star numbers)
     unsigned int i = 0;
-    char *token;
+    const char *token;
     while ((token = strtok(NULL, " ")) != NULL && i < num_segments * 2)
     {
         star_numbers[i] = atoi(token);
@@ -316,7 +316,7 @@ bool generate_constell_table(const uint8_t *data, size_t data_len, struct Conste
 
     unsigned int num_constells = 0;
     size_t line_start = 0;
-    size_t line_end = 0;
+    size_t line_end;
 
     // Count the number of lines in the data
     for (size_t i = 0; i < data_len; ++i)
@@ -334,11 +334,6 @@ bool generate_constell_table(const uint8_t *data, size_t data_len, struct Conste
         printf("Allocation of memory for constellation table failed\n");
         return false;
     }
-
-    const unsigned BUF_SIZE = 256;
-    char buffer[BUF_SIZE];
-    size_t offset = 0;
-    size_t i = 0; // Use size_t here for consistency with offset
 
     // Parse each line of data
     int line_number = 0;
@@ -446,7 +441,7 @@ int star_magnitude_comparator(const void *v1, const void *v2)
         return 0;
 }
 
-bool star_numbers_by_magnitude(int **num_by_mag, struct Star *star_table, unsigned int num_stars)
+bool star_numbers_by_magnitude(int **num_by_mag, const struct Star *star_table, unsigned int num_stars)
 {
     // Create and sort a copy of the star table
     struct Star *table_copy = malloc(num_stars * sizeof(struct Star));
@@ -461,9 +456,10 @@ bool star_numbers_by_magnitude(int **num_by_mag, struct Star *star_table, unsign
 
     // Create and fill array of indicies in table copy
     *num_by_mag = malloc(num_stars * sizeof(int));
-    if (num_by_mag == NULL)
+    if (*num_by_mag == NULL)
     {
-        printf("Allocation of memory for num by mag array  failed\n");
+        printf("Allocation of memory for num by mag array failed\n");
+        free(table_copy);
         return false;
     }
 
@@ -485,7 +481,7 @@ int map_float_to_int_range(double min_float, double max_float, int min_int, int 
 
 bool string_to_time(const char *string, struct tm *time)
 {
-    char *pointer = strptime(string, "%Y-%m-%dT%H:%M:%S", time);
+    const char *pointer = strptime(string, "%Y-%m-%dT%H:%M:%S", time);
     mktime(time);
 
     if (pointer == NULL)

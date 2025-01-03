@@ -1,4 +1,5 @@
 project('astroterm', 'c',
+    version: 'beta',
     default_options : ['warning_level=3', 'buildtype=debugoptimized'],
     meson_version: '>=1.4.0',
 )
@@ -120,13 +121,28 @@ project_lib = static_library(
 # Application executable
 # ------------------------------------------------------------------------------
 
+# Get the version from the project
+program_version = meson.project_version()
+program_name = meson.project_name()
+
+# Get the Git hash dynamically (assumes `git` is available)
+git_hash_cmd = run_command('git', 'rev-parse', '--short', 'HEAD', check: true)
+git_hash = git_hash_cmd.stdout().strip()
+
+# Add preprocessor definitions
+build_defines = [
+  f'-DPROJ_NAME="@program_name@"',
+  f'-DPROJ_VERSION="@program_version@"',
+  f'-DPROJ_HASH="@git_hash@"',
+]
+
 executable(
     meson.project_name(),
     'src/main.c',
     link_with           : project_lib,
     dependencies        : [argtable2],
     include_directories : project_include_dirs,
-    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'],
+    c_args              : ['-Wall', '-Wextra', '-Wno-unused-variable', '-Wno-unused-parameter', '-g'] + build_defines,
     install             : true,
 )
 

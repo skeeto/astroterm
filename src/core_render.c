@@ -20,7 +20,7 @@ void horizontal_to_polar(double azimuth, double altitude, double *radius, double
     return;
 }
 
-void render_object_stereo(WINDOW *win, struct ObjectBase *object, struct Conf *config)
+void render_object_stereo(WINDOW *win, struct ObjectBase *object, const struct Conf *config)
 {
     double radius_polar, theta_polar;
     horizontal_to_polar(object->azimuth, object->altitude, &radius_polar, &theta_polar);
@@ -67,7 +67,7 @@ void render_object_stereo(WINDOW *win, struct ObjectBase *object, struct Conf *c
     return;
 }
 
-void render_stars_stereo(WINDOW *win, struct Conf *config, struct Star *star_table, int num_stars, int *num_by_mag)
+void render_stars_stereo(WINDOW *win, const struct Conf *config, struct Star *star_table, int num_stars, const int *num_by_mag)
 {
     int i;
     for (i = 0; i < num_stars; ++i)
@@ -94,7 +94,7 @@ void render_stars_stereo(WINDOW *win, struct Conf *config, struct Star *star_tab
     return;
 }
 
-void render_constellation(WINDOW *win, struct Conf *config, struct Constell *constellation, struct Star *star_table)
+void render_constellation(WINDOW *win, const struct Conf *config, struct Constell *constellation, const struct Star *star_table)
 {
     unsigned int num_segments = constellation->num_segments;
 
@@ -191,8 +191,8 @@ void render_constellation(WINDOW *win, struct Conf *config, struct Constell *con
     }
 }
 
-void render_constells(WINDOW *win, struct Conf *config, struct Constell **constell_table, int num_const,
-                      struct Star *star_table)
+void render_constells(WINDOW *win, const struct Conf *config, struct Constell **constell_table, int num_const,
+                      const struct Star *star_table)
 {
     for (int i = 0; i < num_const; ++i)
     {
@@ -201,7 +201,7 @@ void render_constells(WINDOW *win, struct Conf *config, struct Constell **conste
     }
 }
 
-void render_planets_stereo(WINDOW *win, struct Conf *config, struct Planet *planet_table)
+void render_planets_stereo(WINDOW *win, const struct Conf *config, const struct Planet *planet_table)
 {
     // Render planets so that closest are drawn on top
     int i;
@@ -222,7 +222,7 @@ void render_planets_stereo(WINDOW *win, struct Conf *config, struct Planet *plan
     return;
 }
 
-void render_moon_stereo(WINDOW *win, struct Conf *config, struct Moon moon_object)
+void render_moon_stereo(WINDOW *win, const struct Conf *config, struct Moon moon_object)
 {
     render_object_stereo(win, &moon_object.base, config);
 
@@ -231,10 +231,9 @@ void render_moon_stereo(WINDOW *win, struct Conf *config, struct Moon moon_objec
 
 int gcd(int a, int b)
 {
-    int temp;
     while (b != 0)
     {
-        temp = a % b;
+        int temp = a % b;
 
         a = b;
         b = temp;
@@ -249,7 +248,7 @@ int compare_angles(const void *a, const void *b)
     return (90 / gcd(x, 90)) < (90 / gcd(y, 90));
 }
 
-void render_azimuthal_grid(WINDOW *win, struct Conf *config)
+void render_azimuthal_grid(WINDOW *win, const struct Conf *config)
 {
     const double to_rad = M_PI / 180.0;
 
@@ -270,8 +269,7 @@ void render_azimuthal_grid(WINDOW *win, struct Conf *config)
 
     // Set the step size to the smallest desirable increment
     int inc;
-    int i;
-    for (i = length - 1; i >= 0; --i)
+    for (int i = length - 1; i >= 0; --i)
     {
         inc = step_sizes[i];
         if (round(rad_vertical * sin(inc * to_rad)) < min_height)
@@ -285,8 +283,7 @@ void render_azimuthal_grid(WINDOW *win, struct Conf *config)
     int number_angles = 90 / inc + 1;
     int *angles = malloc(number_angles * sizeof(int));
 
-    // int i;
-    for (i = 0; i < number_angles; ++i)
+    for (int i = 0; i < number_angles; ++i)
     {
         angles[i] = inc * i;
     }
@@ -296,8 +293,7 @@ void render_azimuthal_grid(WINDOW *win, struct Conf *config)
     int quad;
     for (quad = 0; quad < 4; ++quad)
     {
-        int i;
-        for (i = 0; i < number_angles; ++i)
+        for (int i = 0; i < number_angles; ++i)
         {
             int angle = angles[i] + 90 * quad;
 
@@ -319,7 +315,6 @@ void render_azimuthal_grid(WINDOW *win, struct Conf *config)
             snprintf(label, str_len + 1, "%d", angle);
 
             // Offset to avoid truncating string
-            int y_off = (y < rad_vertical) ? 1 : -1;
             int x_off = (x < rad_horizontal) ? 0 : -(str_len - 1);
 
             mvwaddstr(win, y, x + x_off, label);
@@ -337,7 +332,7 @@ void render_azimuthal_grid(WINDOW *win, struct Conf *config)
     // }
 }
 
-void render_cardinal_directions(WINDOW *win, struct Conf *config)
+void render_cardinal_directions(WINDOW *win, const struct Conf *config)
 {
     // Render horizon directions
 

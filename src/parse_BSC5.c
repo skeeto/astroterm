@@ -44,8 +44,6 @@ static struct Entry parse_entry(uint8_t *buffer)
 
 bool parse_entries(uint8_t *data, size_t data_size, struct Entry **entries_out, unsigned int *num_entries_out)
 {
-    size_t stream_items; // Number of bytes read from data
-
     // Check if there's enough data to read the header
     if (data_size < header_bytes)
     {

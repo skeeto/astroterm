@@ -79,8 +79,10 @@ void test_diagonal_ascii_10x10(void)
     // Read window content into an array
     read_window_to_array(win, actual, 10, 10);
 
+    const char(*const_actual)[MAX_WINDOW_WIDTH] = (const char(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_arrays(actual, diagonal_ascii_10x10, 10, 10));
+    TEST_ASSERT_TRUE(compare_arrays(const_actual, diagonal_ascii_10x10, 10, 10));
 
     delwin(win);
 }
@@ -115,8 +117,10 @@ void test_diagonal_ascii_opposite_10x10(void)
     // Read window content into an ASCII array
     read_window_to_array(win, actual, 10, 10);
 
+    const char(*const_actual)[MAX_WINDOW_WIDTH] = (const char(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_arrays(actual, diagonal_ascii_opposite_10x10, 10, 10));
+    TEST_ASSERT_TRUE(compare_arrays(const_actual, diagonal_ascii_opposite_10x10, 10, 10));
 
     delwin(win);
 }
@@ -152,8 +156,10 @@ void test_vertical_ascii_11x11(void)
     // Read window content into an ASCII array
     read_window_to_array(win, actual, 11, 11);
 
+    const char(*const_actual)[MAX_WINDOW_WIDTH] = (const char(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_arrays(actual, vertical_ascii_11x11, 11, 11));
+    TEST_ASSERT_TRUE(compare_arrays(const_actual, vertical_ascii_11x11, 11, 11));
 
     delwin(win);
 }
@@ -189,8 +195,10 @@ void test_horizontal_ascii_11x11(void)
     // Read window content into an ASCII array
     read_window_to_array(win, actual, 11, 11);
 
+    const char(*const_actual)[MAX_WINDOW_WIDTH] = (const char(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_arrays(actual, horizontal_ascii_11x11, 11, 11));
+    TEST_ASSERT_TRUE(compare_arrays(const_actual, horizontal_ascii_11x11, 11, 11));
 
     delwin(win);
 }
@@ -258,8 +266,10 @@ void test_diagonal_smooth_10x10(void)
     // Read window content into a wide-character array
     read_window_to_wide_array(win, actual, 10, 10);
 
+    const wchar_t(*const_actual)[MAX_WINDOW_WIDTH] = (const wchar_t(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_wide_arrays(actual, diagonal_smooth_10x10, 10, 10));
+    TEST_ASSERT_TRUE(compare_wide_arrays(const_actual, diagonal_smooth_10x10, 10, 10));
 
     delwin(win);
 }
@@ -294,8 +304,10 @@ void test_diagonal_smooth_opposite_10x10(void)
     // Read window content into a wide-character array
     read_window_to_wide_array(win, actual, 10, 10);
 
+    const wchar_t(*const_actual)[MAX_WINDOW_WIDTH] = (const wchar_t(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_wide_arrays(actual, diagonal_smooth_opposite_10x10, 10, 10));
+    TEST_ASSERT_TRUE(compare_wide_arrays(const_actual, diagonal_smooth_opposite_10x10, 10, 10));
 
     delwin(win);
 }
@@ -331,8 +343,10 @@ void test_vertical_smooth_11x11(void)
     // Read window content into a wide-character array
     read_window_to_wide_array(win, actual, 11, 11);
 
+    const wchar_t(*const_actual)[MAX_WINDOW_WIDTH] = (const wchar_t(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_wide_arrays(actual, vertical_smooth_11x11, 11, 11));
+    TEST_ASSERT_TRUE(compare_wide_arrays(const_actual, vertical_smooth_11x11, 11, 11));
 
     delwin(win);
 }
@@ -368,8 +382,10 @@ void test_horizontal_smooth_11x11(void)
     // Read window content into a wide-character array
     read_window_to_wide_array(win, actual, 11, 11);
 
+    const wchar_t(*const_actual)[MAX_WINDOW_WIDTH] = (const wchar_t(*)[MAX_WINDOW_WIDTH])actual;
+
     // Compare actual and expected output
-    TEST_ASSERT_TRUE(compare_wide_arrays(actual, horizontal_smooth_11x11, 11, 11));
+    TEST_ASSERT_TRUE(compare_wide_arrays(const_actual, horizontal_smooth_11x11, 11, 11));
 
     delwin(win);
 }
