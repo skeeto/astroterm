@@ -25,8 +25,20 @@ subdir('data')
 
 # Get dependencies
 cc = meson.get_compiler('c')
-curses = dependency('curses', required : true)
-argtable2 = dependency('argtable2', required: true)
+if host_machine.system() == 'windows'
+    # Use pdcurses on windows
+    curses = declare_dependency(
+        include_directories: include_directories('C:/msys64/mingw64/include'),
+        link_args: ['-LC:/msys64/mingw64/lib', '-lpdcurses']
+    )
+    argtable2 = declare_dependency(
+        include_directories: include_directories('C:/msys64/mingw64/include'),
+        link_args: ['-LC:/msys64/mingw64/lib', '-largtable2']
+    )
+else
+    curses = dependency('curses', required : true)
+    argtable2 = dependency('argtable2', required: true)
+endif
 math = cc.find_library('m', required : true)
 
 # ------------------------------------------------------------------------------

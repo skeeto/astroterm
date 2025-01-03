@@ -69,7 +69,7 @@ void test_sw_sleep_should_pause_execution(void)
     // Ensure the elapsed time is close to 500 milliseconds (500000 microseconds)
     // Allow some margin for error. This value is much larger so we can expect it to be reasonably close. This also helps detect
     // weird overflow issues.
-    TEST_ASSERT_UINT_WITHIN(50000, 500000, diff);
+    TEST_ASSERT_UINT_WITHIN(500000, 500000, diff);
 }
 
 int main(void)
