@@ -266,7 +266,7 @@ void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)
     }
 }
 
-enum fillType
+enum FillType
 {
     HORIZONTAL,
     VERTICAL,

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #ifndef AU
@@ -65,7 +66,7 @@ double greenwich_mean_sidereal_time_rad(double jd)
     return gmst;
 }
 
-double datetime_to_julian_date(struct tm *time)
+double datetime_to_julian_date(const struct tm *time)
 {
     // Convert ISO C tm struct to Gregorian datetime format
     int second = time->tm_sec;
@@ -148,7 +149,7 @@ static double solve_kepler(double M, double e, double E)
 /* Calculate the heliocentric ICRF position of a planet in rectangular
  * equatorial coordinates
  */
-void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_rates *rates, const struct kep_extra *extras,
+void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRates *rates, const struct KepExtra *extras,
                             double julian_date, double *xh, double *yh, double *zh)
 {
     // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
@@ -236,16 +237,13 @@ void calc_planet_helio_ICRF(const struct kep_elems *elements, const struct kep_r
  * elements but those are beyond the scope of this project
  * https://ascom-standards.org/Help/Developer/html/72A95B28-BBE2-4C7D-BC03-2D6AB324B6F7.htm
  */
-void ICRF_to_ITRF(double *x, double *y, double *z)
-{
-    // TODO: implement concise CIO/CEO based transformations
-    *x = *x;
-    *y = *y;
-    *z = *z;
-}
+// void ICRF_to_ITRF(double *x, double *y, double *z)
+// {
+// TODO: implement concise CIO/CEO based transformations
+// }
 
-void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct kep_elems *planet_elements,
-                          const struct kep_rates *planet_rates, const struct kep_extra *planet_extras, double julian_date,
+void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct KepElems *planet_elements,
+                          const struct KepRates *planet_rates, const struct KepExtra *planet_extras, double julian_date,
                           double *xg, double *yg, double *zg)
 {
     // Coordinates of desired planet
@@ -260,8 +258,8 @@ void calc_planet_geo_ICRF(double xe, double ye, double ze, const struct kep_elem
     return;
 }
 
-void calc_moon_geo_ICRF(const struct kep_elems *moon_elements, const struct kep_rates *moon_rates, double julian_date,
-                        double *xg, double *yg, double *zg)
+void calc_moon_geo_ICRF(const struct KepElems *moon_elements, const struct KepRates *moon_rates, double julian_date, double *xg,
+                        double *yg, double *zg)
 {
     // Algorithm taken from Paul Schlyter's page "How to compute planetary
     // positions" https://stjarnhimlen.se/comp/ppcomp.html#6 (modified)
@@ -354,28 +352,49 @@ void julian_to_gregorian(double jd, int *year, int *month, int *day)
     *year = (*month > 2) ? (d - 4716) : (d - 4715);
 }
 
-const char *get_zodiac_sign(int day, int month)
+enum ZodiacSign date_to_zodiac(int month, int day)
 {
-    // Define Zodiac signs and date ranges
-    static const char *zodiac_signs[] = {"Capricorn", "Aquarius", "Pisces", "Aries",   "Taurus",      "Gemini",   "Cancer",
-                                         "Leo",       "Virgo",    "Libra",  "Scorpio", "Sagittarius", "Capricorn"};
+    // Start dates for zodiac signs (first is Aries)
+    static const int zodiac_start_days[] = {21, 20, 21, 21, 23, 23, 23, 23, 22, 22, 20, 19};
 
-    static const int zodiac_start_days[] = {20, 19, 21, 21, 21, 21, 23, 23, 23, 23, 23, 22, 31};
+    // Offset Aries as start
+    int index = month - 3;
+    if (index < 0)
+    {
+        index += 12;
+    }
 
-    int index = (day < zodiac_start_days[month - 1]) ? (month - 1) : month;
+    if (day < zodiac_start_days[index])
+    {
+        // We are in the previous zodiac
+        index = (index == 0) ? 11 : index - 1;
+    }
 
-    return zodiac_signs[index];
+    return index;
 }
 
-const char *get_zodiac_symbol(int day, int month)
+const char *get_zodiac_sign(int month, int day)
 {
-    static const char *zodiac_symbols[] = {"♑", "♒", "♓", "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑"};
+    // Define Zodiac signs and their date ranges
+    static const char *zodiac_signs[] = {
+        "Aries", "Taurus",  "Gemini",      "Cancer",    "Leo",      "Virgo",
+        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+    };
 
-    static const int zodiac_start_days[] = {20, 19, 21, 21, 21, 21, 23, 23, 23, 23, 23, 22, 31};
+    enum ZodiacSign zodiac = date_to_zodiac(month, day);
 
-    int index = (day < zodiac_start_days[month - 1]) ? (month - 1) : month;
+    return zodiac_signs[zodiac];
+}
 
-    return zodiac_symbols[index];
+const char *get_zodiac_symbol(int month, int day)
+{
+    static const char *zodiac_symbols[] = {
+        "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓",
+    };
+
+    enum ZodiacSign zodiac = date_to_zodiac(month, day);
+
+    return zodiac_symbols[zodiac];
 }
 
 /* Takes the normalized age of the moon within the synodic month
@@ -386,7 +405,7 @@ const char *get_zodiac_symbol(int day, int month)
  * 4 : full moon
  * etc.
  */
-enum moon_phase moon_age_to_phase(double age)
+enum MoonPhase moon_age_to_phase(double age)
 {
     if (age < 0.03 || age > 0.97)
     {
@@ -422,15 +441,24 @@ enum moon_phase moon_age_to_phase(double age)
     }
 }
 
-const char *get_moon_phase_name(double julian_date)
+const char *get_moon_phase_name(enum MoonPhase phase)
 {
     char *phase_names[] = {"New Moon",  "Waxing Crescent", "First Quarter", "Waxing Gibbous",
                            "Full Moon", "Waning Gibbous",  "Last Quarter",  "Waning Crescent"};
-    double age = calc_moon_age(julian_date);
-    return phase_names[moon_age_to_phase(age)];
+    return phase_names[phase];
 }
 
-const char *get_moon_phase_image(double julian_date, bool northern)
+/* Remove variant selector from emoji
+ */
+const char *normalize_emoji(const char *emoji)
+{
+    static char normalized[5];
+    strncpy(normalized, emoji, 4);
+    normalized[4] = '\0';
+    return normalized;
+}
+
+const char *get_moon_phase_image(enum MoonPhase phase, bool northern)
 {
     // Moon phases throughout the synodic month *as seen from the Northern
     // hemisphere*
@@ -439,19 +467,15 @@ const char *get_moon_phase_image(double julian_date, bool northern)
     static const char *moon_phases[8] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
     // clang-format on
 
-    double age = calc_moon_age(julian_date);
-
-    int phase_index = moon_age_to_phase(age);
-
     // If we are in the Southern hemisphere, negate the index to move in the
     // opposite direction throughout the cycle
     // FIXME: this is messy
-    if (!northern && phase_index != 0)
+    if (!northern && phase != 0)
     {
-        phase_index = 8 - phase_index;
+        phase = 8 - phase;
     }
 
-    return moon_phases[phase_index];
+    return normalize_emoji(moon_phases[phase]);
 }
 
 void decimal_to_dms(double decimal_value, int *degrees, int *minutes, double *seconds)

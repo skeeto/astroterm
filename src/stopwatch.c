@@ -14,9 +14,9 @@
 #include <windows.h>
 #endif
 
-int sw_gettime(struct sw_timestamp *stamp)
+int sw_gettime(struct SwTimestamp *stamp)
 {
-    memset(stamp, 0, sizeof(struct sw_timestamp));
+    memset(stamp, 0, sizeof(struct SwTimestamp));
 
 #if defined(_WIN32)
     // Microsoft Windows (32-bit or 64-bit)
@@ -78,50 +78,73 @@ int sw_gettime(struct sw_timestamp *stamp)
     return 0;
 }
 
-int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin, unsigned long long *diff)
+int sw_timediff_usec(struct SwTimestamp end, struct SwTimestamp begin, unsigned long long *diff)
 {
     *diff = 0;
 
-    // Ensure unions have same member set
+    // Ensure unions have the same member set
     if (end.val_member != begin.val_member)
     {
         return -1;
     }
 
-#if defined(_WIN32)
-    // Microsoft Windows (32-bit or 64-bit)
-
-    LARGE_INTEGER frequency; // ticks per second
-    int check = QueryPerformanceFrequency(&frequency);
-    if (check == 0)
+    switch (end.val_member)
     {
-        return -1;
-    } // QueryPerformanceFrequency() returns 0 on failure
-
-    *diff = (unsigned long long)(end.val.tick_win.QuadPart - begin.val.tick_win.QuadPart) * 1.0E6 / frequency.QuadPart;
-
-#elif defined(__APPLE__) && defined(__MACH__)
-    // Apple OSX and iOS (Darwin)
-
-    *diff = (end.val.tick_apple - begin.val.tick_apple) / 1.0E3; // ns to us
-
-#elif defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
-    // Some POSIX systems
-
-    *diff = (unsigned long long)(end.val.tick_spec.tv_sec - begin.val.tick_spec.tv_sec) * 1.0E6;    // sec to us
-    *diff += (unsigned long long)(end.val.tick_spec.tv_nsec - begin.val.tick_spec.tv_nsec) / 1.0E3; // ns to us
-
-#elif defined(__unix__)
-    // Almost all Unix systems
-
-    *diff = (unsigned long long)(end.val.tick_val.tv_sec - begin.val.tick_val.tv_sec) * 1.0E6; // sec to us
-    *diff += (unsigned long long)(end.val.tick_val.tv_usec - begin.val.tick_val.tv_usec);
-
+    case TICK_WIN: {
+#if defined(_WIN32)
+        LARGE_INTEGER frequency; // ticks per second
+        int check = QueryPerformanceFrequency(&frequency);
+        if (check == 0)
+        {
+            return -1; // QueryPerformanceFrequency failed
+        }
+        *diff = (unsigned long long)(end.val.tick_win.QuadPart - begin.val.tick_win.QuadPart) * 1000000ULL / frequency.QuadPart;
 #else
-
-    return -1; // Give up
-
+        return -1; // Unsupported on this platform
 #endif
+        break;
+    }
+
+    case TICK_APPLE: {
+#if defined(__APPLE__) && defined(__MACH__)
+        *diff = (end.val.tick_apple - begin.val.tick_apple) / 1000ULL; // ns to us
+#else
+        return -1; // Unsupported on this platform
+#endif
+        break;
+    }
+
+    case TICK_SPEC: {
+#if defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
+        long sec_diff = end.val.tick_spec.tv_sec - begin.val.tick_spec.tv_sec;
+        long nsec_diff = end.val.tick_spec.tv_nsec - begin.val.tick_spec.tv_nsec;
+
+        if (nsec_diff < 0)
+        {
+            sec_diff -= 1;
+            nsec_diff += 1000000000L; // Adjust for nanosecond underflow
+        }
+
+        *diff = (unsigned long long)sec_diff * 1000000ULL + (unsigned long long)nsec_diff / 1000ULL;
+#else
+        return -1; // Unsupported on this platform
+#endif
+        break;
+    }
+
+    case TICK_VAL: {
+#if defined(__unix__)
+        *diff = (unsigned long long)(end.val.tick_val.tv_sec - begin.val.tick_val.tv_sec) * 1000000ULL;
+        *diff += (unsigned long long)(end.val.tick_val.tv_usec - begin.val.tick_val.tv_usec);
+#else
+        return -1; // Unsupported on this platform
+#endif
+        break;
+    }
+
+    default:
+        return -1; // Unsupported timestamp type
+    }
 
     return 0;
 }

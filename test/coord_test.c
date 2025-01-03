@@ -9,6 +9,8 @@ void tearDown(void)
 {
 }
 
+// project_stereographic
+
 void test_project_stereographic_top(void)
 {
     // Center top of sphere
@@ -43,11 +45,34 @@ void test_project_stereographic_top(void)
     TEST_ASSERT_FLOAT_WITHIN(0.01, expected_theta_polar, theta_polar);
 }
 
+// polar_to_win
+
+void test_polar_to_win(void)
+{
+    int row, col;
+
+    // Test case 1: Center of screen
+    polar_to_win(0.0, 0.0, 100, 100, &row, &col);
+    TEST_ASSERT_EQUAL_INT(50, row);
+    TEST_ASSERT_EQUAL_INT(50, col);
+
+    // Test case 2: Top of screen
+    polar_to_win(1.0, M_PI / 2, 100, 100, &row, &col);
+    TEST_ASSERT_EQUAL_INT(0, row);
+    TEST_ASSERT_EQUAL_INT(50, col);
+
+    // Test case 3: Bottom of screen
+    polar_to_win(1.0, -M_PI / 2, 100, 100, &row, &col);
+    TEST_ASSERT_EQUAL_INT(99, row);
+    TEST_ASSERT_EQUAL_INT(50, col);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
 
     RUN_TEST(test_project_stereographic_top);
+    RUN_TEST(test_polar_to_win);
 
     return UNITY_END();
 }

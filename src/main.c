@@ -7,6 +7,7 @@
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
+#include "version.h"
 
 // Embedded data generated during build
 #include "bsc5_constellations.h"
@@ -27,10 +28,10 @@
 static void catch_winch(int sig);
 static void resize_ncurses(void);
 static void resize_meta(WINDOW *win);
-static void resize_main(WINDOW *win, struct conf *config);
-static void parse_options(int argc, char *argv[], struct conf *config);
-static void convert_options(struct conf *config);
-static void render_metadata(WINDOW *win, struct conf *config);
+static void resize_main(WINDOW *win, const struct Conf *config);
+static void parse_options(int argc, char *argv[], struct Conf *config);
+static void convert_options(struct Conf *config);
+static void render_metadata(WINDOW *win, const struct Conf *config);
 
 // Track if we need to resize the curses window
 static volatile bool perform_resize = false;
@@ -43,7 +44,7 @@ static double julian_date_start = 0.0; // Note of when we started
 int main(int argc, char *argv[])
 {
     // Default config
-    struct conf config = {
+    struct Conf config = {
         .longitude = 0.0,
         .latitude = 0.0,
         .dt_string_utc = NULL,
@@ -69,12 +70,12 @@ int main(int argc, char *argv[])
     // Initialize data structs
     unsigned int num_stars, num_const;
 
-    struct entry *BSC5_entries;
-    struct star_name *name_table;
-    struct constell *constell_table;
-    struct star *star_table;
-    struct planet *planet_table;
-    struct moon moon_object;
+    struct Entry *BSC5_entries;
+    struct StarName *name_table;
+    struct Constell *constell_table;
+    struct Star *star_table;
+    struct Planet *planet_table;
+    struct Moon moon_object;
     int *num_by_mag;
 
     // Track success of functions
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
     // Render loop
     while (true)
     {
-        struct sw_timestamp frame_begin;
+        struct SwTimestamp frame_begin;
         sw_gettime(&frame_begin);
 
         if (perform_resize)
@@ -197,7 +198,7 @@ int main(int argc, char *argv[])
         julian_date += (double)dt / microsec_per_day * config.speed;
 
         // Determine time it took to update positions and render to screen
-        struct sw_timestamp frame_end;
+        struct SwTimestamp frame_end;
         sw_gettime(&frame_end);
 
         unsigned long long frame_time;
@@ -219,11 +220,12 @@ int main(int argc, char *argv[])
     free_stars(star_table, num_stars);
     free_planets(planet_table, NUM_PLANETS);
     free_moon_object(moon_object);
+    free_star_names(name_table, num_stars);
 
     return EXIT_SUCCESS;
 }
 
-void parse_options(int argc, char *argv[], struct conf *config)
+void parse_options(int argc, char *argv[], struct Conf *config)
 {
     struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
     struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (0.0)");
@@ -250,10 +252,13 @@ void parse_options(int argc, char *argv[], struct conf *config)
                  "Use the latitude and longitude of the provided city. If the name contains multiple words, "
                  "enclose the name in single or double quotes. For a list of available cities, see: "
                  "https://github.com/da-luce/astroterm/blob/main/data/cities100000.csv");
+    struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
+
     struct arg_end *end = arg_end(20);
 
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,  speed_arg, color_arg,
-                        constell_arg, grid_arg,      ascii_arg,    meta_arg,      ratio_arg, help_arg, city_arg,  end};
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,
+                        speed_arg,    color_arg,     constell_arg, grid_arg,      ascii_arg, meta_arg,
+                        ratio_arg,    help_arg,      city_arg,     version_arg,   end};
 
     int nerrors = arg_parse(argc, argv, argtable);
 
@@ -270,6 +275,12 @@ void parse_options(int argc, char *argv[], struct conf *config)
         arg_print_errors(stderr, end, argv[0]);
         printf("Try '--help' for more information.\n");
         exit(EXIT_FAILURE);
+    }
+
+    if (version_arg->count > 0)
+    {
+        printf("%s version: %s-%s\n", PROJ_NAME, PROJ_VERSION, PROJ_HASH);
+        exit(EXIT_SUCCESS);
     }
 
     if (latitude_arg->count > 0)
@@ -372,7 +383,7 @@ void parse_options(int argc, char *argv[], struct conf *config)
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 }
 
-void convert_options(struct conf *config)
+void convert_options(struct Conf *config)
 {
     // Convert longitude and latitude to radians
     config->longitude *= M_PI / 180.0;
@@ -417,7 +428,7 @@ void resize_ncurses(void)
     resizeterm(y, x);
 }
 
-void resize_main(WINDOW *win, struct conf *config)
+void resize_main(WINDOW *win, const struct Conf *config)
 {
     // Clear the window before resizing
     werase(win);
@@ -451,14 +462,14 @@ void resize_meta(WINDOW *win)
     wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
 }
 
-void render_metadata(WINDOW *win, struct conf *config)
+void render_metadata(WINDOW *win, const struct Conf *config)
 {
     // Gregorian Date (local time)
 
     // Convert sim julian date (UTC) to local time
     const double JULIAN_DATE_EPOCH = 2440587.5;
     time_t utc_time = (time_t)((julian_date - JULIAN_DATE_EPOCH) * 86400);
-    struct tm *local_time = localtime(&utc_time);
+    const struct tm *local_time = localtime(&utc_time);
     if (local_time == NULL)
     {
         // Default to UTC if conversion fails
@@ -475,8 +486,8 @@ void render_metadata(WINDOW *win, struct conf *config)
     mvwprintw(win, 0, 0, "Date (%s): \t%02d-%02d-%04d %02d:%02d", timezone, day, month, year, hour, minute);
 
     // Zodiac
-    const char *zodiac_name = get_zodiac_sign(day, month);
-    const char *zodiac_symbol = get_zodiac_symbol(day, month);
+    const char *zodiac_name = get_zodiac_sign(month, day);
+    const char *zodiac_symbol = get_zodiac_symbol(month, day);
     if (config->ascii)
     {
         mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac_name);
@@ -487,7 +498,9 @@ void render_metadata(WINDOW *win, struct conf *config)
     }
 
     // Lunar phase
-    const char *lunar_phase = get_moon_phase_name(julian_date);
+    double age = calc_moon_age(julian_date);
+    enum MoonPhase phase = moon_age_to_phase(age);
+    const char *lunar_phase = get_moon_phase_name(phase);
     mvwprintw(win, 2, 0, "Lunar Phase: \t%s", lunar_phase);
 
     // Lat and Lon (convert back to degrees)

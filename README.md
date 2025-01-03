@@ -1,12 +1,12 @@
-# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)
+# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm)
 
 `astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It displays the real-time positions of stars, planets, constellations, and more, all within your terminal—no telescope required! Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
 `astroterm` is constantly improving, and we'd love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
-![Stars above New York, NY around 5:00 PM on January 1, 2025](./assets/NY_2025-01-01.gif)
+![Stars above Singapore on January 2, 2025](./assets/SG_2025-01-02.gif)
 
-_<p align="center">Stars above New York, NY around 5:00 PM on January 1, 2025</p>_
+_<p align="center">Stars above Singapore on January 2, 2025</p>_
 
 ## Features
 
@@ -40,6 +40,9 @@ _<p align="center">Stars above New York, NY around 5:00 PM on January 1, 2025</p
 > `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
 > [`pkg-config`](https://repology.org/project/pkg-config/versions) in order
 > for Meson to find them.
+
+> [!TIP]
+> See [`ci.yml`](./.github/workflows/ci.yml) for how `astroterm` is built and tested on Ubuntu via GitHub Actions.
 
 #### Install
 
@@ -98,7 +101,7 @@ Usage: astroterm [OPTION]...
                             name in single or double quotes. For a list of avai
                             lable cities, see: https://github.com/da-luce/astro
                             term/blob/main/data/cities100000.csv
-
+  -v, --version             Display version info and exit
 ```
 
 ### Example
@@ -121,7 +124,7 @@ While we're still waiting for someone to invent time travel, we can cheat a litt
 If we then wanted to display constellations and add color, we would add `--constellations --color` as options.
 
 If you simply want the current time, don't specify the `--datetime` option and
-_astroterm_ will use the system time. For your current location, you will still
+`astroterm` will use the system time. For your current location, you will still
 have to specify the `--lat` and `--long` options, or provide the nearest city with the `--city` option.
 
 For more options and help, run `astroterm -h` or `astroterm --help`.

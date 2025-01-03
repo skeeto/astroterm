@@ -22,25 +22,48 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Meson and Ninja
+    - name: Install Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip python3-setuptools ninja-build build-essential lcov xxd
-        pip3 install meson gcovr
+        echo "Installing manual APT dependencies..."
+        sudo apt-get install -y \
+          python3-pip \
+          python3-setuptools \
+          ninja-build \
+          build-essential \
+          xxd \
+          wget \
+          pkg-config \
+          libncurses-dev \
+          libargtable2-dev
+        echo "Installing Meson via pip..."
+        pip3 install meson
 
-    - name: Install Dependencies
+    - name: Install Code Quality Tools
       run: |
-        sudo apt-get install -y pkg-config libncurses-dev libargtable2-dev clang-format
+        sudo apt-get install -y cppcheck clang-format
+        pip3 install --upgrade gcovr
 
     - name: Build
       env:
         CC: ${{ matrix.compiler }}
+
       run: |
         sh install.sh
 
     - name: Test
       run: |
-        meson test -C build
+        meson test -v -C build
+
+    - name: Run Cppcheck
+      run: |
+        cppcheck \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --suppress=missingInclude \
+          --suppress=style \
+          --error-exitcode=1 \
+          src/
 
     - name: Check Formatting
       run: |

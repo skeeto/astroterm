@@ -2,6 +2,10 @@ test_files += [
     files('coord_test.c'),
     files('astro_test.c'),
     files('city_test.c'),
+    files('bit_test.c'),
+    files('core_test.c'),
+    files('stopwatch_test.c'),
+    files('drawing_test.c'),
 ]
 
 test_include_dirs += [

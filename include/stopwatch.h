@@ -18,7 +18,7 @@
 #include <windows.h>
 #endif
 
-struct sw_timestamp
+struct SwTimestamp
 {
     // Timestamp value
     union {
@@ -42,12 +42,12 @@ struct sw_timestamp
 
 /* Set a timestamp. Returns 0 on success and -1 on failure
  */
-int sw_gettime(struct sw_timestamp *stamp);
+int sw_gettime(struct SwTimestamp *stamp);
 
 /* Set the difference between two timestamps in microseconds. Returns 0 on
  * success -1 on failure
  */
-int sw_timediff_usec(struct sw_timestamp end, struct sw_timestamp begin, unsigned long long *diff);
+int sw_timediff_usec(struct SwTimestamp end, struct SwTimestamp begin, unsigned long long *diff);
 
 /* Sleep for the specified number of microseconds. Returns 0 on success and -1
  * on failure
