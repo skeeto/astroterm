@@ -18,7 +18,29 @@ _<p align="center">Stars above Singapore on January 2, 2025</p>_
 
 ## Installation
 
-### Building from Source
+Several installation methods are provided based on your platform. If none of these fit your needs, you can always [build from source](#building-from-source)
+
+### Linux
+
+#### Prebuilt Executable
+
+May need to force local to get unicode to work.
+
+### MacOS
+
+#### Prebuilt Executable
+
+May need to force sign.
+
+### Windows
+
+#### Prebuilt Executable
+
+Release provides an `.exe`.
+
+## Building from Source
+
+### Linux, macOS & WSL
 
 #### Requirements
 
@@ -60,11 +82,28 @@ sh install.sh
 
 You may now run the generated `./build/astroterm` binary or add the `astroterm` command system-wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
+### Windows (not recommended)
+
+#### Requirements
+
+- [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/) (Other C compilers currently don't work)
+- [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer ([installation via python](https://mesonbuild.com/Quick-guide.html#installation-using-python) is recommended)
+- [`ninja`](https://repology.org/project/ninja/versions) 1.8.2 or newer
+- [`python`](https://www.python.org/downloads/) (for embedding data during build)
+- [`pdcurses`](https://github.com/wmcbrine/PDCurses/tree/master/wincon)*
+- [`argtable2`](https://github.com/jonathanmarvens/argtable2)*
+
+> [!WARNING]
+> *These libraries must be compiled locally and moved to where Meson expects them to be. See [`ci.yml`](./.github/workflows/ci.yml#L106) for how this is done.
+
+> [!TIP]
+> Some steps must be done in the [Visual Studio Developer Command Prompt and Developer PowerShell](https://learn.microsoft.com/en-us/visualstudio/ide/reference/command-prompt-powershell?view=vs-2022), so it's best to just do everything there.
+
+## Usage
+
 Example output:
 
 ![Stars above Syndey, AU on January 6, 2025](./assets/SYD_2025-01-06.png)
-
-## Usage
 
 ### Options
 

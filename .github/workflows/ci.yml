@@ -11,7 +11,7 @@ on:
       - dev
 
 jobs:
-  build-linux-x86_64:
+  build-linux:
     runs-on: ubuntu-latest  # Native x86_64 Ubuntu runner
     strategy:
       matrix:
@@ -62,8 +62,18 @@ jobs:
         name: coverage
         path: build/meson-logs/coverage.xml
 
-  build-mac-arm64:
-    runs-on: macos-latest # Native macOS runner
+  build-mac:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, macos-13]
+        arch: [arm64, x86]
+        exclude:
+          - os: macos-latest
+            arch: x86
+          - os: macos-13
+            arch : arm64
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -74,11 +84,10 @@ jobs:
         brew install \
           meson \
           ninja \
-          pkg-config \
           ncurses \
           argtable
 
-    - name: Build for macOS arm64
+    - name: Build for macOS ${{ matrix.arch }}
       env:
         CC: clang
       run: |
@@ -88,17 +97,17 @@ jobs:
       run: |
         meson test -v -C build
 
-    - name: Upload macOS arm64 Build Artifacts
+    - name: Upload macOS ${{ matrix.arch }} Build Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: build-mac-arm64
+        name: build-mac-${{ matrix.arch }}
         path: build/astroterm
 
-  build-win-x86_64:
+  build-win:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2016, windows-latest]
+        os: [windows-latest, windows-2019]
 
     steps:
     - name: Checkout Code
@@ -123,7 +132,7 @@ jobs:
         mkdir \build\local\include
         git clone https://github.com/wmcbrine/PDCurses.git
         cd PDCurses\wincon
-        nmake -f Makefile.vc WIDE=Y DLL=Y
+        nmake -f Makefile.vc WIDE=Y UTF8=Y
         copy pdcurses.lib \build\local\lib
         copy ..\curses.h \build\local\include
         copy ..\panel.h \build\local\include
@@ -137,9 +146,12 @@ jobs:
         copy argtable2.lib \build\local\lib
         copy argtable2.h \build\local\include
 
+    - name: Download BSC5
+      run: curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5 || echo "bsc5 already exists or curl failed"
+
     - name: Build for Windows x86_64
       run: |
-        meson setup build
+        meson setup build -Drelease_build=true
         meson compile -C build
 
     - name: Run Tests
@@ -150,11 +162,11 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-win-x86_64
-        path: build/astroterm
+        path: build/astroterm.exe
 
   code-quality:
     runs-on: ubuntu-latest
-    needs: build-linux-x86_64
+    needs: build-linux
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -196,7 +208,7 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [build-linux-x86_64, build-mac-arm64, build-win-x86_64, code-quality, upload-coverage]
+    needs: [build-linux, build-mac, build-win, code-quality, upload-coverage]
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     steps:
 

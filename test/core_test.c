@@ -7,7 +7,9 @@
 #include "core.h"
 #include "core_position.h"
 #include "data/keplerian_elements.h"
+#include "math_util.h"
 #include "unity.h"
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,6 +50,30 @@ void tearDown(void)
 #define P_EPSILON 0.02
 #define M_EPSILON 0.06
 
+// Function to trim trailing '\r' characters
+char *trim_string(const char *str)
+{
+    if (str == NULL)
+        return NULL;
+
+    // Duplicate the string to ensure we don't modify the original
+    char *trimmed = strdup(str);
+    if (trimmed == NULL)
+        return NULL;
+
+    // Find the end of the string
+    char *end = trimmed + strlen(trimmed) - 1;
+
+    // Trim trailing '\r' characters
+    while (end >= trimmed && *end == '\r')
+    {
+        *end = '\0';
+        end--;
+    }
+
+    return trimmed;
+}
+
 void test_generate_star_table(void)
 {
     TEST_ASSERT_NOT_NULL(star_table);
@@ -62,7 +88,7 @@ void test_generate_star_table(void)
 
     // Verify start with name
     TEST_ASSERT_EQUAL(7001, star_table[7000].catalog_number);
-    TEST_ASSERT_EQUAL_STRING("Vega", star_table[7000].base.label);
+    TEST_ASSERT_EQUAL_STRING("Vega", trim_string(star_table[7000].base.label));
 
     // Verify last star
     int last_index = 9110 - 1;
@@ -76,11 +102,12 @@ void test_generate_star_table(void)
 
 void test_generate_name_table(void)
 {
+    // Trim carriage returns so passed on windows
     TEST_ASSERT_NOT_NULL(name_table);
-    TEST_ASSERT_EQUAL_STRING("Acamar", name_table[896].name);
-    TEST_ASSERT_EQUAL_STRING("Vega", name_table[7000].name);
-    TEST_ASSERT_EQUAL_STRING("Wezen", name_table[2692].name);
-    TEST_ASSERT_EQUAL_STRING("Zubeneschamali", name_table[5684].name);
+    TEST_ASSERT_EQUAL_STRING("Acamar", trim_string(name_table[896].name));
+    TEST_ASSERT_EQUAL_STRING("Vega", trim_string(name_table[7000].name));
+    TEST_ASSERT_EQUAL_STRING("Wezen", trim_string(name_table[2692].name));
+    TEST_ASSERT_EQUAL_STRING("Zubeneschamali", trim_string(name_table[5684].name));
 }
 
 void test_generate_constell_table(void)
@@ -135,14 +162,14 @@ void test_update_star_positions(void)
     // Verify Vega's position is correct
     // https://stellarium-web.org/skysource/Vega?fov=120.00&date=2020-10-23T12:00:00Z&lat=42.36&lng=-71.06&elev=0
     TEST_ASSERT_EQUAL(7001, star_table[7000].catalog_number);
-    TEST_ASSERT_EQUAL_STRING("Vega", star_table[7000].base.label);
+    TEST_ASSERT_EQUAL_STRING("Vega", trim_string(star_table[7000].base.label));
     TEST_ASSERT_DOUBLE_WITHIN(S_EPSILON, 0.547246, star_table[7000].base.azimuth);
     TEST_ASSERT_DOUBLE_WITHIN(S_EPSILON, 0.0, star_table[7000].base.altitude);
 
     // Verify Arcturus's position is correct
     // https://stellarium-web.org/skysource/Arcturus?fov=120.00&date=2020-10-23T12:00:00Z&lat=42.36&lng=-71.06&elev=0
     TEST_ASSERT_EQUAL(5340, star_table[5339].catalog_number);
-    TEST_ASSERT_EQUAL_STRING("Arcturus", star_table[5339].base.label);
+    TEST_ASSERT_EQUAL_STRING("Arcturus", trim_string(star_table[5339].base.label));
     TEST_ASSERT_DOUBLE_WITHIN(S_EPSILON, 1.511414, star_table[5339].base.azimuth);
     TEST_ASSERT_DOUBLE_WITHIN(S_EPSILON, 0.440355, star_table[5339].base.altitude);
 }

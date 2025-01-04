@@ -28,7 +28,7 @@ int sw_gettime(struct SwTimestamp *stamp)
         return -1;
     } // QueryPerformanceCounter() returns 0 on failure
 
-    stamp->val.tick_windows = tick;
+    stamp->val.tick_win = tick;
     stamp->val_member = TICK_WIN;
 
 #elif defined(__APPLE__) && defined(__MACH__)

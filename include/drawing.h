@@ -23,7 +23,7 @@
 #ifndef DRAWING_H
 #define DRAWING_H
 
-#include <ncurses.h>
+#include <curses.h>
 #include <stdbool.h>
 
 /* Draw an ASCII line segment from (xa, ya) and (xb, yb) where y and x

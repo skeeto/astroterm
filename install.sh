@@ -45,7 +45,7 @@ build_with_meson() {
     BUILD_DIR="$SCRIPT_DIR/build"
 
     if [ "$GITHUB_ACTIONS" = "true" ]; then
-        MESON_FLAGS=" --buildtype debugoptimized -Db_coverage=true"
+        MESON_FLAGS="-Drelease_build=true -Db_coverage=true"
         echo "Running as a GitHub Action. Adding flags: $MESON_FLAGS"
     else
         MESON_FLAGS=""

@@ -16,9 +16,8 @@
 
 // Third party libraries
 #include <argtable2.h>
-#include <ncurses.h>
+#include <curses.h>
 
-#include <getopt.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -31,6 +30,7 @@ static void resize_meta(WINDOW *win);
 static void resize_main(WINDOW *win, const struct Conf *config);
 static void parse_options(int argc, char *argv[], struct Conf *config);
 static void convert_options(struct Conf *config);
+static const char *get_timezone(const struct tm *local_time);
 static void render_metadata(WINDOW *win, const struct Conf *config);
 
 // Track if we need to resize the curses window
@@ -104,9 +104,11 @@ int main(int argc, char *argv[])
     free(BSC5_entries);
 
     // Terminal/System settings
-    setlocale(LC_ALL, "");         // Required for unicode rendering
+    setlocale(LC_ALL, ""); // Required for unicode rendering
+#ifndef _WIN32
     signal(SIGWINCH, catch_winch); // Capture window resizes
-    tzset();                       // Initialize timezone information
+#endif
+    tzset(); // Initialize timezone information
 
     // Ncurses initialization
     ncurses_init(config.color);
@@ -425,7 +427,10 @@ void resize_ncurses(void)
     int y;
     int x;
     term_size(&y, &x);
+
+#ifndef _WIN32
     resizeterm(y, x);
+#endif
 }
 
 void resize_main(WINDOW *win, const struct Conf *config)
@@ -462,6 +467,26 @@ void resize_meta(WINDOW *win)
     wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
 }
 
+const char *get_timezone(const struct tm *local_time)
+{
+#ifdef _WIN32
+    // Windows-specific code
+    TIME_ZONE_INFORMATION tz_info;
+    if (GetTimeZoneInformation(&tz_info) == TIME_ZONE_ID_DAYLIGHT && local_time->tm_isdst > 0)
+    {
+        return tz_info.DaylightName; // DST time zone name
+    }
+    else
+    {
+        return tz_info.StandardName; // Standard time zone name
+    }
+#else
+    // Unix-like systems (Linux/macOS) code
+    extern char *tzname[2]; // tzname[0] is standard, tzname[1] is DST
+    return local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+#endif
+}
+
 void render_metadata(WINDOW *win, const struct Conf *config)
 {
     // Gregorian Date (local time)
@@ -482,7 +507,7 @@ void render_metadata(WINDOW *win, const struct Conf *config)
     int hour = local_time->tm_hour;        // Hour (0-23)
     int minute = local_time->tm_min;       // Minute (0-59)
 
-    const char *timezone = local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+    const char *timezone = get_timezone(local_time);
     mvwprintw(win, 0, 0, "Date (%s): \t%02d-%02d-%04d %02d:%02d", timezone, day, month, year, hour, minute);
 
     // Zodiac

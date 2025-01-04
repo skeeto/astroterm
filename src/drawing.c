@@ -1,7 +1,7 @@
 #include "drawing.h"
 
+#include <curses.h>
 #include <math.h>
-#include <ncurses.h>
 #include <stdlib.h>
 
 // The difference in logic between drawing an ASCII and unicode line differs

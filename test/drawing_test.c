@@ -2,8 +2,8 @@
 #include "drawing.h"
 #include "unity.h"
 
+#include <curses.h>
 #include <locale.h>
-#include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
