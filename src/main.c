@@ -253,7 +253,7 @@ void parse_options(int argc, char *argv[], struct Conf *config)
         arg_str0("i", "city", "<city_name>",
                  "Use the latitude and longitude of the provided city. If the name contains multiple words, "
                  "enclose the name in single or double quotes. For a list of available cities, see: "
-                 "https://github.com/da-luce/astroterm/blob/main/data/cities100000.csv");
+                 "https://github.com/da-luce/astroterm/blob/main/data/cities.csv");
     struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
 
     struct arg_end *end = arg_end(20);

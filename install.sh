@@ -1,6 +1,11 @@
 #!/bin/sh
  
 SCRIPT_DIR="$(dirname "$0")" # directory where the script is located
+if [ "$1" = "--coverage" ]; then
+    COVERAGE=true
+else
+    COVERAGE=false
+fi
 
 check_dependencies() {
     for dep in "xxd" "sed" "meson" "ninja"; do
@@ -45,7 +50,11 @@ build_with_meson() {
     BUILD_DIR="$SCRIPT_DIR/build"
 
     if [ "$GITHUB_ACTIONS" = "true" ]; then
-        MESON_FLAGS="-Drelease_build=true -Db_coverage=true"
+        if [ "$COVERAGE" = "true" ]; then
+            MESON_FLAGS="-Drelease_build=true -Db_coverage=true"
+        else
+            MESON_FLAGS="-Drelease_build=true"
+        fi
         echo "Running as a GitHub Action. Adding flags: $MESON_FLAGS"
     else
         MESON_FLAGS=""

@@ -41,19 +41,24 @@ else
     cflags = ['-O2', '-Wall', '-Wno-unused-variable', '-Wno-unused-parameter', '-Wunused-function']
     if not is_release
         cflags += ['-Wextra', '-g']
+        message('Adding profiling')
+    else
+        cflags += ['-s']
+        message('Stripping debug symbols')
     endif
 endif
 
 if is_windows
 
     # This is where we will install Windows libraries
-    local_include = include_directories('/build/local/include')
+    local_include = include_directories('install/include')
+    local_lib = join_paths(meson.current_source_dir(), 'install/lib')
     project_include_dirs += local_include
 
     # PDcurses
     curses = declare_dependency(
         include_directories: local_include,
-        link_args: ['-L/build/local/lib', '-lpdcurses']
+        link_args: ['-L' + local_lib, '-lpdcurses']
     )
 
     if curses.found()
@@ -64,18 +69,18 @@ if is_windows
 
     argtable2 = declare_dependency(
         include_directories: local_include,
-        link_args: ['-L/build/local/lib', '-largtable2']
+        link_args: ['-L' + local_lib, '-largtable2']
     )
 
-        if curses.found()
+    if argtable2.found()
         message('argtable2 found!')
     else
         message('argtable2 not found. Please ensure it is installed and the paths are correct.')
     endif
 
 else
-    curses = dependency('curses', required : true)
-    argtable2 = dependency('argtable2', required: true)
+    curses = dependency('curses', required : true, static: true)
+    argtable2 = dependency('argtable2', required: true, static: true)
 endif
 
 # TODO: why is this necessary?
@@ -161,7 +166,7 @@ bsc5_names = configure_file(
     command: embed_command
 )
 city_data = configure_file(
-    input: 'data/cities100000.csv',
+    input: 'data/cities.csv',
     output: 'city_data.h',
     command: embed_command
 )

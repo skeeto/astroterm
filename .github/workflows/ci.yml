@@ -11,8 +11,54 @@ on:
       - dev
 
 jobs:
+  # Special build that builds with profiling and coverage
+  build-profile:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Plus gcovr for code coverage
+    - name: Install Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          python3-pip \
+          python3-setuptools \
+          ninja-build \
+          build-essential \
+          xxd \
+          wget \
+          pkg-config \
+          libncurses-dev \
+          libargtable2-dev
+        pip3 install meson gcovr
+
+    - name: Build for Linux x86_64
+      env:
+        CC: ${{ matrix.compiler }}
+      run: |
+        sh install.sh --coverage
+
+    - name: Run Tests
+      run: |
+        meson test -v -C build
+
+    - name: Generate Code Coverage Reports
+      run: |
+        ninja coverage-xml -C build
+
+    - name: Upload Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: build/meson-logs/coverage.xml
+
   build-linux:
-    runs-on: ubuntu-latest  # Native x86_64 Ubuntu runner
+    runs-on: ubuntu-20.04 # Use an older Ubuntu version to ensure compatibility with older C libraries
     strategy:
       matrix:
         compiler: [gcc, clang]
@@ -46,33 +92,43 @@ jobs:
       run: |
         meson test -v -C build
 
-    - name: Generate Code Coverage Reports
-      run: |
-        ninja coverage-xml -C build
-
     - name: Upload x86_64 Build Artifacts
+      # Only use result of one compiler
+      if: matrix.compiler == 'gcc'
       uses: actions/upload-artifact@v3
       with:
-        name: build-linux-x86_64
+        name: astroterm-linux-x86_64
         path: build/astroterm
 
-    - name: Upload Coverage
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage
-        path: build/meson-logs/coverage.xml
+  run-linux:
+    runs-on: ubuntu-latest
+    needs: build-linux
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: astroterm-linux-x86_64
+          path: astroterm-linux-x86_64
 
-  build-mac:
+      - name: Make Executable
+        run: |
+          chmod +x astroterm-linux-x86_64/astroterm
+
+      - name: Run Executable
+        run: |
+          ./astroterm-linux-x86_64/astroterm --version
+
+  build-darwin:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [macos-latest, macos-13]
-        arch: [arm64, x86]
+        arch: [aarch64, x86_64]
         exclude:
           - os: macos-latest
-            arch: x86
+            arch: x86_64
           - os: macos-13
-            arch : arm64
+            arch : aarch64
 
     steps:
     - name: Checkout Code
@@ -87,7 +143,7 @@ jobs:
           ncurses \
           argtable
 
-    - name: Build for macOS ${{ matrix.arch }}
+    - name: Build for Darwin ${{ matrix.arch }}
       env:
         CC: clang
       run: |
@@ -97,11 +153,38 @@ jobs:
       run: |
         meson test -v -C build
 
-    - name: Upload macOS ${{ matrix.arch }} Build Artifacts
+    - name: Upload Darwin ${{ matrix.arch }} Build Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: build-mac-${{ matrix.arch }}
+        name: astroterm-darwin-${{ matrix.arch }}
         path: build/astroterm
+
+  run-darwin:
+    runs-on: ${{ matrix.os }}
+    needs: build-darwin  # Ensure this depends on the build job
+    strategy:
+      matrix:
+        os: [macos-latest, macos-13]
+        arch: [aarch64, x86_64]
+        exclude:
+          - os: macos-latest
+            arch: x86_64
+          - os: macos-13
+            arch: aarch64
+
+    steps:
+      - name: Download Darwin ${{ matrix.arch }} Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: astroterm-darwin-${{ matrix.arch }}
+
+      - name: Make Executable
+        run: |
+          chmod +x astroterm
+
+      - name: Run Executable
+        run: |
+          ./astroterm --version
 
   build-win:
     runs-on: ${{ matrix.os }}
@@ -126,25 +209,28 @@ jobs:
       with:
         architecture: x64
 
+    # I tried the 3.9 release, something broke, so sticking with cloning main for now
     - name: Clone and Build PDCurses
       run: |
-        mkdir \build\local\lib
-        mkdir \build\local\include
-        git clone https://github.com/wmcbrine/PDCurses.git
+        mkdir .\install\lib
+        mkdir .\install\include
+        cd .\install
+        git clone https://github.com/wmcbrine/PDCurses/
         cd PDCurses\wincon
         nmake -f Makefile.vc WIDE=Y UTF8=Y
-        copy pdcurses.lib \build\local\lib
-        copy ..\curses.h \build\local\include
-        copy ..\panel.h \build\local\include
+        copy pdcurses.lib ..\..\lib
+        copy ..\curses.h ..\..\include
+        copy ..\panel.h ..\..\include
 
     - name: Download and Build Argtable2
       run: |
+        cd .\install
         curl -L -o argtable2-13.tar.gz http://prdownloads.sourceforge.net/argtable/argtable2-13.tar.gz
         tar -xzf argtable2-13.tar.gz
-        cd argtable2-13\src
+        cd .\argtable2-13\src
         nmake -f Makefile.nmake
-        copy argtable2.lib \build\local\lib
-        copy argtable2.h \build\local\include
+        copy argtable2.lib ..\..\lib
+        copy argtable2.h ..\..\include
 
     - name: Download BSC5
       run: curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5 || echo "bsc5 already exists or curl failed"
@@ -161,12 +247,25 @@ jobs:
     - name: Upload Windows x86_64 Build Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: build-win-x86_64
+        name: astroterm-win-x86_64
         path: build/astroterm.exe
+
+  run-win:
+    runs-on: windows-latest
+    needs: build-win
+    steps:
+      - name: Download Windows Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: astroterm-win-x86_64
+
+      - name: Run Executable
+        run: |
+          .\astroterm.exe --version
 
   code-quality:
     runs-on: ubuntu-latest
-    needs: build-linux
+    needs: build-profile
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -208,15 +307,33 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [build-linux, build-mac, build-win, code-quality, upload-coverage]
+    needs: [run-linux, run-darwin, run-win, code-quality, upload-coverage]
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
     steps:
 
-    - name: Download Build Artifacts
+    - name: Download Build astroterm-linux-x86_64
       uses: actions/download-artifact@v3
       with:
-        name: build-linux-x86_64
-        path: build-linux-x86_64
+        name: astroterm-linux-x86_64
+        path: astroterm-linux-x86_64
+
+    - name: Download Build astroterm-darwin-x86_64
+      uses: actions/download-artifact@v3
+      with:
+        name: astroterm-darwin-x86_64
+        path: astroterm-darwin-x86_64
+
+    - name: Download Build astroterm-darwin-aarch64
+      uses: actions/download-artifact@v3
+      with:
+        name: astroterm-darwin-aarch64
+        path: astroterm-darwin-aarch64
+
+    - name: Download Build astroterm-win-x84_64
+      uses: actions/download-artifact@v3
+      with:
+        name: astroterm-win-x84_64
+        path: astroterm-win-x84_64
 
     - name: Generate Changelog
       id: changelog
@@ -230,9 +347,9 @@ jobs:
       uses: ncipollo/release-action@v1.12.0
       with:
         allowUpdates: true
-        draft: false
+        draft: true
         makeLatest: true
         name: ${{ github.ref_name }}
         body: ${{ steps.changelog.outputs.changes }}
         token: ${{ secrets.GITHUB_TOKEN }}
-        artifacts: 'build-linux-x86_64/astroterm,build-mac-arm64/astroterm'
+        artifacts: 'astroterm-linux-x86_64,astroterm-darwin-aarch64,astroterm-darwin-x86_64,astroterm-win-x86_64'

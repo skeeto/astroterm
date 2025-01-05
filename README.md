@@ -18,17 +18,51 @@ _<p align="center">Stars above Singapore on January 2, 2025</p>_
 
 ## Installation
 
-Several installation methods are provided based on your platform. If none of these fit your needs, you can always [build from source](#building-from-source)
+Several installation methods are provided based on your platform. If none of these fit your needs, you can always [build from source](#building-from-source). Refer to [troubleshooting](#troubleshooting) for help resolving any issues.
 
 ### Linux
 
 #### Prebuilt Executable
 
-May need to force local to get unicode to work.
+1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
+2. Download `astroterm-linux-x84_64` from the latest release under "Assets"
+3. Extract and run the executable via the command line
+
+```bash
+tar -xf astroterm-linux-x84_64.zip -C astroterm-linux-x84_64
+astroterm-linux-x84_64\astroterm
+```
 
 ### MacOS
 
 #### Prebuilt Executable
+
+1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
+2. Download the appropriate `.zip` file for your system architecture:
+
+   - **Apple Silicon (M-series):** `astroterm-darwin-aarch64`
+   - **Intel-based Macs:** `astroterm-darwin-x86_64`
+
+3. Extract and run the executable via the terminal a first time
+
+```bash
+unzip astroterm-darwin-<arch> -d astroterm-darwin-<arch>
+cd ./astroterm-darwin-<arch>
+chmod +x astroterm
+./astroterm
+```
+
+Replace `<arch>` to match the name of your architecture.
+
+4. Handle Gatekeeper's Security Warning
+  
+  Gatekeeper will complain that it cannot run the executable. Go to **Privacy & Secturity** in te Settings app, and under Security, allow `astroterm`.
+
+5. Re-run the Executable
+
+After allowing the app, return to the terminal and run:
+
+`./astroterm`
 
 May need to force sign.
 
@@ -36,7 +70,14 @@ May need to force sign.
 
 #### Prebuilt Executable
 
-Release provides an `.exe`.
+1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
+2. Download `astroterm-win-x84_64` from the latest release under "Assets"
+3. Extract and run the `.exe` via the command line
+
+```powershell
+tar -xf astroterm-win-x84_64.zip -C astroterm-win-x84_64
+astroterm-win-x84_64\astroterm-win-x84_64.exe
+```
 
 ## Building from Source
 
@@ -139,7 +180,7 @@ Usage: astroterm [OPTION]...
                             . If the name contains multiple words, enclose the
                             name in single or double quotes. For a list of avai
                             lable cities, see: https://github.com/da-luce/astro
-                            term/blob/main/data/cities100000.csv
+                            term/blob/main/data/cities.csv
   -v, --version             Display version info and exit
 ```
 
@@ -173,6 +214,33 @@ For more options and help, run `astroterm -h` or `astroterm --help`.
 
 > [!TIP]
 > Star magnitudes decrease as apparent brightness increases, i.e., to show more stars, increase the threshold.
+
+## Troubleshooting
+
+### Broken Unicode on Linux
+
+If Unicode characters do not display correctly in the terminal, you may need to configure your system's locale to support Unicode.
+
+1. Temporarily set the locale (add this to `.bashrc` or equivalent to permanently enforce)
+
+  ```bash
+  export LC_ALL="en_US.UTF-8"
+  export LC_CTYPE="en_US.UTF-8"
+  ```
+
+2. Install and configure locales (example for Ubuntu/Debian)
+
+  ```bash
+  sudo apt update
+  sudo apt install -y locales
+  sudo dpkg-reconfigure locales
+  ```
+
+  During configuration, select `en_US.UTF-8` as the default locale.
+
+### Broken Resizing on Windows
+
+Currently, resizing the terminal on Windows is not functioning properly due to known incompatibilities. At this time, no solutions are available. Contributions or suggestions to address this issue are greatly appreciated.
 
 ## Development
 
