@@ -395,12 +395,14 @@ void free_star_name_members(struct StarName name_data)
 
 void free_stars(struct Star *star_table, unsigned int size)
 {
+    (void)size;
     free(star_table);
     return;
 }
 
 void free_planets(struct Planet *planets, unsigned int size)
 {
+    (void)size;
     free(planets);
     return;
 }
@@ -408,6 +410,7 @@ void free_planets(struct Planet *planets, unsigned int size)
 void free_moon_object(struct Moon moon_data)
 {
     // Nothing was allocated during moon generation
+    (void)moon_data;
     return;
 }
 

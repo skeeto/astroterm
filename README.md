@@ -4,14 +4,14 @@
 
 `astroterm` is constantly improving, and we'd love to hear your ideas! If you have a suggestion or find a bug, please open an issue and share your feedback.
 
-![Stars above Singapore on January 2, 2025](./assets/SG_2025-01-02.gif)
+![The night sky above Singapore on January 2, 2025](./assets/SG_2025-01-02.gif)
 
 _<p align="center">Stars above Singapore on January 2, 2025</p>_
 
 ## Features
 
-- 🔭 **Customizable Sky View:** Choose any date, time, and location to explore past, present, or future celestial events
-- 📐 **Accurate Rendering:** Displays the moon, stars, and planets with as much precision as terminal graphics allow.
+- 🔭 **Highly Customizable:** Choose any date, time, and location to explore past, present, or future celestial events
+- 📐 **Accurate Rendering:** Displays the moon, stars, and planets with as much precision as terminal graphics allow
 - 🌘 **Moon Phases:** Displays precise lunar phases in real-time
 - 🌌 **Constellation Figures:** Renders detailed constellation shapes
 - ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
@@ -24,60 +24,55 @@ Several installation methods are provided based on your platform. If none of the
 
 #### Prebuilt Executable
 
-1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
-2. Download `astroterm-linux-x84_64` from the latest release under "Assets"
-3. Extract and run the executable via the command line
+1. Download the latest executable using `wget`
 
-```bash
-tar -xf astroterm-linux-x84_64.zip -C astroterm-linux-x84_64
-astroterm-linux-x84_64\astroterm
-```
+    ```sh
+    wget -O astroterm-linux_x86_64 "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
+    ```
+
+2. Run the executable
+
+    ```sh
+    ./astroterm-linux-x84_64
+    ```
 
 ### MacOS
 
 #### Prebuilt Executable
 
-1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
-2. Download the appropriate `.zip` file for your system architecture:
+1. Download the latest executable for your system architecture using `wget`
 
-   - **Apple Silicon (M-series):** `astroterm-darwin-aarch64`
-   - **Intel-based Macs:** `astroterm-darwin-x86_64`
+    ```sh
+    wget -O astroterm-darwin-<arch>.zip "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-darwin-<arch>.zip"
+    ```
 
-3. Extract and run the executable via the terminal a first time
+   - Replace `<arch>` with the appropriate architecture:
+     - **Apple Silicon (M-series):** `astroterm-darwin-aarch64`
+     - **Intel-based Macs:** `astroterm-darwin-x86_64`
 
-```bash
-unzip astroterm-darwin-<arch> -d astroterm-darwin-<arch>
-cd ./astroterm-darwin-<arch>
-chmod +x astroterm
-./astroterm
-```
+2. Run the executable
 
-Replace `<arch>` to match the name of your architecture.
-
-4. Handle Gatekeeper's Security Warning
-  
-  Gatekeeper will complain that it cannot run the executable. Go to **Privacy & Secturity** in te Settings app, and under Security, allow `astroterm`.
-
-5. Re-run the Executable
-
-After allowing the app, return to the terminal and run:
-
-`./astroterm`
-
-May need to force sign.
+    ```sh
+    ./astroterm-darwin-<arch>
+    ```
 
 ### Windows
 
 #### Prebuilt Executable
 
-1. Go to the [Releases Page](https://github.com/da-luce/astroterm/releases)
-2. Download `astroterm-win-x84_64` from the latest release under "Assets"
-3. Extract and run the `.exe` via the command line
+1. Download the latest `.exe` file using PowerShell's `Invoke-WebRequest`:
 
-```powershell
-tar -xf astroterm-win-x84_64.zip -C astroterm-win-x84_64
-astroterm-win-x84_64\astroterm-win-x84_64.exe
-```
+    ```powershell
+    Invoke-WebRequest -Uri "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-windows-x86_64.exe" -OutFile "astroterm-windows-x86_64.exe"
+    ```
+
+2. Run the `.exe`
+
+    ```powershell
+    .\astroterm-windows-x86_64.exe
+    ```
+
+Or, download via the [Releases Page](https://github.com/da-luce/astroterm/releases).
 
 ## Building from Source
 
@@ -93,11 +88,10 @@ astroterm-win-x84_64\astroterm-win-x84_64.exe
 - [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer ([installation via python](https://mesonbuild.com/Quick-guide.html#installation-using-python) is recommended)
 - [`ninja`](https://repology.org/project/ninja/versions) 1.8.2 or newer
 - [`ncurses`](https://repology.org/project/ncurses/versions) library
-- [`argtable2/3`](https://repology.org/project/argtable2/versions)
-- Some common CLI tools (_these are checked for automatically during install_)
+- [`argtable2`](https://repology.org/project/argtable2/versions)
+- Some common CLI tools
   - [`wget`](https://repology.org/project/wget/versions) or [`curl`](https://repology.org/project/curl/versions)
   - [`xxd`](https://repology.org/project/xxd/versions) (is also commonly packaged with [`vim`](https://repology.org/project/vim/versions))
-  - [`sed`](https://www.gnu.org/software/sed/manual/sed.html) (should be available on all Unix versions)
 
 > [!WARNING]
 > `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
@@ -109,17 +103,24 @@ astroterm-win-x84_64\astroterm-win-x84_64.exe
 
 #### Install
 
-Clone the repository and enter the project directory:
+1. Clone the repository and enter the project directory:
 
-```sh
-git clone https://github.com/da-luce/astroterm && cd astroterm
-```
+  ```sh
+  git clone https://github.com/da-luce/astroterm && cd astroterm
+  ```
 
-Run the install script:
+2. Download star data:
 
-```sh
-sh install.sh
-```
+  ```sh
+  curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+  ```
+
+3. Build:
+
+  ```sh
+  meson setup build
+  meson compile -C build
+  ```
 
 You may now run the generated `./build/astroterm` binary or add the `astroterm` command system-wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
@@ -135,7 +136,26 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 - [`argtable2`](https://github.com/jonathanmarvens/argtable2)*
 
 > [!WARNING]
-> *These libraries must be compiled locally and moved to where Meson expects them to be. See [`ci.yml`](./.github/workflows/ci.yml#L106) for how this is done.
+> *These libraries must be compiled locally and moved to where Meson expects them to be. See [`ci.yml`](./.github/workflows/ci.yml#L98) for how this is done.
+
+1. Clone the repository and enter the project directory:
+
+  ```sh
+  git clone https://github.com/da-luce/astroterm && cd astroterm
+  ```
+
+2. Download star data:
+
+  ```sh
+  curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5
+  ```
+
+3. Build:
+
+  ```sh
+  meson setup build
+  meson compile -C build
+  ```
 
 > [!TIP]
 > Some steps must be done in the [Visual Studio Developer Command Prompt and Developer PowerShell](https://learn.microsoft.com/en-us/visualstudio/ide/reference/command-prompt-powershell?view=vs-2022), so it's best to just do everything there.
@@ -216,6 +236,12 @@ For more options and help, run `astroterm -h` or `astroterm --help`.
 > Star magnitudes decrease as apparent brightness increases, i.e., to show more stars, increase the threshold.
 
 ## Troubleshooting
+
+### Release Won't Download via Curl
+
+For some reason, `curl` does not follow the latest release redirect. Use `wget`
+to download the latest release or hardcode the tag in the link using `curl`. Or,
+just download via the [releases page](https://github.com/da-luce/astroterm/releases).
 
 ### Broken Unicode on Linux
 

@@ -122,12 +122,12 @@ else
     if (conf.get('HAVE_NCURSES_H', 0) == 1)
         # Have ncurses without wide char support*
         # *on certain systems, the ncurses header includes wide char functions
-        warning('ncursesw header not found, which is sometimes needed for ' + 
+        warning('ncursesw header not found, which is sometimes needed for ' +
                 'unicode support. This may not be an issue as the regular ' +
                 'ncurses.h sometimes contains wide character support')
     else
         if (conf.get('HAVE_CURSES_H', 0) == 1)
-            # Have curses but not ncurses 
+            # Have curses but not ncurses
             warning('ncurses header not found. Ncurses is required for ' +
                     'certain features such as color support')
         endif

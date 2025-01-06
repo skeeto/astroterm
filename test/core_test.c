@@ -7,7 +7,7 @@
 #include "core.h"
 #include "core_position.h"
 #include "data/keplerian_elements.h"
-#include "math_util.h"
+#include "macros.h"
 #include "unity.h"
 
 #include <stdlib.h>

@@ -3,7 +3,7 @@
 #include "core_position.h"
 #include "core_render.h"
 #include "data/keplerian_elements.h"
-#include "math_util.h"
+#include "macros.h"
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
@@ -70,13 +70,13 @@ int main(int argc, char *argv[])
     // Initialize data structs
     unsigned int num_stars, num_const;
 
-    struct Entry *BSC5_entries;
-    struct StarName *name_table;
-    struct Constell *constell_table;
-    struct Star *star_table;
-    struct Planet *planet_table;
+    struct Entry *BSC5_entries = NULL;
+    struct StarName *name_table = NULL;
+    struct Constell *constell_table = NULL;
+    struct Star *star_table = NULL;
+    struct Planet *planet_table = NULL;
     struct Moon moon_object;
-    int *num_by_mag;
+    int *num_by_mag = NULL;
 
     // Track success of functions
     bool s = true;
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 void parse_options(int argc, char *argv[], struct Conf *config)
 {
     struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
-    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (0.0)");
+    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: 0.0)");
     struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
     struct arg_dbl *threshold_arg =
         arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 5.0)");
@@ -418,6 +418,7 @@ void convert_options(struct Conf *config)
 
 void catch_winch(int sig)
 {
+    (void)sig;
     perform_resize = true;
 }
 
