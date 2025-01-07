@@ -3,7 +3,7 @@
 #include "core_position.h"
 #include "core_render.h"
 #include "data/keplerian_elements.h"
-#include "math_util.h"
+#include "macros.h"
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
@@ -16,9 +16,8 @@
 
 // Third party libraries
 #include <argtable2.h>
-#include <ncurses.h>
+#include <curses.h>
 
-#include <getopt.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -31,6 +30,7 @@ static void resize_meta(WINDOW *win);
 static void resize_main(WINDOW *win, const struct Conf *config);
 static void parse_options(int argc, char *argv[], struct Conf *config);
 static void convert_options(struct Conf *config);
+static const char *get_timezone(const struct tm *local_time);
 static void render_metadata(WINDOW *win, const struct Conf *config);
 
 // Track if we need to resize the curses window
@@ -70,13 +70,13 @@ int main(int argc, char *argv[])
     // Initialize data structs
     unsigned int num_stars, num_const;
 
-    struct Entry *BSC5_entries;
-    struct StarName *name_table;
-    struct Constell *constell_table;
-    struct Star *star_table;
-    struct Planet *planet_table;
+    struct Entry *BSC5_entries = NULL;
+    struct StarName *name_table = NULL;
+    struct Constell *constell_table = NULL;
+    struct Star *star_table = NULL;
+    struct Planet *planet_table = NULL;
     struct Moon moon_object;
-    int *num_by_mag;
+    int *num_by_mag = NULL;
 
     // Track success of functions
     bool s = true;
@@ -104,9 +104,11 @@ int main(int argc, char *argv[])
     free(BSC5_entries);
 
     // Terminal/System settings
-    setlocale(LC_ALL, "");         // Required for unicode rendering
+    setlocale(LC_ALL, ""); // Required for unicode rendering
+#ifndef _WIN32
     signal(SIGWINCH, catch_winch); // Capture window resizes
-    tzset();                       // Initialize timezone information
+#endif
+    tzset(); // Initialize timezone information
 
     // Ncurses initialization
     ncurses_init(config.color);
@@ -228,7 +230,7 @@ int main(int argc, char *argv[])
 void parse_options(int argc, char *argv[], struct Conf *config)
 {
     struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
-    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (0.0)");
+    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: 0.0)");
     struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
     struct arg_dbl *threshold_arg =
         arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 5.0)");
@@ -251,7 +253,7 @@ void parse_options(int argc, char *argv[], struct Conf *config)
         arg_str0("i", "city", "<city_name>",
                  "Use the latitude and longitude of the provided city. If the name contains multiple words, "
                  "enclose the name in single or double quotes. For a list of available cities, see: "
-                 "https://github.com/da-luce/astroterm/blob/main/data/cities100000.csv");
+                 "https://github.com/da-luce/astroterm/blob/main/data/cities.csv");
     struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
 
     struct arg_end *end = arg_end(20);
@@ -416,6 +418,7 @@ void convert_options(struct Conf *config)
 
 void catch_winch(int sig)
 {
+    (void)sig;
     perform_resize = true;
 }
 
@@ -425,7 +428,10 @@ void resize_ncurses(void)
     int y;
     int x;
     term_size(&y, &x);
+
+#ifndef _WIN32
     resizeterm(y, x);
+#endif
 }
 
 void resize_main(WINDOW *win, const struct Conf *config)
@@ -462,6 +468,26 @@ void resize_meta(WINDOW *win)
     wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
 }
 
+const char *get_timezone(const struct tm *local_time)
+{
+#ifdef _WIN32
+    // Windows-specific code
+    TIME_ZONE_INFORMATION tz_info;
+    if (GetTimeZoneInformation(&tz_info) == TIME_ZONE_ID_DAYLIGHT && local_time->tm_isdst > 0)
+    {
+        return tz_info.DaylightName; // DST time zone name
+    }
+    else
+    {
+        return tz_info.StandardName; // Standard time zone name
+    }
+#else
+    // Unix-like systems (Linux/macOS) code
+    extern char *tzname[2]; // tzname[0] is standard, tzname[1] is DST
+    return local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+#endif
+}
+
 void render_metadata(WINDOW *win, const struct Conf *config)
 {
     // Gregorian Date (local time)
@@ -482,7 +508,7 @@ void render_metadata(WINDOW *win, const struct Conf *config)
     int hour = local_time->tm_hour;        // Hour (0-23)
     int minute = local_time->tm_min;       // Minute (0-59)
 
-    const char *timezone = local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+    const char *timezone = get_timezone(local_time);
     mvwprintw(win, 0, 0, "Date (%s): \t%02d-%02d-%04d %02d:%02d", timezone, day, month, year, hour, minute);
 
     // Zodiac

@@ -2,6 +2,9 @@
 
 #include "astro.h"
 #include "parse_BSC5.h"
+#ifdef _WIN32
+#include "strptime.h"
+#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -143,6 +146,9 @@ bool generate_moon_object(struct Moon *moon_data, const struct KepElems *moon_el
     return true;
 }
 
+// Line buffer (more than enough to store any of the names)
+#define BUF_SIZE 32
+
 // TODO: verify this catches the first and last entries
 bool generate_name_table(const uint8_t *data, size_t data_len, struct StarName **name_table_out, int num_stars)
 {
@@ -153,7 +159,6 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct StarName *
         return false;
     }
 
-    const unsigned BUF_SIZE = 32; // More than enough room to store any line
     char buffer[BUF_SIZE];
     size_t offset = 0;
 
@@ -217,6 +222,7 @@ bool generate_name_table(const uint8_t *data, size_t data_len, struct StarName *
  *
  * NOTE: line numbers are 0-indexed
  */
+#define MAX_BUF_SIZE 2048
 bool parse_line(const uint8_t *data, struct Constell **constell_table_out, int line_start, int line_end, int line_number)
 {
     // Validate the input range
@@ -227,7 +233,7 @@ bool parse_line(const uint8_t *data, struct Constell **constell_table_out, int l
 
     // Create a temporary buffer for the line data
     size_t line_length = line_end - line_start + 1;
-    char buffer[line_length + 1]; // +1 for null-terminator
+    char buffer[MAX_BUF_SIZE];
 
     // Copy the relevant data into the buffer (ensure null-termination)
     memcpy(buffer, &data[line_start], line_length);
@@ -389,12 +395,14 @@ void free_star_name_members(struct StarName name_data)
 
 void free_stars(struct Star *star_table, unsigned int size)
 {
+    (void)size;
     free(star_table);
     return;
 }
 
 void free_planets(struct Planet *planets, unsigned int size)
 {
+    (void)size;
     free(planets);
     return;
 }
@@ -402,6 +410,7 @@ void free_planets(struct Planet *planets, unsigned int size)
 void free_moon_object(struct Moon moon_data)
 {
     // Nothing was allocated during moon generation
+    (void)moon_data;
     return;
 }
 

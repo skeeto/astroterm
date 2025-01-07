@@ -6,7 +6,7 @@
 
 #include "core.h"
 
-#include <ncurses.h>
+#include <curses.h>
 
 /* Render stars to the screen using a stereographic projection
  */

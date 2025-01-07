@@ -1,5 +1,5 @@
 #include "astro.h"
-#include "math_util.h"
+#include "macros.h"
 
 #include <math.h>
 #include <stdbool.h>
@@ -138,10 +138,8 @@ double current_julian_date(void)
 
 static double solve_kepler(double M, double e, double E)
 {
-    const double to_rad = M_PI / 180.0;
-
-    double dM = M - (E - e / to_rad * sin(E * to_rad));
-    double dE = dM / (1.0 - e * cos(E * to_rad));
+    double dM = M - (E - e / TO_RAD * sin(E * TO_RAD));
+    double dE = dM / (1.0 - e * cos(E * TO_RAD));
 
     return dE;
 }
@@ -153,8 +151,6 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
                             double julian_date, double *xh, double *yh, double *zh)
 {
     // Explanatory Supplement to the Astronomical Almanac: Chapter 8,  Page 340
-
-    const double to_rad = M_PI / 180.0;
 
     // 1.
 
@@ -178,7 +174,7 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
         double c = extras->c;
         double s = extras->s;
         double f = extras->f;
-        M = L - w_bar + b * t * t + c * cos(f * t * to_rad) + s * sin(f * t * to_rad);
+        M = L - w_bar + b * t * t + c * cos(f * t * TO_RAD) + s * sin(f * t * TO_RAD);
     }
 
     // 3.
@@ -189,7 +185,7 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
     }
 
     double e_star = 180.0 / M_PI * e;
-    double E = M + e_star * sin(M * to_rad);
+    double E = M + e_star * sin(M * TO_RAD);
 
     double dE = 1.0;
     int n = 0;
@@ -202,18 +198,18 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
 
     // 4.
 
-    const double xp = a * (cos(E * to_rad) - e);
-    const double yp = a * sqrt(1.0 - e * e) * sin(E * to_rad);
+    const double xp = a * (cos(E * TO_RAD) - e);
+    const double yp = a * sqrt(1.0 - e * e) * sin(E * TO_RAD);
     const double zp = 0.0;
 
     // 5.
 
-    a *= to_rad;
-    e *= to_rad;
-    I *= to_rad;
-    L *= to_rad;
-    w *= to_rad;
-    O *= to_rad;
+    a *= TO_RAD;
+    e *= TO_RAD;
+    I *= TO_RAD;
+    L *= TO_RAD;
+    w *= TO_RAD;
+    O *= TO_RAD;
     double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
     double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
     double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
@@ -221,7 +217,7 @@ void calc_planet_helio_ICRF(const struct KepElems *elements, const struct KepRat
     // 6.
 
     // Obliquity at J2000 in radians
-    double eps = 84381.448 / (60.0 * 60.0) * to_rad;
+    double eps = 84381.448 / (60.0 * 60.0) * TO_RAD;
 
     *xh = xecl;
     *yh = cos(eps) * yecl - sin(eps) * zecl;
@@ -267,8 +263,6 @@ void calc_moon_geo_ICRF(const struct KepElems *moon_elements, const struct KepRa
     // https: //
     // astronomy.stackexchange.com/questions/29522/moon-equatorial-coordinates
 
-    const double to_rad = M_PI / 180.0;
-
     // When using Paul Schlyter's elements
     double d = julian_date - 2451543.5; // weird stuff here
 
@@ -290,7 +284,7 @@ void calc_moon_geo_ICRF(const struct KepElems *moon_elements, const struct KepRa
 
     // Compute the eccentric anomaly, E
     double e_star = 180.0 / M_PI * e;
-    double E = M + e_star * sin(M * to_rad) * (1.0 + e * cos(M * to_rad));
+    double E = M + e_star * sin(M * TO_RAD) * (1.0 + e * cos(M * TO_RAD));
 
     double dE = 1.0;
     int n = 0;
@@ -302,21 +296,21 @@ void calc_moon_geo_ICRF(const struct KepElems *moon_elements, const struct KepRa
     }
 
     // Compute moon's geocentric  coordinates in its orbital plane
-    double xp = a * (cos(E * to_rad) - e);
-    double yp = a * sqrt(1.0 - e * e) * sin(E * to_rad);
+    double xp = a * (cos(E * TO_RAD) - e);
+    double yp = a * sqrt(1.0 - e * e) * sin(E * TO_RAD);
     double zp = 0.0;
 
     // Compute the moon's position in 3-dimensional space in ecliptic coords
-    I *= to_rad;
-    w *= to_rad;
-    O *= to_rad;
-    M *= to_rad;
+    I *= TO_RAD;
+    w *= TO_RAD;
+    O *= TO_RAD;
+    M *= TO_RAD;
     double xecl = (cos(w) * cos(O) - sin(w) * sin(O) * cos(I)) * xp + (-sin(w) * cos(O) - cos(w) * sin(O) * cos(I)) * yp;
     double yecl = (cos(w) * sin(O) + sin(w) * cos(O) * cos(I)) * xp + (-sin(w) * sin(O) + cos(w) * cos(O) * cos(I)) * yp;
     double zecl = (sin(w) * sin(I)) * xp + (cos(w) * sin(I)) * yp;
 
     // Obliquity at J2000 in radians
-    double eps = 84381.448 / (60.0 * 60.0) * to_rad;
+    double eps = 84381.448 / (60.0 * 60.0) * TO_RAD;
 
     // Convert to equatorial coords
     *xg = xecl;

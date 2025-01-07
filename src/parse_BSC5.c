@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const size_t header_bytes = 28;
-static const size_t entry_bytes = 32;
+#define HEADER_BYTES 28
+#define ENTRY_BYTES 32
 
 static struct Header parse_header(uint8_t *buffer)
 {
@@ -45,15 +45,15 @@ static struct Entry parse_entry(uint8_t *buffer)
 bool parse_entries(uint8_t *data, size_t data_size, struct Entry **entries_out, unsigned int *num_entries_out)
 {
     // Check if there's enough data to read the header
-    if (data_size < header_bytes)
+    if (data_size < HEADER_BYTES)
     {
         printf("Insufficient data size for header\n");
         return false;
     }
 
     // Read the header from the embedded binary data
-    uint8_t header_buffer[header_bytes];
-    memcpy(header_buffer, data, header_bytes);
+    uint8_t header_buffer[HEADER_BYTES];
+    memcpy(header_buffer, data, HEADER_BYTES);
     struct Header header_data = parse_header(header_buffer);
 
     // STARN is negative if coordinates are J2000 (which they are in BSC5)
@@ -69,25 +69,25 @@ bool parse_entries(uint8_t *data, size_t data_size, struct Entry **entries_out, 
     }
 
     // Move the data pointer to the beginning of the entries section
-    data += header_bytes;
-    data_size -= header_bytes;
+    data += HEADER_BYTES;
+    data_size -= HEADER_BYTES;
 
     // Read entries from the embedded binary data
-    uint8_t entry_buffer[entry_bytes];
+    uint8_t entry_buffer[ENTRY_BYTES];
     for (unsigned int i = 0; i < num_entries; ++i)
     {
-        if (data_size < entry_bytes)
+        if (data_size < ENTRY_BYTES)
         {
             printf("Insufficient data size for entry %u\n", i);
             return false;
         }
 
-        memcpy(entry_buffer, data, entry_bytes);
+        memcpy(entry_buffer, data, ENTRY_BYTES);
         (*entries_out)[i] = parse_entry(entry_buffer);
 
         // Move the data pointer to the next entry
-        data += entry_bytes;
-        data_size -= entry_bytes;
+        data += ENTRY_BYTES;
+        data_size -= ENTRY_BYTES;
     }
 
     // Set the number of entries found

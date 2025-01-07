@@ -1,12 +1,19 @@
 #include "term.h"
 
+#include <curses.h>
 #include <math.h>
-#include <ncurses.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32
+#include <stdio.h>
+#include <windows.h>
+extern BOOL WINAPI GetCurrentConsoleFont(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFO lpConsoleCurrentFont);
+#else
 #include <sys/ioctl.h>
 #include <unistd.h>
+#endif
 
 void ncurses_init(bool color)
 {
@@ -16,6 +23,11 @@ void ncurses_init(bool color)
     cbreak();    // Disable line buffering
     curs_set(0); // Make cursor invisible
     timeout(0);  // Non-blocking read for getch
+
+    // Set the console output code page to UTF-8 on Windows
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
 
     // Initialize colors
     if (color)
@@ -93,10 +105,11 @@ void term_size(int *y, int *x)
 #if defined(_WIN32)
 
     CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    *y = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-    *x = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+    int columns, rows;
 
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    *x = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    *y = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 #else
 
     struct winsize ws;
@@ -113,7 +126,7 @@ bool stdout_directed_to_console(void)
 
     // Hacky way to check if stdout is directed to a console
     // https://stackoverflow.com/questions/2087775/how-do-i-detect-when-output-is-being-redirected
-    fpost_t pos;
+    fpos_t pos;
     fgetpos(stdout, &pos);
     return (pos == -1);
 
@@ -133,7 +146,7 @@ float get_cell_aspect_ratio(void)
     {
 #if defined(_WIN32)
 
-        static const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+        HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
         CONSOLE_FONT_INFO cfi;
         GetCurrentConsoleFont(handle, false, &cfi);
         float cell_width = cfi.dwFontSize.X;
@@ -162,6 +175,7 @@ float get_cell_aspect_ratio(void)
     return default_height;
 }
 
+#define MAX_STR_LEN 2048
 void mvwaddstr_truncate(WINDOW *win, int y, int x, const char *str)
 {
     // Remaining space on the current line
@@ -172,7 +186,7 @@ void mvwaddstr_truncate(WINDOW *win, int y, int x, const char *str)
     if (space_left > 0)
     {
         // Truncate if necessary
-        char truncated[space_left + 1]; // +1 for the null terminator
+        char truncated[MAX_STR_LEN];
         strncpy(truncated, str, space_left);
         truncated[space_left] = '\0';
         mvwaddstr(win, y, x, truncated);

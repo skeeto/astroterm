@@ -1,13 +1,13 @@
 #include "core_render.h"
-#include "math_util.h"
+#include "macros.h"
 
 #include "coord.h"
 #include "core.h"
 #include "drawing.h"
 #include "term.h"
 
+#include <curses.h>
 #include <math.h>
-#include <ncurses.h>
 #include <stdlib.h>
 
 void horizontal_to_polar(double azimuth, double altitude, double *radius, double *theta)

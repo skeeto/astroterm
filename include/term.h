@@ -4,9 +4,9 @@
 #ifndef TERM_H
 #define TERM_H
 
-#include <ncurses.h>
+#include <curses.h>
 
-/* Initialize ncurses.
+/* Initialize ncurses.h
  */
 void ncurses_init(bool color);
 
