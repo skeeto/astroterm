@@ -1,7 +1,7 @@
 #include "drawing.h"
 
+#include <curses.h>
 #include <math.h>
-#include <ncurses.h>
 #include <stdlib.h>
 
 // The difference in logic between drawing an ASCII and unicode line differs
@@ -112,10 +112,10 @@ void draw_line_ASCII(WINDOW *win, int ya, int xa, int yb, int xb)
         }
     }
 
-    // Add asterisks at beginning and end of segment to "prettify"
-
-    mvwaddch(win, ya, xa, '*');
-    mvwaddch(win, yb, xb, '*');
+    // Could add asterisks at beginning and end of segment to "prettify",
+    // but not for this application
+    // mvwaddch(win, ya, xa, '*');
+    // mvwaddch(win, yb, xb, '*');
 }
 
 void draw_line_smooth(WINDOW *win, int ya, int xa, int yb, int xb)
@@ -266,7 +266,7 @@ void draw_line_dotted(WINDOW *win, int ya, int xa, int yb, int xb)
     }
 }
 
-enum fillType
+enum FillType
 {
     HORIZONTAL,
     VERTICAL,

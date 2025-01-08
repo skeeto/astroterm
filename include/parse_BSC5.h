@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <string.h>
 
-struct header
+struct Header
 {
     int STAR0;
     int STAR1;
@@ -20,7 +20,7 @@ struct header
     int NBENT;
 };
 
-struct entry
+struct Entry
 {
     float XNO;
     double SRA0;
@@ -36,6 +36,6 @@ struct entry
  * allocates memory which must be freed by the caller. Returns false in event
  * of a file error
  */
-bool parse_entries(uint8_t *data, size_t data_size, struct entry **entries_out, unsigned int *num_entries_out);
+bool parse_entries(uint8_t *data, size_t data_size, struct Entry **entries_out, unsigned int *num_entries_out);
 
 #endif // PARSE_BSC5_H

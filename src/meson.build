@@ -9,6 +9,8 @@ project_source_files += [
     files('parse_BSC5.c'),
     files('stopwatch.c'),
     files('term.c'),
+    files('city.c'),
+    files('strptime.c')
 ]
 
 # NOTE:  We add main separately in the main Meson.build file to avoid duplicate "mains" when testing

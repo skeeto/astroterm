@@ -1,49 +1,64 @@
+#include "city.h"
 #include "core.h"
 #include "core_position.h"
 #include "core_render.h"
-
 #include "data/keplerian_elements.h"
+#include "macros.h"
 #include "parse_BSC5.h"
 #include "stopwatch.h"
 #include "term.h"
+#include "version.h"
 
 // Embedded data generated during build
 #include "bsc5_constellations.h"
 #include "bsc5_data.h"
 #include "bsc5_names.h"
 
-// Third part libraries
-#include "argtable3.h"
+// Third party libraries
+#include <argtable2.h>
+#include <curses.h>
 
-#include <getopt.h>
 #include <locale.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-static volatile bool perform_resize = false;
+#include <time.h>
 
 static void catch_winch(int sig);
-static void handle_resize(WINDOW *win);
-static void parse_options(int argc, char *argv[], struct conf *config);
-static void convert_options(struct conf *config);
+static void resize_ncurses(void);
+static void resize_meta(WINDOW *win);
+static void resize_main(WINDOW *win, const struct Conf *config);
+static void parse_options(int argc, char *argv[], struct Conf *config);
+static void convert_options(struct Conf *config);
+static const char *get_timezone(const struct tm *local_time);
+static void render_metadata(WINDOW *win, const struct Conf *config);
+
+// Track if we need to resize the curses window
+static volatile bool perform_resize = false;
+
+// Track current simulation time (UTC)
+// Default to current time in dt_string_utc is NULL
+static double julian_date = 0.0;
+static double julian_date_start = 0.0; // Note of when we started
 
 int main(int argc, char *argv[])
 {
     // Default config
-    struct conf config = {
-        .longitude = -71.057083, // Boston, MA
-        .latitude = 42.361145,
+    struct Conf config = {
+        .longitude = 0.0,
+        .latitude = 0.0,
         .dt_string_utc = NULL,
-        .threshold = 3.0f,
-        .label_thresh = 0.5f,
+        .threshold = 5.0f,
+        .label_thresh = 0.25f,
         .fps = 24,
-        .animation_mult = 1.0f,
-        .julian_date = 0.0,
-        .ascii = true,
-        .color_flag = false,
-        .grid_flag = false,
-        .constell_flag = false,
+        .speed = 1.0f,
+        .aspect_ratio = 0.0,
+        .quit_on_any = false,
+        .unicode = false,
+        .color = false,
+        .grid = false,
+        .constell = false,
+        .metadata = false,
     };
 
     // Parse command line args and convert to internal representations
@@ -56,13 +71,13 @@ int main(int argc, char *argv[])
     // Initialize data structs
     unsigned int num_stars, num_const;
 
-    struct entry *BSC5_entries;
-    struct star_name *name_table;
-    struct constell *constell_table;
-    struct star *star_table;
-    struct planet *planet_table;
-    struct moon moon_object;
-    int *num_by_mag;
+    struct Entry *BSC5_entries = NULL;
+    struct StarName *name_table = NULL;
+    struct Constell *constell_table = NULL;
+    struct Star *star_table = NULL;
+    struct Planet *planet_table = NULL;
+    struct Moon moon_object;
+    int *num_by_mag = NULL;
 
     // Track success of functions
     bool s = true;
@@ -82,90 +97,125 @@ int main(int argc, char *argv[])
 
     if (!s)
     {
-        // At least one of the above functions failed, abort
-        abort();
+        // At least one of the above functions failed, exit
+        exit(EXIT_FAILURE);
     }
 
     // This memory is no longer needed
     free(BSC5_entries);
-    free_star_names(name_table, num_stars);
 
     // Terminal/System settings
-    setlocale(LC_ALL, "");         // Required for unicode rendering
+    setlocale(LC_ALL, ""); // Required for unicode rendering
+#ifndef _WIN32
     signal(SIGWINCH, catch_winch); // Capture window resizes
+#endif
+    tzset(); // Initialize timezone information
 
     // Ncurses initialization
-    ncurses_init(config.color_flag != 0);
-    WINDOW *win = newwin(0, 0, 0, 0);
-    wtimeout(win, 0); // Non-blocking read for wgetch
-    win_resize_square(win, get_cell_aspect_ratio());
-    win_position_center(win);
+    ncurses_init(config.color);
+
+    // Main (projection) window
+    WINDOW *main_win = newwin(0, 0, 0, 0);
+    resize_main(main_win, &config);
+
+    // Metadata window
+    WINDOW *metadata_win = newwin(0, 0, 0, 0); // Position at top left
+    if (config.metadata)
+    {
+        resize_meta(metadata_win);
+    }
 
     // Render loop
     while (true)
     {
-        struct sw_timestamp frame_begin;
+        struct SwTimestamp frame_begin;
         sw_gettime(&frame_begin);
-
-        werase(win);
 
         if (perform_resize)
         {
-            // Putting this after erasing the window reduces flickering
-            handle_resize(win);
-        }
+            resize_ncurses();
+            resize_main(main_win, &config);
+            if (config.metadata)
+            {
+                resize_meta(metadata_win);
+            }
+            doupdate();
 
-        // Update object positions
-        update_star_positions(star_table, num_stars, config.julian_date, config.latitude, config.longitude);
-        update_planet_positions(planet_table, config.julian_date, config.latitude, config.longitude);
-        update_moon_position(&moon_object, config.julian_date, config.latitude, config.longitude);
-        update_moon_phase(&moon_object, config.julian_date, config.latitude);
-
-        // Render
-        render_stars_stereo(win, &config, star_table, num_stars, num_by_mag);
-        if (config.constell_flag != 0)
-        {
-            render_constells(win, &config, &constell_table, num_const, star_table);
-        }
-        render_planets_stereo(win, &config, planet_table);
-        render_moon_stereo(win, &config, moon_object);
-        if (config.grid_flag != 0)
-        {
-            render_azimuthal_grid(win, &config);
+            perform_resize = false;
         }
         else
         {
-            render_cardinal_directions(win, &config);
+            werase(metadata_win);
+            werase(main_win);
+        }
+
+        // Update object positions
+        update_star_positions(star_table, num_stars, julian_date, config.latitude, config.longitude);
+        update_planet_positions(planet_table, julian_date, config.latitude, config.longitude);
+        update_moon_position(&moon_object, julian_date, config.latitude, config.longitude);
+        update_moon_phase(&moon_object, julian_date, config.latitude);
+
+        // Render objects
+        render_stars_stereo(main_win, &config, star_table, num_stars, num_by_mag);
+        if (config.constell)
+        {
+            render_constells(main_win, &config, &constell_table, num_const, star_table);
+        }
+        render_planets_stereo(main_win, &config, planet_table);
+        render_moon_stereo(main_win, &config, moon_object);
+        if (config.grid)
+        {
+            render_azimuthal_grid(main_win, &config);
+        }
+        else
+        {
+            render_cardinal_directions(main_win, &config);
+        }
+
+        // Render metadata
+        if (config.metadata)
+        {
+            render_metadata(metadata_win, &config);
         }
 
         // Exit if ESC or q is pressed
-        int ch = wgetch(win);
-        if (ch == 27 || ch == 'q')
+        int ch = getch();
+        if (ch != ERR && (ch == 27 || ch == 'q' || config.quit_on_any))
         {
-            // Note: wgetch also calls wrefresh(win), so we want this at the
-            // bottom after the virtual screen is updated
             break;
         }
+
+        // Use double buffering to avoid flickering while updating
+        wnoutrefresh(main_win);
+        if (config.metadata)
+        {
+            wnoutrefresh(metadata_win);
+        }
+        doupdate();
 
         // TODO: this timing scheme *should* minimize any drift or divergence
         // between simulation time and realtime. Check this to make sure.
 
         // Increment "simulation" time
         const double microsec_per_day = 24.0 * 60.0 * 60.0 * 1.0E6;
-        config.julian_date += (double)dt / microsec_per_day * config.animation_mult;
+        julian_date += (double)dt / microsec_per_day * config.speed;
 
         // Determine time it took to update positions and render to screen
-        struct sw_timestamp frame_end;
+        struct SwTimestamp frame_end;
         sw_gettime(&frame_end);
 
         unsigned long long frame_time;
         sw_timediff_usec(frame_end, frame_begin, &frame_time);
 
+        // If updating the frame took less time than the time between frames,
+        // wait the rest of the time
         if (frame_time < dt)
         {
             sw_sleep(dt - frame_time);
         }
     }
+
+    // Clean up
 
     ncurses_kill();
 
@@ -173,37 +223,47 @@ int main(int argc, char *argv[])
     free_stars(star_table, num_stars);
     free_planets(planet_table, NUM_PLANETS);
     free_moon_object(moon_object);
+    free_star_names(name_table, num_stars);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-void parse_options(int argc, char *argv[], struct conf *config)
+void parse_options(int argc, char *argv[], struct Conf *config)
 {
-    // Define Argtable3 option structures
-    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 42.361145)");
-    struct arg_dbl *longitude_arg =
-        arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: -71.057083)");
+    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
+    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: 0.0)");
     struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
     struct arg_dbl *threshold_arg =
-        arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 3.0)");
+        arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 5.0)");
     struct arg_dbl *label_arg =
-        arg_dbl0("l", "label-thresh", "<float>", "Label stars brighter than this magnitude (default: 0.5)");
+        arg_dbl0("l", "label-thresh", "<float>", "Label stars brighter than this magnitude (default: 0.25)");
     struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
-    struct arg_dbl *anim_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
-    struct arg_lit *color_arg = arg_lit0(NULL, "color", "Enable terminal colors");
-    struct arg_lit *constell_arg = arg_lit0(NULL, "constellations",
-                                            "Draw constellations stick figures. Note: a constellation is only "
+    struct arg_dbl *speed_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
+    struct arg_lit *color_arg = arg_lit0("c", "color", "Enable terminal colors");
+    struct arg_lit *constell_arg = arg_lit0("C", "constellations",
+                                            "Draw constellation stick figures. Note: a constellation is only "
                                             "drawn if all stars in the figure are over the threshold");
-    struct arg_lit *grid_arg = arg_lit0(NULL, "grid", "Draw an azimuthal grid");
-    struct arg_lit *ascii_arg = arg_lit0(NULL, "ascii", "Only use ASCII characters");
+    struct arg_lit *grid_arg = arg_lit0("g", "grid", "Draw an azimuthal grid");
+    struct arg_lit *unicode_arg = arg_lit0("u", "unicode", "Use unicode characters");
+    struct arg_lit *quit_arg = arg_lit0("q", "quit-on-any", "Quit on any keypress (default is to quit on 'q' or 'ESC' only)");
+    struct arg_lit *meta_arg = arg_lit0("m", "metadata", "Display metadata");
     struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
+    struct arg_dbl *ratio_arg = arg_dbl0("r", "aspect-ratio", "<float>",
+                                         "Override the calculated terminal cell aspect ratio. Use this if your projection is "
+                                         "not 'square.' A value around 2.0 works well for most cases");
+    struct arg_str *city_arg =
+        arg_str0("i", "city", "<city_name>",
+                 "Use the latitude and longitude of the provided city. If the name contains multiple words, "
+                 "enclose the name in single or double quotes. For a list of available cities, see: "
+                 "https://github.com/da-luce/astroterm/blob/main/data/cities.csv");
+    struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
+
     struct arg_end *end = arg_end(20);
 
-    // Create argtable array
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg, anim_arg,
-                        color_arg,    constell_arg,  grid_arg,     ascii_arg,     help_arg,  end};
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg,   fps_arg,
+                        speed_arg,    color_arg,     constell_arg, grid_arg,      unicode_arg, quit_arg,
+                        meta_arg,     ratio_arg,     help_arg,     city_arg,      version_arg, end};
 
-    // Parse the arguments
     int nerrors = arg_parse(argc, argv, argtable);
 
     if (help_arg->count > 0)
@@ -221,7 +281,12 @@ void parse_options(int argc, char *argv[], struct conf *config)
         exit(EXIT_FAILURE);
     }
 
-    // Assign parsed values to global variables
+    if (version_arg->count > 0)
+    {
+        printf("%s %s-%s\n", PROJ_NAME, PROJ_VERSION, PROJ_HASH);
+        exit(EXIT_SUCCESS);
+    }
+
     if (latitude_arg->count > 0)
     {
         config->latitude = latitude_arg->dval[0];
@@ -267,41 +332,68 @@ void parse_options(int argc, char *argv[], struct conf *config)
         }
     }
 
-    if (anim_arg->count > 0)
+    if (speed_arg->count > 0)
     {
-        config->animation_mult = (float)anim_arg->dval[0];
+        config->speed = (float)speed_arg->dval[0];
     }
 
     if (color_arg->count > 0)
     {
-        config->color_flag = TRUE;
+        config->color = true;
     }
 
     if (constell_arg->count > 0)
     {
-        config->constell_flag = TRUE;
+        config->constell = true;
+    }
+
+    if (meta_arg->count > 0)
+    {
+        config->metadata = true;
     }
 
     if (grid_arg->count > 0)
     {
-        config->grid_flag = TRUE;
+        config->grid = true;
     }
 
-    if (ascii_arg->count > 0)
+    if (unicode_arg->count > 0)
     {
-        config->ascii = FALSE;
+        config->unicode = true;
+    }
+
+    if (quit_arg->count > 0)
+    {
+        config->quit_on_any = true;
+    }
+
+    if (ratio_arg->count > 0)
+    {
+        config->aspect_ratio = ratio_arg->dval[0];
+    }
+
+    if (city_arg->count > 0)
+    {
+        const char *city_name = city_arg->sval[0];
+        CityData *city = get_city(city_name);
+
+        if (!city)
+        {
+            fprintf(stderr, "ERROR: Could not find city \"%s\"\n", city_name);
+            exit(EXIT_FAILURE);
+        }
+
+        config->latitude = city->latitude;
+        config->longitude = city->longitude;
+        free_city(city);
     }
 
     // Free Argtable resources
     arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 }
 
-void convert_options(struct conf *config)
+void convert_options(struct Conf *config)
 {
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
     // Convert longitude and latitude to radians
     config->longitude *= M_PI / 180.0;
     config->latitude *= M_PI / 180.0;
@@ -310,7 +402,8 @@ void convert_options(struct conf *config)
     if (config->dt_string_utc == NULL)
     {
         // Set julian date to current time
-        config->julian_date = current_julian_date();
+        julian_date_start = current_julian_date();
+        julian_date = julian_date_start;
     }
     else
     {
@@ -319,11 +412,12 @@ void convert_options(struct conf *config)
         if (!parse_success)
         {
             printf("ERROR: Unable to parse datetime string '%s'\nDatetimes "
-                   "must be in form <yyyy-mm-ddThh:mm:ss>",
+                   "must be in form <yyyy-mm-ddThh:mm:ss>\n",
                    config->dt_string_utc);
             exit(EXIT_FAILURE);
         }
-        config->julian_date = datetime_to_julian_date(&datetime);
+        julian_date_start = datetime_to_julian_date(&datetime);
+        julian_date = julian_date_start;
     }
 
     return;
@@ -331,27 +425,136 @@ void convert_options(struct conf *config)
 
 void catch_winch(int sig)
 {
+    (void)sig;
     perform_resize = true;
 }
 
-void handle_resize(WINDOW *win)
+void resize_ncurses(void)
 {
     // Resize ncurses internal terminal
     int y;
     int x;
     term_size(&y, &x);
-    resizeterm(y, x);
 
-    // ???
-    wclear(win);
-    wrefresh(win);
+#ifndef _WIN32
+    resizeterm(y, x);
+#endif
+}
+
+void resize_main(WINDOW *win, const struct Conf *config)
+{
+    // Clear the window before resizing
+    werase(win);
+    wnoutrefresh(win);
 
     // Check cell ratio
-    float aspect = get_cell_aspect_ratio();
+    float aspect;
+    if (config->aspect_ratio)
+    {
+        aspect = config->aspect_ratio;
+    }
+    else
+    {
+        aspect = get_cell_aspect_ratio();
+    }
 
     // Resize/position application window
     win_resize_square(win, aspect);
     win_position_center(win);
+}
 
-    perform_resize = false;
+void resize_meta(WINDOW *win)
+{
+    // Clear the window before resizing
+    werase(win);
+    wnoutrefresh(win);
+
+    const int meta_lines = 6; // Allows for 6 rows
+    const int meta_cols = 45; // Set to allow enough room for longest line (elapsed time)
+
+    wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
+}
+
+const char *get_timezone(const struct tm *local_time)
+{
+#ifdef _WIN32
+    // Windows-specific code
+    TIME_ZONE_INFORMATION tz_info;
+    if (GetTimeZoneInformation(&tz_info) == TIME_ZONE_ID_DAYLIGHT && local_time->tm_isdst > 0)
+    {
+        return tz_info.DaylightName; // DST time zone name
+    }
+    else
+    {
+        return tz_info.StandardName; // Standard time zone name
+    }
+#else
+    // Unix-like systems (Linux/macOS) code
+    extern char *tzname[2]; // tzname[0] is standard, tzname[1] is DST
+    return local_time->tm_isdst > 0 ? tzname[1] : tzname[0];
+#endif
+}
+
+void render_metadata(WINDOW *win, const struct Conf *config)
+{
+    // Gregorian Date (local time)
+
+    // Convert sim julian date (UTC) to local time
+    const double JULIAN_DATE_EPOCH = 2440587.5;
+    time_t utc_time = (time_t)((julian_date - JULIAN_DATE_EPOCH) * 86400);
+    const struct tm *local_time = localtime(&utc_time);
+    if (local_time == NULL)
+    {
+        // Default to UTC if conversion fails
+        local_time = gmtime(&utc_time);
+    }
+
+    int year = local_time->tm_year + 1900; // tm_year is years since 1900
+    int month = local_time->tm_mon + 1;    // tm_mon is months since January (0-11)
+    int day = local_time->tm_mday;         // Day of the month
+    int hour = local_time->tm_hour;        // Hour (0-23)
+    int minute = local_time->tm_min;       // Minute (0-59)
+
+    const char *timezone = get_timezone(local_time);
+    mvwprintw(win, 0, 0, "Date (%s): \t%02d-%02d-%04d %02d:%02d", timezone, day, month, year, hour, minute);
+
+    // Zodiac
+    const char *zodiac_name = get_zodiac_sign(month, day);
+    const char *zodiac_symbol = get_zodiac_symbol(month, day);
+    if (config->unicode)
+    {
+        mvwprintw(win, 1, 0, "Zodiac: \t%s %s", zodiac_name, zodiac_symbol);
+    }
+    else
+    {
+        mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac_name);
+    }
+
+    // Lunar phase
+    double age = calc_moon_age(julian_date);
+    enum MoonPhase phase = moon_age_to_phase(age);
+    const char *lunar_phase = get_moon_phase_name(phase);
+    mvwprintw(win, 2, 0, "Lunar Phase: \t%s", lunar_phase);
+
+    // Lat and Lon (convert back to degrees)
+    int deg, min;
+    double sec;
+    decimal_to_dms(config->latitude * 180 / M_PI, &deg, &min, &sec);
+    mvwprintw(win, 3, 0, "Latitude: \t%d° %d' %.2f\"", deg, min, sec);
+
+    // Longitude
+    decimal_to_dms(config->longitude * 180 / M_PI, &deg, &min, &sec);
+    mvwprintw(win, 4, 0, "Longitude: \t%d° %d' %.2f\"", deg, min, sec);
+
+    // Elapsed time
+    int eyears, edays, ehours, emins, esecs;
+    elapsed_time_to_components(julian_date - julian_date_start, &eyears, &edays, &ehours, &emins, &esecs);
+    const char *year_label = (eyears == 1) ? " year" : "years";
+    const char *day_label = (edays == 1) ? " day" : "days";
+
+    // Display elapsed time with proper labels
+    mvwprintw(win, 5, 0, "Elapsed Time: \t%03d %s, %03d %s, %02d:%02d:%02d", eyears, year_label, edays, day_label, ehours,
+              emins, esecs);
+
+    return;
 }

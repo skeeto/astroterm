@@ -6,14 +6,14 @@
 
 #include <math.h>
 
-void update_star_positions(struct star *star_table, int num_stars, double julian_date, double latitude, double longitude)
+void update_star_positions(struct Star *star_table, int num_stars, double julian_date, double latitude, double longitude)
 {
     double gmst = greenwich_mean_sidereal_time_rad(julian_date);
 
     int i;
     for (i = 0; i < num_stars; ++i)
     {
-        struct star *star = &star_table[i];
+        struct Star *star = &star_table[i];
 
         double right_ascension, declination;
         calc_star_position(star->right_ascension, star->ra_motion, star->declination, star->dec_motion, julian_date,
@@ -30,7 +30,7 @@ void update_star_positions(struct star *star_table, int num_stars, double julian
     return;
 }
 
-void update_planet_positions(struct planet *planet_table, double julian_date, double latitude, double longitude)
+void update_planet_positions(struct Planet *planet_table, double julian_date, double latitude, double longitude)
 {
     double gmst = greenwich_mean_sidereal_time_rad(julian_date);
 
@@ -78,7 +78,7 @@ void update_planet_positions(struct planet *planet_table, double julian_date, do
     }
 }
 
-void update_moon_position(struct moon *moon_object, double julian_date, double latitude, double longitude)
+void update_moon_position(struct Moon *moon_object, double julian_date, double latitude, double longitude)
 {
     double gmst = greenwich_mean_sidereal_time_rad(julian_date);
 
@@ -99,29 +99,11 @@ void update_moon_position(struct moon *moon_object, double julian_date, double l
 }
 
 // FIXME: this does not render the correct phase and angle
-void update_moon_phase(struct moon *moon_object, double julian_date, double latitude)
+void update_moon_phase(struct Moon *moon_object, double julian_date, double latitude)
 {
-#define NUM_PHASES 8
-
-    // Moon phases throughout the synodic month *as seen from the Northern
-    // hemisphere*
-    // FIXME: clang-format on CI fails on this line for some reason
-    // clang-format off
-    static const char *moon_phases[NUM_PHASES] = {"🌑︎", "🌒︎", "🌓︎", "🌔︎", "🌕︎", "🌖︎", "🌗︎", "🌘︎"};
-    // clang-format on
-    double phase = calc_moon_phase(julian_date);
-
-    // If we are in the Southern hemisphere, negate the phase to move in the
-    // opposite direction throughout the cycle
-    if (latitude < 0)
-    {
-        phase = 1 - phase;
-    }
-
-    int phase_index = map_float_to_int_range(0.0, 1.0, 0, NUM_PHASES - 1, phase);
-    char *moon_char = (char *)moon_phases[phase_index];
-
-    moon_object->base.symbol_unicode = moon_char;
+    double age = calc_moon_age(julian_date);
+    enum MoonPhase phase = moon_age_to_phase(age);
+    moon_object->base.symbol_unicode = get_moon_phase_image(phase, latitude >= 0);
 
     return;
 }

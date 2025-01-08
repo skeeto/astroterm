@@ -15,7 +15,7 @@ char byte_to_char(uint8_t byte)
 
 // Signed formats
 
-int16_t bytes_to_int16_LE(uint8_t *buffer)
+int16_t bytes_to_int16_LE(const uint8_t *buffer)
 {
     int16_t result = 0x0;
     for (size_t i = 0; i < sizeof(int16_t); ++i)
@@ -25,7 +25,7 @@ int16_t bytes_to_int16_LE(uint8_t *buffer)
     return result;
 }
 
-int32_t bytes_to_int32_LE(uint8_t *buffer)
+int32_t bytes_to_int32_LE(const uint8_t *buffer)
 {
     uint32_t result = 0x0;
     for (size_t i = 0; i < sizeof(int32_t); ++i)
@@ -35,7 +35,7 @@ int32_t bytes_to_int32_LE(uint8_t *buffer)
     return result;
 }
 
-int64_t bytes_to_int64_LE(uint8_t *buffer)
+int64_t bytes_to_int64_LE(const uint8_t *buffer)
 {
     uint64_t result = 0x0;
     for (size_t i = 0; i < sizeof(int64_t); ++i)
@@ -47,7 +47,7 @@ int64_t bytes_to_int64_LE(uint8_t *buffer)
 
 // Unsigned formats
 
-uint16_t bytes_to_uint16_LE(uint8_t *buffer)
+uint16_t bytes_to_uint16_LE(const uint8_t *buffer)
 {
     uint16_t result = 0x0;
     for (size_t i = 0; i < sizeof(uint16_t); ++i)
@@ -57,7 +57,7 @@ uint16_t bytes_to_uint16_LE(uint8_t *buffer)
     return result;
 }
 
-uint32_t bytes_to_uint32_LE(uint8_t *buffer)
+uint32_t bytes_to_uint32_LE(const uint8_t *buffer)
 {
     uint32_t result = 0x0;
     for (size_t i = 0; i < sizeof(uint32_t); ++i)
@@ -67,7 +67,7 @@ uint32_t bytes_to_uint32_LE(uint8_t *buffer)
     return result;
 }
 
-uint64_t bytes_to_uint64_LE(uint8_t *buffer)
+uint64_t bytes_to_uint64_LE(const uint8_t *buffer)
 {
     uint64_t result = 0x0;
     for (size_t i = 0; i < sizeof(uint64_t); ++i)
@@ -79,7 +79,7 @@ uint64_t bytes_to_uint64_LE(uint8_t *buffer)
 
 // Floating point formats
 
-float bytes_to_float32_LE(uint8_t *buffer)
+float bytes_to_float32_LE(const uint8_t *buffer)
 {
     float f;
     uint32_t tempInt = bytes_to_uint32_LE(buffer);
@@ -91,7 +91,7 @@ float bytes_to_float32_LE(uint8_t *buffer)
     return f;
 }
 
-double bytes_to_double64_LE(uint8_t *buffer)
+double bytes_to_double64_LE(const uint8_t *buffer)
 {
     double d;
 
@@ -103,7 +103,7 @@ double bytes_to_double64_LE(uint8_t *buffer)
 
 // Boolean formats
 
-bool bytes_to_bool32_LE(uint8_t *buffer)
+bool bytes_to_bool32_LE(const uint8_t *buffer)
 {
     int result = bytes_to_int32_LE(buffer);
     return (result != 0);

@@ -4,3 +4,5 @@ build
 coverage
 build_coverage
 .DS_Store
+log
+install

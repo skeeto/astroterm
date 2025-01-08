@@ -1,6 +1,6 @@
 #include "keplerian_elements.h"
 
-const struct kep_elems planet_elements[NUM_PLANETS] = {
+const struct KepElems planet_elements[NUM_PLANETS] = {
     [MERCURY] = {0.38709843, 0.20563661, 7.00559432, 174.79394829, 29.11810076, 48.33961819},
     [VENUS] = {0.72332102, 0.00676399, 3.39777545, 50.21215137, 55.09494217, 76.67261496},
     [EARTH] = {1.00000018, 0.01673163, -0.00054346, -2.46314313, 108.04266274, -5.11260389},
@@ -10,7 +10,7 @@ const struct kep_elems planet_elements[NUM_PLANETS] = {
     [URANUS] = {19.18797948, 0.04685740, 0.77298127, 141.76872184, 98.47154226, 73.96250215},
     [NEPTUNE] = {30.06952752, 0.00895439, 1.77005520, 257.54130563, -85.10477129, 131.78635853}};
 
-const struct kep_rates planet_rates[NUM_PLANETS] = {
+const struct KepRates planet_rates[NUM_PLANETS] = {
     [MERCURY] = {0.00000000, 0.00002123, -0.00590158, 149472.51546610, 0.28154195, -0.12214182},
     [VENUS] = {-0.00000026, -0.00005107, 0.00043494, 58517.75880612, 0.32953822, -0.27274174},
     [EARTH] = {-0.00000003, -0.00003661, -0.01337178, 35999.05511069, 0.55919116, -0.24123856},
@@ -20,15 +20,15 @@ const struct kep_rates planet_rates[NUM_PLANETS] = {
     [URANUS] = {-0.00020455, -0.00001550, -0.00180155, 428.40245610, 0.03527286, 0.05739699},
     [NEPTUNE] = {0.00006447, 0.00000818, 0.00022400, 218.45505376, 0.01616240, -0.00606302}};
 
-const struct kep_extra planet_extras[NUM_PLANETS] = {[JUPITER] = {-0.00012452, 0.06064060, -0.35635438, 38.35125000},
-                                                     [SATURN] = {0.00025899, -0.13434469, 0.87320147, 38.35125000},
-                                                     [URANUS] = {0.00058331, -0.97731848, 0.17689245, 7.67025000},
-                                                     [NEPTUNE] = {-0.00041348, 0.68346318, -0.10162547, 7.67025000}};
+const struct KepExtra planet_extras[NUM_PLANETS] = {[JUPITER] = {-0.00012452, 0.06064060, -0.35635438, 38.35125000},
+                                                    [SATURN] = {0.00025899, -0.13434469, 0.87320147, 38.35125000},
+                                                    [URANUS] = {0.00058331, -0.97731848, 0.17689245, 7.67025000},
+                                                    [NEPTUNE] = {-0.00041348, 0.68346318, -0.10162547, 7.67025000}};
 
 // Paul Schlyter's "How to compute planetary positions"
 // https://stjarnhimlen.se/comp/ppcomp.html
-const struct kep_elems moon_elements = {.a = 60.2666, .e = 0.054900, .I = 5.1454, .M = 115.3654, .w = 318.0634, .O = 125.1228};
-const struct kep_rates moon_rates = {
+const struct KepElems moon_elements = {.a = 60.2666, .e = 0.054900, .I = 5.1454, .M = 115.3654, .w = 318.0634, .O = 125.1228};
+const struct KepRates moon_rates = {
     .da = 0.0, .de = 0.0, .dI = 0.0, .dM = 13.0649929509, .dw = 0.1643573223, .dO = -0.0529538083};
 
 // https://ssd.jpl.nasa.gov/planets/approx_pos.html *
