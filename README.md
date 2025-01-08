@@ -56,6 +56,15 @@ Several installation methods are provided based on your platform. If none of the
 
 ### MacOS
 
+#### Homebrew
+
+You can install Astroterm directly from the [custom Homebrew tap](https://github.com/da-luce/homebrew-astroterm):
+
+```sh
+brew tap da-luce/astroterm
+brew install astroterm
+```
+
 #### Prebuilt Executable
 
 1. Download the latest executable for your system architecture using `wget`

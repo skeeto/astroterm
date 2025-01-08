@@ -1,12 +1,12 @@
 project('astroterm', 'c',
-    version: '1.0.1',
-    default_options : ['warning_level=3', 'buildtype=minsize'],
+    version: '1.0.2',
+    default_options : ['warning_level=3', 'buildtype=debug'],
     meson_version: '>=1.4.0',
 )
 
 # Detect runtime environment
 env = environment()
-is_release = get_option('release_build')
+is_release = get_option('buildtype') == 'release'
 is_windows = host_machine.system() == 'windows'
 
 # ------------------------------------------------------------------------------
@@ -36,9 +36,17 @@ if cc.get_id() == 'msvc'
     if not is_release
         cflags += ['/Zi']
     endif
+    lflags = []
 else
     # For GCC or other compilers
     cflags = ['-O2', '-Wall', '-Wno-unused-variable', '-Wno-unused-parameter', '-Wunused-function']
+
+    # On Homebrew for Linux, the argtable2 library is compiled as non-PIC,
+    # which causes errors when attempting to statically link it with PIE
+    # enabled. To resolve this, we disable PIE during the linking phase to
+    # allow static linking of the non-PIC argtable2 library. Setting pie : false for the executable target does not seem to resolve this: https://github.com/mesonbuild/meson/issues/4651
+    lflags = ['-no-pie']
+
     if not is_release
         cflags += ['-Wextra', '-g']
         message('Adding profiling')
@@ -181,7 +189,7 @@ project_lib = static_library(
     project_source_files,
     dependencies        : [curses, math],
     include_directories : project_include_dirs,
-    c_args              : cflags
+    c_args              : cflags,
 )
 
 # ------------------------------------------------------------------------------
@@ -205,6 +213,7 @@ executable(
     dependencies        : [argtable2],
     include_directories : project_include_dirs,
     c_args              : cflags + build_defines,
+    link_args           : lflags,
     install             : true,
 )
 
