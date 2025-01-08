@@ -5,6 +5,9 @@
 #define TERM_H
 
 #include <curses.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 /* Initialize ncurses.h
  */
@@ -47,5 +50,11 @@ float get_cell_aspect_ratio(void);
  * instead of having it wrap
  */
 void mvwaddstr_truncate(WINDOW *win, int y, int x, const char *str);
+
+/* Check for window resizing on windows
+ */
+#ifdef _WIN32
+int check_console_window_resize_event(COORD *info);
+#endif
 
 #endif // TERM_H
