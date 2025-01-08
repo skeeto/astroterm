@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
         .fps = 24,
         .speed = 1.0f,
         .aspect_ratio = 0.0,
-        .ascii = false,
+        .quit_on_any = false,
+        .unicode = false,
         .color = false,
         .grid = false,
         .constell = false,
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
 
         // Exit if ESC or q is pressed
         int ch = getch();
-        if (ch == 27 || ch == 'q')
+        if (ch != ERR && (ch == 27 || ch == 'q' || config.quit_on_any))
         {
             break;
         }
@@ -243,7 +244,8 @@ void parse_options(int argc, char *argv[], struct Conf *config)
                                             "Draw constellation stick figures. Note: a constellation is only "
                                             "drawn if all stars in the figure are over the threshold");
     struct arg_lit *grid_arg = arg_lit0("g", "grid", "Draw an azimuthal grid");
-    struct arg_lit *ascii_arg = arg_lit0("A", "ascii", "Only use ASCII characters");
+    struct arg_lit *unicode_arg = arg_lit0("u", "unicode", "Use unicode characters");
+    struct arg_lit *quit_arg = arg_lit0("q", "quit-on-any", "Quit on any keypress (default is to quit on 'q' or 'ESC' only)");
     struct arg_lit *meta_arg = arg_lit0("m", "metadata", "Display metadata");
     struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
     struct arg_dbl *ratio_arg = arg_dbl0("r", "aspect-ratio", "<float>",
@@ -258,9 +260,9 @@ void parse_options(int argc, char *argv[], struct Conf *config)
 
     struct arg_end *end = arg_end(20);
 
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg, fps_arg,
-                        speed_arg,    color_arg,     constell_arg, grid_arg,      ascii_arg, meta_arg,
-                        ratio_arg,    help_arg,      city_arg,     version_arg,   end};
+    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg,   fps_arg,
+                        speed_arg,    color_arg,     constell_arg, grid_arg,      unicode_arg, quit_arg,
+                        meta_arg,     ratio_arg,     help_arg,     city_arg,      version_arg, end};
 
     int nerrors = arg_parse(argc, argv, argtable);
 
@@ -355,9 +357,14 @@ void parse_options(int argc, char *argv[], struct Conf *config)
         config->grid = true;
     }
 
-    if (ascii_arg->count > 0)
+    if (unicode_arg->count > 0)
     {
-        config->ascii = true;
+        config->unicode = true;
+    }
+
+    if (quit_arg->count > 0)
+    {
+        config->quit_on_any = true;
     }
 
     if (ratio_arg->count > 0)
@@ -514,13 +521,13 @@ void render_metadata(WINDOW *win, const struct Conf *config)
     // Zodiac
     const char *zodiac_name = get_zodiac_sign(month, day);
     const char *zodiac_symbol = get_zodiac_symbol(month, day);
-    if (config->ascii)
+    if (config->unicode)
     {
-        mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac_name);
+        mvwprintw(win, 1, 0, "Zodiac: \t%s %s", zodiac_name, zodiac_symbol);
     }
     else
     {
-        mvwprintw(win, 1, 0, "Zodiac: \t%s %s", zodiac_name, zodiac_symbol);
+        mvwprintw(win, 1, 0, "Zodiac: \t%s", zodiac_name);
     }
 
     // Lunar phase

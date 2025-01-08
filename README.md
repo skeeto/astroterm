@@ -6,15 +6,32 @@
 
 ![The night sky above Singapore on January 2, 2025](./assets/SG_2025-01-02.gif)
 
-_<p align="center">Stars above Singapore on January 2, 2025</p>_
+_<p align="center">The night sky above above Singapore on January 2, 2025</p>_
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Linux](#linux)
+  - [MacOS](#macos)
+  - [Windows](#windows)
+- [Building from Source](#building-from-source)
+- [Usage](#usage)
+- [Troubleshooting](#troubleshooting)
+- [Citations](#citations)
+- [Data Sources](#data-sources)
 
 ## Features
 
 - 🔭 **Highly Customizable:** Choose any date, time, and location to explore past, present, or future celestial events
-- 📐 **Accurate Rendering:** Displays the moon, stars, and planets with as much precision as terminal graphics allow
-- 🌘 **Moon Phases:** Displays precise lunar phases in real-time
-- 🌌 **Constellation Figures:** Renders detailed constellation shapes
+- 📐 **Accurate Rendering:** View the moon, stars, and planets with as much precision as terminal graphics allow
+- 🌘 **Moon Phases:** Precise lunar phases in real-time
+- 🌌 **Constellation Figures:** Detailed constellation shapes
 - ⚡ **Performance Optimized:** Lightweight and fast ASCII rendering
+
+![Stars above Syndey, AU on January 6, 2025](./assets/SYD_2025-01-06.png)
+
+_<p align="center">Stars over Sydney, Australia on January 6, 2025</p>_
 
 ## Installation
 
@@ -137,6 +154,8 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 
 > [!WARNING]
 > *These libraries must be compiled locally and moved to where Meson expects them to be. See [`ci.yml`](./.github/workflows/ci.yml#L98) for how this is done.
+>
+#### Install
 
 1. Clone the repository and enter the project directory:
 
@@ -162,10 +181,6 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 
 ## Usage
 
-Example output:
-
-![Stars above Syndey, AU on January 6, 2025](./assets/SYD_2025-01-06.png)
-
 ### Options
 
 The `--help` flag displays all supported options:
@@ -174,7 +189,7 @@ The `--help` flag displays all supported options:
 Usage: astroterm [OPTION]...
 
   -a, --latitude=<degrees>  Observer latitude [-90°, 90°] (default: 0.0)
-  -o, --longitude=<degrees> Observer longitude [-180°, 180°] (0.0)
+  -o, --longitude=<degrees> Observer longitude [-180°, 180°] (default: 0.0)
   -d, --datetime=<yyyy-mm-ddThh:mm:ss>
                             Observation datetime in UTC
   -t, --threshold=<float>   Only render stars brighter than this magnitude (def
@@ -189,7 +204,9 @@ Usage: astroterm [OPTION]...
                             tion is only drawn if all stars in the figure are o
                             ver the threshold
   -g, --grid                Draw an azimuthal grid
-  -A, --ascii               Only use ASCII characters
+  -u, --unicode             Use unicode characters
+  -q, --quit-on-any         Quit on any keypress (default is to quit on 'q' or
+                            'ESC' only)
   -m, --metadata            Display metadata
   -r, --aspect-ratio=<float>
                             Override the calculated terminal cell aspect ratio.

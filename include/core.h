@@ -23,7 +23,8 @@ struct Conf
     float speed;
     double julian_date;
     double aspect_ratio;
-    bool ascii;
+    bool quit_on_any;
+    bool unicode;
     bool color;
     bool grid;
     bool constell;
