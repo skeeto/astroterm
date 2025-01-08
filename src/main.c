@@ -35,6 +35,10 @@ static void render_metadata(WINDOW *win, const struct Conf *config);
 
 // Track if we need to resize the curses window
 static volatile bool perform_resize = false;
+#ifdef _WIN32
+// Track console size on windows
+static COORD winsize;
+#endif
 
 // Track current simulation time (UTC)
 // Default to current time in dt_string_utc is NULL
@@ -130,6 +134,11 @@ int main(int argc, char *argv[])
     {
         struct SwTimestamp frame_begin;
         sw_gettime(&frame_begin);
+
+#ifdef _WIN32
+        // Use this function to catch console resizes on Windows
+        perform_resize = check_console_window_resize_event(&winsize);
+#endif
 
         if (perform_resize)
         {
@@ -436,8 +445,10 @@ void resize_ncurses(void)
     int x;
     term_size(&y, &x);
 
-#ifndef _WIN32
-    resizeterm(y, x);
+#ifdef _WIN32
+    resize_term(winsize.Y, winsize.X);
+#else
+    resize_term(y, x);
 #endif
 }
 
@@ -445,7 +456,9 @@ void resize_main(WINDOW *win, const struct Conf *config)
 {
     // Clear the window before resizing
     werase(win);
+#ifndef _WIN32
     wnoutrefresh(win);
+#endif
 
     // Check cell ratio
     float aspect;
@@ -461,18 +474,26 @@ void resize_main(WINDOW *win, const struct Conf *config)
     // Resize/position application window
     win_resize_square(win, aspect);
     win_position_center(win);
+#ifdef _WIN32
+    wnoutrefresh(win);
+#endif
 }
 
 void resize_meta(WINDOW *win)
 {
     // Clear the window before resizing
     werase(win);
+#ifndef _WIN32
     wnoutrefresh(win);
+#endif
 
     const int meta_lines = 6; // Allows for 6 rows
     const int meta_cols = 45; // Set to allow enough room for longest line (elapsed time)
 
     wresize(win, MIN(LINES, meta_lines), MIN(COLS, meta_cols));
+#ifdef _WIN32
+    wnoutrefresh(win);
+#endif
 }
 
 const char *get_timezone(const struct tm *local_time)
