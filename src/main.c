@@ -292,7 +292,7 @@ void parse_options(int argc, char *argv[], struct Conf *config)
 
     if (version_arg->count > 0)
     {
-        printf("%s %s-%s\n", PROJ_NAME, PROJ_VERSION, PROJ_HASH);
+        printf("%s %s\n", PROJ_NAME, PROJ_VERSION);
         exit(EXIT_SUCCESS);
     }
 

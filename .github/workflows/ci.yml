@@ -277,6 +277,31 @@ jobs:
         path: ./bin/release
         merge-multiple: true
 
+    - name: Verify Version Consistency
+      run: |
+        TAG_VERSION="${{ github.ref_name }}"
+        BINARY_PATH="./bin/release/astroterm-linux-x86_64"
+
+        # Ensure the binary is executable
+        chmod +x "$BINARY_PATH"
+
+        # Extract version from binary output
+        BINARY_VERSION=$($BINARY_PATH -v | awk '{print $2}')
+
+        # Remove the "v" prefix if present
+        if [[ "$TAG_VERSION" == v* ]]; then
+          TAG_VERSION=${TAG_VERSION:1}
+        fi
+
+        # Compare the two versions
+        if [ "$TAG_VERSION" != "$BINARY_VERSION" ]; then
+            echo "Error: Git tag version ($TAG_VERSION) does not match binary version ($BINARY_VERSION)."
+            exit 1
+        fi
+
+        echo "Success: Git tag version ($TAG_VERSION) matches binary version ($BINARY_VERSION)."
+
+
     - name: List files in release folder
       run: ls -al ./bin/release
 

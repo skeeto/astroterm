@@ -11,8 +11,4 @@
 #define PROJ_VERSION "[unknown version]"
 #endif
 
-#ifndef PROJ_HASH
-#define PROJ_HASH "[unknown hash]"
-#endif
-
 #endif // VERSION_H
