@@ -283,10 +283,6 @@ If Unicode characters do not display correctly in the terminal, you may need to 
 
   During configuration, select `en_US.UTF-8` as the default locale.
 
-### Broken Resizing on Windows
-
-Currently, resizing the terminal on Windows is not functioning properly due to known incompatibilities. At this time, no solutions are available. Contributions or suggestions to address this issue are greatly appreciated.
-
 ## Development
 
 ### Testing
