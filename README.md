@@ -44,14 +44,14 @@ Several installation methods are provided based on your platform. If none of the
 1. Download the latest executable using `wget`
 
     ```sh
-    wget -O astroterm-linux_x86_64 "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
+    wget -O astroterm-linux-x86_64 "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
     ```
 
 2. Run the executable
 
     ```sh
-    chmod +x ./astroterm-linux-x84_64
-    ./astroterm-linux-x84_64
+    chmod +x ./astroterm-linux-x86_64
+    ./astroterm-linux-x86_64
     ```
 
 ### MacOS
