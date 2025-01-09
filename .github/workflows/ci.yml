@@ -150,10 +150,10 @@ jobs:
       - name: Build
         env:
           CC: ${{ matrix.compiler }}
-          BuildFlag:  ${{ matrix.coverage && '-Db_coverage=true' || '-Drelease_build=true'}}
+          BuildFlag:  ${{ matrix.coverage && '-Db_coverage=true' || '--buildtype=release'}}
         run: |
           meson setup build $BuildFlag
-          meson compile -C build
+          meson compile --verbose -C build
 
       - name: Test
         run: |
