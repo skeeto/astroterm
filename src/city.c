@@ -1,5 +1,5 @@
 #include "city.h"
-#include "city_data.h"
+#include "cities.h"
 #include "macros.h"
 
 #include <ctype.h>
@@ -92,7 +92,7 @@ static int compare_city(const void *key, const void *element)
 
 CityData *get_city(const char *name)
 {
-    if (name == NULL || city_data_len == 0)
+    if (name == NULL || cities_len == 0)
     {
         return NULL;
     }
@@ -108,15 +108,15 @@ CityData *get_city(const char *name)
     char **lines = NULL;
     size_t line_count = 0;
 
-    char *data = malloc(city_data_len + 1);
+    char *data = malloc(cities_len + 1);
     if (data == NULL)
     {
         free(normalized_name);
         return NULL;
     }
 
-    memcpy(data, city_data, city_data_len);
-    data[city_data_len] = '\0';
+    memcpy(data, cities, cities_len);
+    data[cities_len] = '\0';
 
     const char *line = strtok(data, "\n");
     while (line != NULL)

@@ -12,6 +12,11 @@ on:
       - main
       - dev
 
+env:
+  Bin: ./bin/release  # Where to put release binaries
+  HashDir: ./hash     # Where to put hashes of binaries
+  DepsDir: ./deps     # Where to put local libs (primarily for Windows builds)
+
 jobs:
 
   binary:
@@ -56,6 +61,8 @@ jobs:
 
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    env:
+      BinaryName: ${{ matrix.suffix == 'win' && format('astroterm-{0}-{1}.exe', matrix.suffix, matrix.arch) || format('astroterm-{0}-{1}', matrix.suffix, matrix.arch)}}
 
     steps:
       - name: Checkout Code
@@ -86,6 +93,7 @@ jobs:
       # macOS Dependencies
       # ------------------------------------------------------------------------
 
+        # Use argtable2 since argtable3 is only available as a dylib
       - name: Install macOS Dependencies
         if: matrix.suffix == 'darwin'
         run: |
@@ -116,29 +124,32 @@ jobs:
         with:
           architecture: x64
 
+        # The most up to date release of PDCurses is outdated,
+        # so we clone directly
       - name: Clone and Build PDCurses
         if: matrix.suffix == 'win'
         run: |
-          mkdir .\install\lib
-          mkdir .\install\include
-          cd .\install
+          mkdir ${{ env.DepsDir }}/lib
+          mkdir ${{ env.DepsDir }}/include
+          cd ${{ env.DepsDir }}
           git clone https://github.com/wmcbrine/PDCurses/
-          cd PDCurses\wincon
+          cd PDCurses/wincon
           nmake -f Makefile.vc WIDE=Y UTF8=Y
-          copy pdcurses.lib ..\..\lib
-          copy ..\curses.h ..\..\include
-          copy ..\panel.h ..\..\include
+          copy pdcurses.lib ../../lib
+          copy ../curses.h ../../include
+          copy ../panel.h ../../include
 
+        # Couldn't get Argtable3 to build nicely so we just use Argtable2 for Windows
       - name: Download and Build Argtable2
         if: matrix.suffix == 'win'
         run: |
-          cd .\install
+          cd ${{ env.DepsDir }}
           curl -L -o argtable2-13.tar.gz http://prdownloads.sourceforge.net/argtable/argtable2-13.tar.gz
           tar -xzf argtable2-13.tar.gz
-          cd .\argtable2-13\src
+          cd ./argtable2-13\src
           nmake -f Makefile.nmake
-          copy argtable2.lib ..\..\lib
-          copy argtable2.h ..\..\include
+          copy argtable2.lib ../../lib
+          copy argtable2.h ../../include
 
       # ------------------------------------------------------------------------
       # Build and test
@@ -147,10 +158,11 @@ jobs:
       - name: Download BSC5
         run: curl -L -o data/bsc5 http://tdc-www.harvard.edu/catalogs/BSC5 || echo "bsc5 already exists or curl failed"
 
+        # Create a static release
       - name: Build
         env:
           CC: ${{ matrix.compiler }}
-          BuildFlag:  ${{ matrix.coverage && '-Db_coverage=true' || '--buildtype=release'}}
+          BuildFlag:  ${{ matrix.coverage && '-Db_coverage=true' || '--buildtype=release -Dprefer_static=true'}}
         run: |
           meson setup build $BuildFlag
           meson compile --verbose -C build
@@ -179,23 +191,17 @@ jobs:
       # Generate Hash
       # ------------------------------------------------------------------------
 
-      # FIXME: annoying logic to ensure artifact and hash name are the same
-
       - name: Generate Hash
-        env:
-            ArtifactName: astroterm-${{ matrix.suffix }}-${{ matrix.arch }}
         run: |
-            mkdir -p ./hash
-            ${{ matrix.suffix == 'win' &&  'certutil -hashfile build/astroterm.exe SHA256' || 'shasum -a 256 build/astroterm' }} > ${{ matrix.suffix == 'win' && format('./hash/{0}.exe.sha256', env.ArtifactName) || format('./hash/{0}.sha256', env.ArtifactName) }}
+            mkdir -p  ${{ env.HashDir }}
+            ${{ matrix.suffix == 'win' &&  'certutil -hashfile build/astroterm.exe SHA256' || 'shasum -a 256 build/astroterm' }} > ${{ env.HashDir }}/${{ env.BinaryName }}.sha256
 
       - name: Upload Hash
         if: matrix.coverage != true
         uses: actions/upload-artifact@v4
-        env:
-            ArtifactName: astroterm-${{ matrix.suffix }}-${{ matrix.arch }}
         with:
-            name: ${{ matrix.suffix == 'win' && format('{0}.exe.sha256', env.ArtifactName) || format('{0}.sha256', env.ArtifactName) }}
-            path: ./hash
+            name: ${{ env.BinaryName }}.sha256
+            path: ${{ env.HashDir }}/*
 
       # ------------------------------------------------------------------------
       # Upload Binary
@@ -203,25 +209,77 @@ jobs:
 
       - name: Rename Binary File
         if: matrix.coverage == false
-        env:
-            ArtifactName: astroterm-${{ matrix.suffix }}-${{ matrix.arch }}
         run: |
-            mkdir -p ./bin/release
-            mv ${{ matrix.suffix == 'win' && 'build/astroterm.exe' || 'build/astroterm' }} ${{ matrix.suffix == 'win' && format('./bin/release/{0}.exe', env.ArtifactName) || format('./bin/release/{0}', env.ArtifactName) }}
+            mkdir -p ${{env.Bin}}
+            mv ${{ matrix.suffix == 'win' && 'build/astroterm.exe' || 'build/astroterm' }} ${{env.Bin}}/${{env.BinaryName}}
 
       - name: Upload Binary
         if: matrix.coverage == false
-        env:
-            ArtifactName: astroterm-${{ matrix.suffix }}-${{ matrix.arch }}
         uses: actions/upload-artifact@v4
         with:
-            name: ${{ matrix.suffix == 'win' && format('{0}.exe', env.ArtifactName) || format('{0}', env.ArtifactName) }}
-            path: ./bin/release
+            name: ${{ env.BinaryName }}
+            path: ${{env.Bin}}
             if-no-files-found: error
+
+  # Ensure binaries are standalone
+  run:
+    needs: binary
+    strategy:
+      matrix:
+        include:
+
+            # astroterm-linux-x86_64
+          - os: ubuntu-20.04
+            suffix: linux
+            arch: x86_64
+
+            # astroterm-darwin-aarch64
+          - os: macos-latest
+            suffix: darwin
+            arch: aarch64
+
+            # astroterm-darwin-x86_64
+          - os: macos-13
+            suffix: darwin
+            arch: x86_64
+
+            # astroterm-win-x86_64
+          - os: windows-latest
+            suffix: win
+            arch: x86_64
+
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      BinaryName: ${{ matrix.suffix == 'win' && format('astroterm-{0}-{1}.exe', matrix.suffix, matrix.arch) || format('astroterm-{0}-{1}', matrix.suffix, matrix.arch)}}
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Download Release Binary
+      uses: actions/download-artifact@v4
+      with:
+        pattern: ${{ env.BinaryName }}*
+        path: ${{env.Bin}}
+        merge-multiple: true
+
+    - name: List Release Directiory
+      run: |
+        ls -l ${{env.Bin}}
+
+    - name: Set Executable Permissions
+      if: matrix.suffix != 'win'
+      run: |
+        chmod +x ${{env.Bin}}/${{ env.BinaryName }}
+
+    - name: Run Binary
+      run: |
+        ${{env.Bin}}/${{ env.BinaryName }} -v
 
   code-quality:
     runs-on: ubuntu-latest
-    needs: binary
+    needs: run
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -264,7 +322,7 @@ jobs:
 
   publish-release:
     runs-on: ubuntu-latest
-    needs: [binary, code-quality, upload-coverage]
+    needs: [binary, run, code-quality, upload-coverage]
     permissions:
       contents: write
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
@@ -274,13 +332,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         pattern: astroterm-*
-        path: ./bin/release
+        path: ${{env.Bin}}
         merge-multiple: true
 
     - name: Verify Version Consistency
       run: |
         TAG_VERSION="${{ github.ref_name }}"
-        BINARY_PATH="./bin/release/astroterm-linux-x86_64"
+        BINARY_PATH="${{env.Bin}}/astroterm-linux-x86_64"
 
         # Ensure the binary is executable
         chmod +x "$BINARY_PATH"
@@ -303,12 +361,12 @@ jobs:
 
 
     - name: List files in release folder
-      run: ls -al ./bin/release
+      run: ls -al ${{env.Bin}}
 
     - name: Update GitHub Release
       uses: ncipollo/release-action@58ae73b360456532aafd58ee170c045abbeaee37 # v1.10.0
       with:
-        artifacts: ./bin/release/*
+        artifacts: ${{env.Bin}}/*
         generateReleaseNotes: true
         draft: true
         token: ${{ secrets.GITHUB_TOKEN }}

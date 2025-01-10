@@ -44,14 +44,14 @@ Several installation methods are provided based on your platform. If none of the
 1. Download the latest executable using `wget`
 
     ```sh
-    wget -O astroterm-linux-x86_64 "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
+    wget -O astroterm "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
     ```
 
 2. Run the executable
 
     ```sh
-    chmod +x ./astroterm-linux-x86_64
-    ./astroterm-linux-x86_64
+    chmod +x ./astroterm
+    ./astroterm
     ```
 
 ### MacOS
@@ -70,7 +70,7 @@ brew install astroterm
 1. Download the latest executable for your system architecture using `wget`
 
     ```sh
-    wget -O astroterm-darwin-<arch> "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-darwin-<arch>"
+    wget -O astroterm "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-darwin-<arch>"
     ```
 
    - Replace `<arch>` with the appropriate architecture:
@@ -80,8 +80,8 @@ brew install astroterm
 2. Run the executable
 
     ```sh
-    chmod +x ./astroterm-darwin-<arch>
-    ./astroterm-darwin-<arch>
+    chmod +x ./astroterm
+    ./astroterm
     ```
 
 ### Windows
@@ -91,13 +91,13 @@ brew install astroterm
 1. Download the latest `.exe` file using PowerShell's `Invoke-WebRequest`:
 
     ```powershell
-    Invoke-WebRequest -Uri "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-win-x86_64.exe" -OutFile "astroterm-win-x86_64.exe"
+    Invoke-WebRequest -Uri "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-win-x86_64.exe" -OutFile "astroterm.exe"
     ```
 
 2. Run the `.exe`
 
     ```powershell
-    .\astroterm-win-x86_64.exe
+    .\astroterm.exe
     ```
 
 Or, download via the [Releases Page](https://github.com/da-luce/astroterm/releases).
@@ -203,17 +203,17 @@ Usage: astroterm [OPTION]...
   -o, --longitude=<degrees> Observer longitude [-180°, 180°] (default: 0.0)
   -d, --datetime=<yyyy-mm-ddThh:mm:ss>
                             Observation datetime in UTC
-  -t, --threshold=<float>   Only render stars brighter than this magnitude (def
-                            ault: 5.0)
+  -t, --threshold=<float>   Only render stars brighter than this magnitude
+                            (default: 5.0)
   -l, --label-thresh=<float>
                             Label stars brighter than this magnitude (default:
                             0.25)
   -f, --fps=<int>           Frames per second (default: 24)
   -s, --speed=<float>       Animation speed multiplier (default: 1.0)
   -c, --color               Enable terminal colors
-  -C, --constellations      Draw constellation stick figures. Note: a constella
-                            tion is only drawn if all stars in the figure are o
-                            ver the threshold
+  -C, --constellations      Draw constellation stick figures. Note: a
+                            constellation is only drawn if all stars in the
+                            figure are over the threshold
   -g, --grid                Draw an azimuthal grid
   -u, --unicode             Use unicode characters
   -q, --quit-on-any         Quit on any keypress (default is to quit on 'q' or
@@ -221,14 +221,15 @@ Usage: astroterm [OPTION]...
   -m, --metadata            Display metadata
   -r, --aspect-ratio=<float>
                             Override the calculated terminal cell aspect ratio.
-                            Use this if your projection is not 'square.' A valu
-                            e around 2.0 works well for most cases
+                            Use this if your projection is not 'square.' A value
+                            around 2.0 works well for most cases
   -h, --help                Print this help message
-  -i, --city=<city_name>    Use the latitude and longitude of the provided city
-                            . If the name contains multiple words, enclose the
-                            name in single or double quotes. For a list of avai
-                            lable cities, see: https://github.com/da-luce/astro
-                            term/blob/main/data/cities.csv
+  -i, --city=<city_name>    Use the latitude and longitude of the provided city.
+                            If the name contains multiple words, enclose the
+                            name in single or double quotes. For a list of
+                            available cities, see:
+                            https://github.com/da-luce/astroterm/blob/main/data/
+                            cities.csv
   -v, --version             Display version info and exit
 ```
 

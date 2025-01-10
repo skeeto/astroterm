@@ -1,8 +1,8 @@
 /* Test high level functions. This is the closest we will get to testing `main.c`.
  */
 
+#include "bsc5.h"
 #include "bsc5_constellations.h"
-#include "bsc5_data.h"
 #include "bsc5_names.h"
 #include "core.h"
 #include "core_position.h"
@@ -26,7 +26,7 @@ struct Moon moon_object;
 
 void setUp(void)
 {
-    parse_entries(bsc5_data, bsc5_data_len, &BSC5_entries, &num_stars);
+    parse_entries(bsc5, bsc5_len, &BSC5_entries, &num_stars);
     generate_name_table(bsc5_names, bsc5_names_len, &name_table, num_stars);
     generate_star_table(&star_table, BSC5_entries, name_table, num_stars);
     star_numbers_by_magnitude(&num_by_mag, star_table, num_stars);

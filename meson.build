@@ -1,108 +1,156 @@
 project('astroterm', 'c',
-    version: '1.0.2',
+    version: '1.0.3',
     default_options : ['warning_level=3', 'buildtype=debug'],
     meson_version: '>=1.4.0',
 )
 
-# Detect runtime environment
-env = environment()
-is_release = get_option('buildtype') == 'release'
 is_windows = host_machine.system() == 'windows'
 
 # ------------------------------------------------------------------------------
-# Dependencies
+# Setup Paths
 # ------------------------------------------------------------------------------
 
 conf = configuration_data()
+fs = import('fs')
 
-# Build submodules
-project_dependencies = []
 project_source_files = []
-project_header_files = []
 project_include_dirs = [
     include_directories('include'),
     include_directories('data'),
 ]
 
-subdir('include')
+# This is where we install local dependencies (primarily for Windows)
+deps_include = 'deps/include'
+deps_lib =  'deps/lib'
+if fs.exists(deps_include)
+    project_include_dirs += include_directories(deps_include)
+endif
+deps_lib_path = join_paths(meson.current_source_dir(), deps_lib)
+deps_include_path = join_paths(meson.current_source_dir(), deps_include)
+
+# Add Homebrew include path
+# Need this for argtable3 which:
+# - Does not provide a .pc file like argtable2
+# - Is sometimes found via cmake, but the argtable3Config.cmake file does not expose include directories
+# Reference: https://apple.stackexchange.com/questions/40704/homebrew-installed-libraries-how-do-i-use-them
+# Thus, we do this ugliness to make sure we include all Homebrew libs
+brew = find_program('brew', required: false)
+if brew.found()
+    # Get the Homebrew prefix
+    brew_prefix = run_command(brew, '--prefix', check: true).stdout().strip()
+    message('Homebrew prefix: ' + brew_prefix)
+
+    homebrew_include_path = brew_prefix + '/include'
+    if fs.exists(homebrew_include_path)
+        project_include_dirs += include_directories(homebrew_include_path)
+        message('Adding Homebrew to include paths: ' + homebrew_include_path)
+    endif
+endif
+
+# Build submodules
 subdir('src')
 subdir('data')
 
-# Setup compiler specific flags, and optimize for size if running in CI
+# ------------------------------------------------------------------------------
+# Setup Compiler
+# ------------------------------------------------------------------------------
+
+# Setup compiler specific flags
+
+# On Homebrew for Linux, the argtable library is compiled as non-PIC,
+# which causes errors when attempting to statically link it with PIE
+# enabled. To resolve this, we disable PIE during the linking phase to
+# allow static linking of the non-PIC argtable library. Setting pie : false
+# for the executable target does not seem to resolve this:
+# https://github.com/mesonbuild/meson/issues/4651
 cc = meson.get_compiler('c')
 if cc.get_id() == 'msvc'
-    # MSVC
-    cflags = ['/O1', '/W4', '/utf-8', ]
-    if not is_release
-        cflags += ['/Zi']
-    endif
-    lflags = []
+    add_project_arguments('/utf-8', language: 'c')
 else
-    # For GCC or other compilers
-    cflags = ['-O2', '-Wall', '-Wno-unused-variable', '-Wno-unused-parameter', '-Wunused-function']
-
-    # On Homebrew for Linux, the argtable2 library is compiled as non-PIC,
-    # which causes errors when attempting to statically link it with PIE
-    # enabled. To resolve this, we disable PIE during the linking phase to
-    # allow static linking of the non-PIC argtable2 library. Setting pie : false for the executable target does not seem to resolve this: https://github.com/mesonbuild/meson/issues/4651
-    lflags = ['-no-pie']
-
-    if not is_release
-        cflags += ['-Wextra', '-g']
-        message('Adding profiling')
-    else
-        cflags += ['-s']
-        message('Stripping debug symbols')
-    endif
+    add_project_link_arguments('-no-pie', language: 'c')
 endif
+
+# ------------------------------------------------------------------------------
+# Dependency: Argtable2/3
+# ------------------------------------------------------------------------------
+
+# astroterm's code is compatible both with the argtable2 and 3 APIs. Since
+# sometimes only one or the other is available, we do a bit more work to
+# support both.
+have_argtable3 = false
+have_argtable2 = false
 
 if is_windows
 
-    # This is where we will install Windows libraries
-    local_include = include_directories('install/include')
-    local_lib = join_paths(meson.current_source_dir(), 'install/lib')
-    project_include_dirs += local_include
-
-    # PDcurses
-    curses = declare_dependency(
-        include_directories: local_include,
-        link_args: ['-L' + local_lib, '-lpdcurses']
-    )
-
-    if curses.found()
-        message('PDCurses found!')
-    else
-        message('PDCurses not found. Please ensure it is installed and the paths are correct.')
+    # Search local deps
+    if cc.has_header('argtable3.h', args: ['-I' + deps_include_path])
+        have_argtable3 = true
+    elif cc.has_header('argtable2.h', args: ['-I' + deps_include_path])
+        have_argtable2 = true
     endif
 
-    argtable2 = declare_dependency(
-        include_directories: local_include,
-        link_args: ['-L' + local_lib, '-largtable2']
+    link_arg = have_argtable3 ? '-largtable3' : '-largtable2'
+    argtable = declare_dependency(
+        include_directories: deps_include,
+        link_args: ['-L' + deps_lib_path, link_arg]
     )
-
-    if argtable2.found()
-        message('argtable2 found!')
-    else
-        message('argtable2 not found. Please ensure it is installed and the paths are correct.')
-    endif
 
 else
-    curses = dependency('curses', required : true, static: true)
-    argtable2 = dependency('argtable2', required: true, static: true)
+
+    # When building on GitHub Actions or locally, the first dependency() call
+    # works as expected. However, when building on Homebrew, it fails to locate
+    # the library. The second fallback method find_library() is required in that
+    # case. Until the root cause is identified, both methods are included to
+    # ensure compatibility.
+    argtable = dependency('argtable3', required: false)
+    if not argtable.found()
+        argtable = cc.find_library('argtable3', required: false)
+    endif
+
+    if argtable.found()
+        have_argtable3 = true
+    else
+        argtable = dependency('argtable2', required: true)
+        have_argtable2 = true
+    endif
+
 endif
 
-# TODO: why is this necessary?
+# Set appropriate include flag
+if have_argtable3
+    add_project_arguments('-DHAVE_ARGTABLE3', language: 'c')
+    message('Using argtable3')
+elif have_argtable2
+    add_project_arguments('-DHAVE_ARGTABLE2', language: 'c')
+    message('Using argtable2')
+else
+    error('Neither argtable3 nor argtable2 found. Please check your include paths.')
+endif
+
+# ------------------------------------------------------------------------------
+# Dependency: math lib
+# ------------------------------------------------------------------------------
+
+# Skip math library check on Windows
 if is_windows
-    # Skip the math library check on Windows
-    # FIXME: this is messy
-    math = dependency('dummy', required: false)
+    math = dependency('', required: false)
 else
     math = cc.find_library('m', required : true)
 endif
 
 # ------------------------------------------------------------------------------
-# Curses info
+# Dependency: Curses
 # ------------------------------------------------------------------------------
+
+if is_windows
+    # Detect PDcurses
+    curses = declare_dependency(
+        include_directories: deps_include,
+        link_args: ['-L' + deps_lib_path, '-lpdcurses']
+    )
+else
+    curses = dependency('curses', required : true)
+endif
 
 # Define some curses preprocessor symbols
 if curses.found()
@@ -149,36 +197,42 @@ endif
 if is_windows
     # On Windows, use python script
     embed_command = [
-        'cmd', '/c', 'python', '..\scripts\embed.py', '@INPUT@', '@OUTPUT@'
+        'cmd', '/c', 'python', '..\\scripts\\embed.py',
+        '--source', '@INPUT@',
+        '--header', '@OUTPUT@',
+        '--array-name', '@BASENAME@'
     ]
 else
     # On Unix-like systems, use the shell script
     embed_command = [
-        'sh', '../scripts/embed.sh', '@INPUT@', '@OUTPUT@'
+        'sh', '../scripts/embed.sh',
+        '--source', '@INPUT0@',
+        '--header', '@OUTPUT@',
+        '--array-name', '@BASENAME@'
     ]
 endif
 
-bsc5_data = configure_file(
-    input: 'data/bsc5',
-    output: 'bsc5_data.h',
+bsc5 = custom_target(
+    input: ['data/bsc5'],
+    output: 'bsc5.h',
     command: embed_command
 )
-bsc5_constellations = configure_file(
-    input: 'data/bsc5_constellations.txt',
+bsc5_constellations = custom_target(
+    input: ['data/bsc5_constellations.txt'],
     output: 'bsc5_constellations.h',
     command: embed_command
 )
-bsc5_names = configure_file(
-    input: 'data/bsc5_names.txt',
+bsc5_names = custom_target(
+    input: ['data/bsc5_names.txt'],
     output: 'bsc5_names.h',
     command: embed_command
 )
-city_data = configure_file(
-    input: 'data/cities.csv',
-    output: 'city_data.h',
+cities = custom_target(
+    input: ['data/cities.csv'],
+    output: 'cities.h',
     command: embed_command
 )
-project_source_files += [bsc5_data, bsc5_constellations, bsc5_names, city_data]
+embedded_files=  [bsc5, bsc5_constellations, bsc5_names, cities]
 
 # ------------------------------------------------------------------------------
 # Application library (for reusability)
@@ -186,10 +240,9 @@ project_source_files += [bsc5_data, bsc5_constellations, bsc5_names, city_data]
 
 project_lib = static_library(
     'astroterm_lib',
-    project_source_files,
+    project_source_files + embedded_files,
     dependencies        : [curses, math],
     include_directories : project_include_dirs,
-    c_args              : cflags,
 )
 
 # ------------------------------------------------------------------------------
@@ -208,12 +261,11 @@ build_defines = [
 
 executable(
     meson.project_name(),
-    'src/main.c',
+    ['src/main.c'] + embedded_files,
     link_with           : project_lib,
-    dependencies        : [argtable2],
+    dependencies        : [argtable],
     include_directories : project_include_dirs,
-    c_args              : cflags + build_defines,
-    link_args           : lflags,
+    c_args              : build_defines,
     install             : true,
 )
 
@@ -226,15 +278,14 @@ executable(
 # ------------------------------------------------------------------------------
 
 test_files = []
-test_infra_source_files = []
 test_include_dirs = []
+unity_source_files = []
 subdir('test')
 
 unity_lib = static_library(
     'unity',
-    test_infra_source_files,
+    unity_source_files,
     include_directories: test_include_dirs,
-    c_args: cflags
 )
 
 # ------------------------------------------------------------------------------
@@ -242,25 +293,15 @@ unity_lib = static_library(
 # ------------------------------------------------------------------------------
 
 # Compile test modules separately
-# DUNITY_INCLUDE_CONFIG_H is necessary for testing doubles
 foreach test_file : test_files
     filepath = test_file[0].full_path()
-    if is_windows
-        # On Windows, use backslashes
-        filename = filepath.split('\\')[-1]
-    else
-        # On non-Windows, use forward slashes
-        filename = filepath.split('/')[-1]
-    endif
-
-    # Call the custom function to get the filename without the extension
-    test_name = filename.split('.')[0]
+    test_name = fs.stem(filepath)
     test_exe = executable(
         test_name,
-        [test_file] + test_infra_source_files,
+        test_file + unity_source_files,
         link_with: [project_lib, unity_lib],
         include_directories: project_include_dirs + test_include_dirs,
-        c_args: cflags + '-DUNITY_INCLUDE_CONFIG_H',
+        c_args: '-DUNITY_INCLUDE_CONFIG_H', # Needed to test doubles
         install: false
     )
 
