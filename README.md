@@ -1,4 +1,4 @@
-# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm)
+# 🌌 astroterm [![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)](https://github.com/da-luce/astroterm/actions?query=branch%3Amain) [![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm) [![Latest release](https://img.shields.io/github/v/release/da-luce/astroterm?label=Latest%20Release)](https://github.com/da-luce/astroterm/releases) [![Homebrew Tap Version](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/da-luce/homebrew-astroterm/main/version.json&query=$.versions.stable&label=Homebrew%20Tap)](https://github.com/da-luce/homebrew-astroterm)
 
 `astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It displays the real-time positions of stars, planets, constellations, and more, all within your terminal—no telescope required! Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
@@ -8,18 +8,22 @@
 
 _<p align="center">The night sky above above Singapore on January 2, 2025</p>_
 
+<!-- omit in toc -->
 ## Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
-  - [Linux](#linux)
-  - [MacOS](#macos)
-  - [Windows](#windows)
-- [Building from Source](#building-from-source)
-- [Usage](#usage)
-- [Troubleshooting](#troubleshooting)
-- [Citations](#citations)
-- [Data Sources](#data-sources)
+- [🌌 astroterm](#-astroterm----)
+  - [Features](#features)
+  - [Installation](#installation)
+    - [Homebrew](#homebrew)
+    - [Prebuilt Executable](#prebuilt-executable)
+    - [Nix (coming soon)](#nix-coming-soon)
+  - [Building from Source](#building-from-source)
+    - [Linux, macOS \& WSL](#linux-macos--wsl)
+    - [Windows](#windows-1)
+  - [Usage](#usage)
+  - [Troubleshooting](#troubleshooting)
+  - [Citations](#citations)
+  - [Data Sources](#data-sources)
 
 ## Features
 
@@ -37,26 +41,7 @@ _<p align="center">Stars over Sydney, Australia on January 6, 2025</p>_
 
 Several installation methods are provided based on your platform. If none of these fit your needs, you can always [build from source](#building-from-source). Refer to [troubleshooting](#troubleshooting) for help resolving any issues.
 
-### Linux
-
-#### Prebuilt Executable
-
-1. Download the latest executable using `wget`
-
-    ```sh
-    wget -O astroterm "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-linux-x86_64"
-    ```
-
-2. Run the executable
-
-    ```sh
-    chmod +x ./astroterm
-    ./astroterm
-    ```
-
-### MacOS
-
-#### Homebrew
+### Homebrew
 
 You can install Astroterm directly from the [custom Homebrew tap](https://github.com/da-luce/homebrew-astroterm):
 
@@ -65,17 +50,24 @@ brew tap da-luce/astroterm
 brew install astroterm
 ```
 
-#### Prebuilt Executable
+### Prebuilt Executable
 
-1. Download the latest executable for your system architecture using `wget`
+#### Unix
+
+1. Download the latest executable using `wget`
 
     ```sh
-    wget -O astroterm "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-darwin-<arch>"
+    wget -O astroterm "https://github.com/da-luce/astroterm/releases/latest/download/astroterm-<os>-<arch>"
     ```
 
+   - Replace `<os>` with the appropriate platform:
+     - **Linux:** `linux`
+     - **macOS:** `darwin`
    - Replace `<arch>` with the appropriate architecture:
-     - **Apple Silicon (M-series):** `astroterm-darwin-aarch64`
-     - **Intel-based Macs:** `astroterm-darwin-x86_64`
+     - **Linux:** `x86_64` (arm64 support to come after [Ubuntu arm64 runners](https://github.blog/news-insights/product-news/arm64-on-github-actions-powering-faster-more-efficient-build-systems/) are avilable)
+     - **Apple Silicon (M-series):** `aarch64`
+     - **Intel-based Macs:** `x86_64`
+   - To view all supported combinations, see the [Releases](https://github.com/da-luce/astroterm/releases) page.
 
 2. Run the executable
 
@@ -84,9 +76,7 @@ brew install astroterm
     ./astroterm
     ```
 
-### Windows
-
-#### Prebuilt Executable
+#### Windows
 
 1. Download the latest `.exe` file using PowerShell's `Invoke-WebRequest`:
 
@@ -100,7 +90,11 @@ brew install astroterm
     .\astroterm.exe
     ```
 
-Or, download via the [Releases Page](https://github.com/da-luce/astroterm/releases).
+### Nix (coming soon)
+
+Astroterm will soon (hopefully) be available for Nix users! Follow [this open PR](https://github.com/NixOS/nixpkgs/pull/373316) to track its progress and updates. To help speed up the process, consider adding a 👍 reaction to the PR.
+
+In the meantime, you can build from source by following the [Building from Source](#building-from-source) instructions if none of the other methods suit your needs.
 
 ## Building from Source
 
@@ -152,7 +146,10 @@ Or, download via the [Releases Page](https://github.com/da-luce/astroterm/releas
 
 You may now run the generated `./build/astroterm` binary or add the `astroterm` command system-wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
-### Windows (not recommended)
+### Windows
+
+> [!WARNING]
+> Building on Windows is more involved than other platforms.
 
 #### Requirements
 
@@ -192,6 +189,7 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 
 ## Usage
 
+<!-- omit in toc -->
 ### Options
 
 The `--help` flag displays all supported options:
@@ -233,6 +231,7 @@ Usage: astroterm [OPTION]...
   -v, --version             Display version info and exit
 ```
 
+<!-- omit in toc -->
 ### Example
 
 Say we wanted to view the sky at 5:00 AM (Eastern) on July 16, 1969—the morning
@@ -266,12 +265,14 @@ For more options and help, run `astroterm -h` or `astroterm --help`.
 
 ## Troubleshooting
 
+<!-- omit in toc -->
 ### Release Won't Download via Curl
 
 For some reason, `curl` does not follow the latest release redirect. Use `wget`
 to download the latest release or hardcode the tag in the link using `curl`. Or,
 just download via the [releases page](https://github.com/da-luce/astroterm/releases).
 
+<!-- omit in toc -->
 ### Broken Unicode on Linux
 
 If Unicode characters do not display correctly in the terminal, you may need to configure your system's locale to support Unicode.
@@ -293,8 +294,10 @@ If Unicode characters do not display correctly in the terminal, you may need to 
 
   During configuration, select `en_US.UTF-8` as the default locale.
 
+<!-- omit in toc -->
 ## Development
 
+<!-- omit in toc -->
 ### Testing
 
 Run `meson test` within the build directory. To get a coverage report, subsequently run `ninja coverage`.
