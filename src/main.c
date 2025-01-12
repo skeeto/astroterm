@@ -10,12 +10,18 @@
 #include "version.h"
 
 // Embedded data generated during build
+#include "bsc5.h"
 #include "bsc5_constellations.h"
-#include "bsc5_data.h"
 #include "bsc5_names.h"
 
 // Third party libraries
+#ifdef HAVE_ARGTABLE3
+#include <argtable3.h>
+#elif defined(HAVE_ARGTABLE2)
 #include <argtable2.h>
+#else
+#error "Neither argtable2 nor argtable3 is available. Please install one of them."
+#endif
 #include <curses.h>
 
 #include <locale.h>
@@ -91,7 +97,7 @@ int main(int argc, char *argv[])
     // uint8_t bsc5_xxx[];
     // size_t bsc5_xxx_len;
 
-    s = s && parse_entries(bsc5_data, bsc5_data_len, &BSC5_entries, &num_stars);
+    s = s && parse_entries(bsc5, bsc5_len, &BSC5_entries, &num_stars);
     s = s && generate_name_table(bsc5_names, bsc5_names_len, &name_table, num_stars);
     s = s && generate_constell_table(bsc5_constellations, bsc5_constellations_len, &constell_table, &num_const);
     s = s && generate_star_table(&star_table, BSC5_entries, name_table, num_stars);

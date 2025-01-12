@@ -7,4 +7,6 @@
     "editor.defaultFormatter": "xaver.clang-format",
     "editor.formatOnPaste": false,
     "editor.formatOnSave": true,
+    "C_Cpp.default.compileCommands": "/Users/sixsa/code/astroterm/build/compile_commands.json",
+    "C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
 }

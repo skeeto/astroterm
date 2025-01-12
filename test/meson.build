@@ -5,13 +5,13 @@ test_files += [
     files('bit_test.c'),
     files('core_test.c'),
     files('stopwatch_test.c'),
-    files('drawing_test.c'),
+    files('drawing_test.c')
 ]
 
 test_include_dirs += [
     include_directories('third_party/unity-v2.6.0'),
 ]
 
-test_infra_source_files += [
+unity_source_files += [
     files('third_party/unity-v2.6.0/unity.c')
 ]
