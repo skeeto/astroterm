@@ -1,5 +1,5 @@
 project('astroterm', 'c',
-    version: '1.0.3',
+    version: '1.0.4',
     default_options : ['warning_level=3', 'buildtype=debug'],
     meson_version: '>=1.4.0',
 )
@@ -47,28 +47,21 @@ if brew.found()
     endif
 endif
 
-# Build submodules
-subdir('src')
-subdir('data')
-
 # ------------------------------------------------------------------------------
 # Setup Compiler
 # ------------------------------------------------------------------------------
 
 # Setup compiler specific flags
-
-# On Homebrew for Linux, the argtable library is compiled as non-PIC,
-# which causes errors when attempting to statically link it with PIE
-# enabled. To resolve this, we disable PIE during the linking phase to
-# allow static linking of the non-PIC argtable library. Setting pie : false
-# for the executable target does not seem to resolve this:
-# https://github.com/mesonbuild/meson/issues/4651
 cc = meson.get_compiler('c')
 if cc.get_id() == 'msvc'
+    # Needed for unicode on Windows
     add_project_arguments('/utf-8', language: 'c')
 else
-    add_project_link_arguments('-no-pie', language: 'c')
+    # Needed to make GCC happy with `strptime` on certain systems
+    add_project_arguments('-D_XOPEN_SOURCE', '-D_USE_XOPEN', '-D_GNU_SOURCE', language : 'c')
 endif
+
+build_defines = []
 
 # ------------------------------------------------------------------------------
 # Dependency: Argtable2/3
@@ -133,7 +126,7 @@ endif
 
 # Skip math library check on Windows
 if is_windows
-    math = dependency('', required: false)
+    math = []
 else
     math = cc.find_library('m', required : true)
 endif
@@ -238,9 +231,14 @@ embedded_files=  [bsc5, bsc5_constellations, bsc5_names, cities]
 # Application library (for reusability)
 # ------------------------------------------------------------------------------
 
-project_lib = static_library(
-    'astroterm_lib',
+# Build submodules
+subdir('src')
+subdir('data')
+
+lib_project = static_library(
+    'lib_astroterm',
     project_source_files + embedded_files,
+    link_with           : lib_strptime,
     dependencies        : [curses, math],
     include_directories : project_include_dirs,
 )
@@ -254,7 +252,7 @@ program_version = meson.project_version()
 program_name = meson.project_name()
 
 # Add preprocessor definitions
-build_defines = [
+build_defines += [
   f'-DPROJ_NAME="@program_name@"',
   f'-DPROJ_VERSION="@program_version@"'
 ]
@@ -262,8 +260,8 @@ build_defines = [
 executable(
     meson.project_name(),
     ['src/main.c'] + embedded_files,
-    link_with           : project_lib,
-    dependencies        : [argtable],
+    link_with           : lib_project,
+    dependencies        : argtable,
     include_directories : project_include_dirs,
     c_args              : build_defines,
     install             : true,
@@ -298,8 +296,8 @@ foreach test_file : test_files
     test_name = fs.stem(filepath)
     test_exe = executable(
         test_name,
-        test_file + unity_source_files,
-        link_with: [project_lib, unity_lib],
+        test_file + unity_source_files + embedded_files,
+        link_with: [lib_project, unity_lib],
         include_directories: project_include_dirs + test_include_dirs,
         c_args: '-DUNITY_INCLUDE_CONFIG_H', # Needed to test doubles
         install: false

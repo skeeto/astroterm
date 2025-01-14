@@ -1,10 +1,11 @@
 #ifndef STRPTIME_H
 #define STRPTIME_H
 
+#ifndef HAS_STRPTIME
 #include <time.h>
 
-#ifdef _WIN32
-char *strptime(const char *buf, const char *fmt, struct tm *tm);
-#endif
+char *strptime(const char *s, const char *format, struct tm *tm);
+
+#endif // HAS_STRPTIME
 
 #endif // STRPTIME_H

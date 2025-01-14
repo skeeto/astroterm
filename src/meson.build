@@ -10,7 +10,21 @@ project_source_files += [
     files('stopwatch.c'),
     files('term.c'),
     files('city.c'),
-    files('strptime.c')
 ]
 
-# NOTE:  We add main separately in the main Meson.build file to avoid duplicate "mains" when testing
+# NOTE: We add main.c separately in the root Meson.build file to avoid duplicate "main" functions when compiling tests
+
+# Availability of strptime on non-POSIX systems is not guaranteed
+has_strptime = cc.has_function('strptime')
+
+if not has_strptime
+  message('strptime is not available, using local implementation.')
+  lib_strptime = static_library(
+    'lib_strptime',
+    'strptime.c'
+)
+else
+  message('strptime is available, no need for local implementation.')
+  build_defines += '-DHAS_STRPTIME'
+  lib_strptime = []
+endif
