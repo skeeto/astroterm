@@ -1,4 +1,7 @@
-# 🌌 astroterm ![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg) [![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm) ![Homebrew Tap Version](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/da-luce/homebrew-astroterm/main/version.json&query=$.versions.stable&label=Homebrew%20Tap)
+# 🌌 astroterm
+
+[![Test Status](https://github.com/da-luce/astroterm/actions/workflows/ci.yml/badge.svg)](https://github.com/da-luce/astroterm/actions?query=branch%3Amain)
+[![codecov](https://codecov.io/gh/da-luce/astroterm/graph/badge.svg?token=80C0ZQBVTM)](https://codecov.io/gh/da-luce/astroterm) [![Latest release](https://img.shields.io/github/v/release/da-luce/astroterm?label=Latest%20Release)](https://github.com/da-luce/astroterm/releases) [![Homebrew Tap Version](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/da-luce/homebrew-astroterm/main/version.json&query=$.versions.stable&label=Homebrew%20Tap)](https://github.com/da-luce/homebrew-astroterm) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 `astroterm` is a terminal-based celestial viewer written in `C` using `ncurses`. It displays the real-time positions of stars, planets, constellations, and more, all within your terminal—no telescope required! Configure sky views by date, time, and location with precise ASCII-rendered visuals. See [usage](#usage) for all supported options!
 
@@ -11,7 +14,7 @@ _<p align="center">The night sky above above Singapore on January 2, 2025</p>_
 <!-- omit in toc -->
 ## Table of Contents
 
-- [🌌 astroterm](#-astroterm---)
+- [🌌 astroterm](#-astroterm)
   - [Features](#features)
   - [Installation](#installation)
     - [Homebrew](#homebrew)

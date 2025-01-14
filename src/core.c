@@ -2,9 +2,6 @@
 
 #include "astro.h"
 #include "parse_BSC5.h"
-#ifdef _WIN32
-#include "strptime.h"
-#endif
 
 #include <math.h>
 #include <stdio.h>
