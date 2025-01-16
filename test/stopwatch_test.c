@@ -1,5 +1,5 @@
-#include "stopwatch.h"
-#include "unity.h"
+#include "src/stopwatch.c"
+#include "unity.c"
 #include <stdlib.h>
 
 void setUp(void)

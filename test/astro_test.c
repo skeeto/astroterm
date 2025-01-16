@@ -1,5 +1,5 @@
-#include "astro.h"
-#include "unity.h"
+#include "src/astro.c"
+#include "unity.c"
 #include <math.h>
 #include <time.h>
 

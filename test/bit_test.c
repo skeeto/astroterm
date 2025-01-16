@@ -1,5 +1,8 @@
+#define UNITY_INCLUDE_DOUBLE
+#define UNITY_DOUBLE_PRECISION 0.001
 #include "bit.h"
-#include "unity.h"
+#include "unity.c"
+#include "src/bit.c"
 
 // Required to test doubles
 #define UNITY_INCLUDE_DOUBLE

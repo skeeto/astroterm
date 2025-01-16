@@ -1,6 +1,6 @@
-#include "coord.h"
+#include "src/coord.c"
 #include "macros.h"
-#include "unity.h"
+#include "unity.c"
 
 void setUp(void)
 {

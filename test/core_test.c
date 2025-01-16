@@ -1,14 +1,20 @@
 /* Test high level functions. This is the closest we will get to testing `main.c`.
  */
 
+#define UNITY_INCLUDE_DOUBLE
+#define UNITY_DOUBLE_PRECISION 0.001
 #include "bsc5.h"
 #include "bsc5_constellations.h"
 #include "bsc5_names.h"
-#include "core.h"
-#include "core_position.h"
-#include "data/keplerian_elements.h"
+#include "src/astro.c"
+#include "src/bit.c"
+#include "src/coord.c"
+#include "src/core.c"
+#include "src/core_position.c"
+#include "src/parse_BSC5.c"
+#include "data/keplerian_elements.c"
 #include "macros.h"
-#include "unity.h"
+#include "unity.c"
 
 #include <stdlib.h>
 #include <string.h>

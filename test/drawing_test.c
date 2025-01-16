@@ -1,6 +1,6 @@
-#include "bit.h"
-#include "drawing.h"
-#include "unity.h"
+#include "src/bit.c"
+#include "src/drawing.c"
+#include "unity.c"
 
 #include <curses.h>
 #include <locale.h>

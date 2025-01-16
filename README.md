@@ -112,23 +112,14 @@ nix-env -iA unstable.astroterm
 > [!IMPORTANT]
 > When building, you must install the _development_ version of the runtime requirements, which provide the headers and libraries necessary for compiling and linking. These packages are typically marked with a `-dev` or `-devel` suffix.
 
-- Unix-like environment (Linux, macOS, WSL, etc.)
+- Unix-like environment (Linux, macOS, WSL, w64devkit, etc.)
 - C compiler
-- [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer ([installation via python](https://mesonbuild.com/Quick-guide.html#installation-using-python) is recommended)
-- [`ninja`](https://repology.org/project/ninja/versions) 1.8.2 or newer
 - [`ncurses`](https://repology.org/project/ncurses/versions) library
 - [`argtable2`](https://repology.org/project/argtable2/versions)
 - Some common CLI tools
   - [`wget`](https://repology.org/project/wget/versions) or [`curl`](https://repology.org/project/curl/versions)
   - [`xxd`](https://repology.org/project/xxd/versions) (is also commonly packaged with [`vim`](https://repology.org/project/vim/versions))
-
-> [!WARNING]
-> `ncurses` and `argtable` detection is spotty on some systems, and you may need to install
-> [`pkg-config`](https://repology.org/project/pkg-config/versions) in order
-> for Meson to find them.
-
-> [!TIP]
-> See [`ci.yml`](./.github/workflows/ci.yml) for how `astroterm` is built and tested on Ubuntu via GitHub Actions.
+  - [`pkg-config`](https://repology.org/project/pkg-config/versions)
 
 #### Install
 
@@ -147,11 +138,8 @@ nix-env -iA unstable.astroterm
 3. Build:
 
   ```sh
-  meson setup build
-  meson compile -C build
+  make
   ```
-
-You may now run the generated `./build/astroterm` binary or add the `astroterm` command system-wide via `meson install -C build`. Pressing <kbd>q</kbd> or <kbd>ESC</kbd> will exit the display.
 
 ### Windows
 
@@ -160,16 +148,10 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 
 #### Requirements
 
-- [Microsoft Visual C++](https://visualstudio.microsoft.com/vs/features/cplusplus/) (Other C compilers currently don't work)
-- [`meson`](https://github.com/mesonbuild/meson) 1.4.0 or newer ([installation via python](https://mesonbuild.com/Quick-guide.html#installation-using-python) is recommended)
-- [`ninja`](https://repology.org/project/ninja/versions) 1.8.2 or newer
-- [`python`](https://www.python.org/downloads/) (for embedding data during build)
+- [w64devkit](https://github.com/skeeto/w64devkit)
 - [`pdcurses`](https://github.com/wmcbrine/PDCurses/tree/master/wincon)*
 - [`argtable2`](https://github.com/jonathanmarvens/argtable2)*
 
-> [!WARNING]
-> *These libraries must be compiled locally and moved to where Meson expects them to be. See [`ci.yml`](./.github/workflows/ci.yml#L98) for how this is done.
->
 #### Install
 
 1. Clone the repository and enter the project directory:
@@ -187,12 +169,8 @@ You may now run the generated `./build/astroterm` binary or add the `astroterm` 
 3. Build:
 
   ```sh
-  meson setup build
-  meson compile -C build
+  make
   ```
-
-> [!TIP]
-> Some steps must be done in the [Visual Studio Developer Command Prompt and Developer PowerShell](https://learn.microsoft.com/en-us/visualstudio/ide/reference/command-prompt-powershell?view=vs-2022), so it's best to just do everything there.
 
 ## Usage
 
@@ -307,7 +285,7 @@ If Unicode characters do not display correctly in the terminal, you may need to 
 <!-- omit in toc -->
 ### Testing
 
-Run `meson test` within the build directory. To get a coverage report, subsequently run `ninja coverage`.
+Run `make check`.
 
 ## Citations
 

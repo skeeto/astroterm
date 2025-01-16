@@ -1,5 +1,5 @@
-#include "city.h"
-#include "unity.h"
+#include "src/city.c"
+#include "unity.c"
 
 void setUp(void)
 {
