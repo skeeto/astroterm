@@ -47,8 +47,8 @@ static const unsigned char *find_string(const unsigned char *, int *, const char
  * We do not implement alternate representations. However, we always
  * check whether a given modifier is allowed for a certain conversion.
  */
-#define ALT_E 0x01
-#define ALT_O 0x02
+#define STRPTIME_ALT_E 0x01
+#define STRPTIME_ALT_O 0x02
 #define LEGAL_ALT(x)                                                                                                           \
     {                                                                                                                          \
         if (alt_format & ~(x))                                                                                                 \
@@ -220,12 +220,12 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
          */
         case 'E': /* "%E?" alternative conversion modifier. */
             LEGAL_ALT(0);
-            alt_format |= ALT_E;
+            alt_format |= STRPTIME_ALT_E;
             goto again;
 
         case 'O': /* "%O?" alternative conversion modifier. */
             LEGAL_ALT(0);
-            alt_format |= ALT_O;
+            alt_format |= STRPTIME_ALT_O;
             goto again;
 
         /*
@@ -263,7 +263,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
 
         recurse:
             bp = (const unsigned char *)strptime((const char *)bp, new_fmt, tm);
-            LEGAL_ALT(ALT_E);
+            LEGAL_ALT(STRPTIME_ALT_E);
             continue;
 
         case 'x': /* The date, using the locale's format. */
@@ -277,7 +277,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
             const int year = split_year ? tm->tm_year : 0;
 
             bp = (const unsigned char *)strptime((const char *)bp, new_fmt, tm);
-            LEGAL_ALT(ALT_E);
+            LEGAL_ALT(STRPTIME_ALT_E);
             tm->tm_year += year;
             if (split_year && tm->tm_year % (2000 - TM_YEAR_BASE) <= 68)
                 tm->tm_year -= 2000 - TM_YEAR_BASE;
@@ -311,14 +311,14 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
                 i += tm->tm_year % 100;
             split_year = 1;
             tm->tm_year = i;
-            LEGAL_ALT(ALT_E);
+            LEGAL_ALT(STRPTIME_ALT_E);
             state |= S_YEAR;
             continue;
 
         case 'd': /* The day of month. */
         case 'e':
             bp = conv_num(bp, &tm->tm_mday, 1, 31);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_MDAY;
             continue;
 
@@ -327,7 +327,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
             /* FALLTHROUGH */
         case 'H':
             bp = conv_num(bp, &tm->tm_hour, 0, 23);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_HOUR;
             continue;
 
@@ -338,7 +338,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
             bp = conv_num(bp, &tm->tm_hour, 1, 12);
             if (tm->tm_hour == 12)
                 tm->tm_hour = 0;
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_HOUR;
             continue;
 
@@ -352,14 +352,14 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
 
         case 'M': /* The minute. */
             bp = conv_num(bp, &tm->tm_min, 0, 59);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             continue;
 
         case 'm': /* The month. */
             i = 1;
             bp = conv_num(bp, &i, 1, 12);
             tm->tm_mon = i - 1;
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_MON;
             continue;
 
@@ -373,7 +373,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
 
         case 'S': /* The seconds. */
             bp = conv_num(bp, &tm->tm_sec, 0, 61);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             continue;
 
 #ifndef TIME_MAX
@@ -422,7 +422,7 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
              * week for now in case it can be used later.
              */
             bp = conv_num(bp, &i, 0, 53);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             if (c == 'U')
                 day_offset = TM_SUNDAY;
             else
@@ -432,14 +432,14 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
 
         case 'w': /* The day of week, beginning on sunday. */
             bp = conv_num(bp, &tm->tm_wday, 0, 6);
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_WDAY;
             continue;
 
         case 'u': /* The day of week, monday = 1. */
             bp = conv_num(bp, &i, 1, 7);
             tm->tm_wday = i % 7;
-            LEGAL_ALT(ALT_O);
+            LEGAL_ALT(STRPTIME_ALT_O);
             state |= S_WDAY;
             continue;
 
@@ -465,12 +465,12 @@ char *strptime(const char *buf, const char *fmt, struct tm *tm)
             i = TM_YEAR_BASE; /* just for data sanity... */
             bp = conv_num(bp, &i, 0, 9999);
             tm->tm_year = i - TM_YEAR_BASE;
-            LEGAL_ALT(ALT_E);
+            LEGAL_ALT(STRPTIME_ALT_E);
             state |= S_YEAR;
             continue;
 
         case 'y': /* The year within 100 years of the epoch. */
-            /* LEGAL_ALT(ALT_E | ALT_O); */
+            /* LEGAL_ALT(STRPTIME_ALT_E | STRPTIME_ALT_O); */
             bp = conv_num(bp, &i, 0, 99);
 
             if (split_year)

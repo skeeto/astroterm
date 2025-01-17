@@ -9,7 +9,6 @@
 #ifdef _WIN32
 #include <stdio.h>
 #include <windows.h>
-extern BOOL WINAPI GetCurrentConsoleFont(HANDLE hConsoleOutput, BOOL bMaximumWindow, PCONSOLE_FONT_INFO lpConsoleCurrentFont);
 #else
 #include <sys/ioctl.h>
 #include <unistd.h>

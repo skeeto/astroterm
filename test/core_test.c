@@ -12,6 +12,7 @@
 #include "src/core.c"
 #include "src/core_position.c"
 #include "src/parse_BSC5.c"
+#include "src/strptime.c"
 #include "data/keplerian_elements.c"
 #include "macros.h"
 #include "unity.c"
