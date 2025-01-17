@@ -14,15 +14,8 @@
 #include "bsc5_constellations.h"
 #include "bsc5_names.h"
 
-// Third party libraries
-#ifdef HAVE_ARGTABLE3
-#include <argtable3.h>
-#elif defined(HAVE_ARGTABLE2)
-#include <argtable2.h>
-#else
-#error "Neither argtable2 nor argtable3 is available. Please install one of them."
-#endif
 #include <curses.h>
+#include "optparse.c"
 
 #include <locale.h>
 #include <signal.h>
@@ -243,168 +236,146 @@ int main(int argc, char *argv[])
     return EXIT_SUCCESS;
 }
 
+static void usage(void)
+{
+    char usage[] =
+"View stars, planets, and more, right in your terminal! ✨🪐\n"
+"\n"
+"Usage: astroterm [OPTION]...\n"
+"\n"
+"  -a, --latitude FLOAT     Observer latitude [-90°, 90°] (0.0)\n"
+"  -o, --longitude FLOAT     Observer longitude [-180°, 180°] (0.0)\n"
+"  -d, --datetime yyyy-mm-ddThh:mm:ss\n"
+"                            Observation datetime in UTC\n"
+"  -t, --threshold FLOAT     Minimum magnitude to render a star (0.5)\n"
+"  -l, --label-thresh FLOAT\n"
+"                            Minimum magnitude to label a star (0.25)\n"
+"  -f, --fps N               Frames per second (24)\n"
+"  -s, --speed FLOAT         Animation speed multiplier (1.0)\n"
+"  -c, --color               Enable terminal colors\n"
+"  -C, --constellations      Draw constellation stick figures\n"
+"  -g, --grid                Draw an azimuthal grid\n"
+"  -u, --unicode             Use unicode characters\n"
+"  -q, --quit-on-any         Quit on any key (default quit on 'q' or ESC)\n"
+"  -m, --metadata            Display metadata\n"
+"  -r, --aspect-ratio FLOAT  Override calculated terminal cell aspect ratio\n"
+"  -h, --help                Print this help message\n"
+"  -i, --city NAME           Use the coordinate the provided city\n"
+"  -v, --version             Display version info and exit\n";
+    fwrite(usage, sizeof(usage)-1, 1, stdout);
+}
+
 void parse_options(int argc, char *argv[], struct Conf *config)
 {
-    struct arg_dbl *latitude_arg = arg_dbl0("a", "latitude", "<degrees>", "Observer latitude [-90°, 90°] (default: 0.0)");
-    struct arg_dbl *longitude_arg = arg_dbl0("o", "longitude", "<degrees>", "Observer longitude [-180°, 180°] (default: 0.0)");
-    struct arg_str *datetime_arg = arg_str0("d", "datetime", "<yyyy-mm-ddThh:mm:ss>", "Observation datetime in UTC");
-    struct arg_dbl *threshold_arg =
-        arg_dbl0("t", "threshold", "<float>", "Only render stars brighter than this magnitude (default: 5.0)");
-    struct arg_dbl *label_arg =
-        arg_dbl0("l", "label-thresh", "<float>", "Label stars brighter than this magnitude (default: 0.25)");
-    struct arg_int *fps_arg = arg_int0("f", "fps", "<int>", "Frames per second (default: 24)");
-    struct arg_dbl *speed_arg = arg_dbl0("s", "speed", "<float>", "Animation speed multiplier (default: 1.0)");
-    struct arg_lit *color_arg = arg_lit0("c", "color", "Enable terminal colors");
-    struct arg_lit *constell_arg = arg_lit0("C", "constellations",
-                                            "Draw constellation stick figures. Note: a constellation is only "
-                                            "drawn if all stars in the figure are over the threshold");
-    struct arg_lit *grid_arg = arg_lit0("g", "grid", "Draw an azimuthal grid");
-    struct arg_lit *unicode_arg = arg_lit0("u", "unicode", "Use unicode characters");
-    struct arg_lit *quit_arg = arg_lit0("q", "quit-on-any", "Quit on any keypress (default is to quit on 'q' or 'ESC' only)");
-    struct arg_lit *meta_arg = arg_lit0("m", "metadata", "Display metadata");
-    struct arg_lit *help_arg = arg_lit0("h", "help", "Print this help message");
-    struct arg_dbl *ratio_arg = arg_dbl0("r", "aspect-ratio", "<float>",
-                                         "Override the calculated terminal cell aspect ratio. Use this if your projection is "
-                                         "not 'square.' A value around 2.0 works well for most cases");
-    struct arg_str *city_arg =
-        arg_str0("i", "city", "<city_name>",
-                 "Use the latitude and longitude of the provided city. If the name contains multiple words, "
-                 "enclose the name in single or double quotes. For a list of available cities, see: "
-                 "https://github.com/da-luce/astroterm/blob/main/data/cities.csv");
-    struct arg_lit *version_arg = arg_lit0("v", "version", "Display version info and exit");
+    struct optparse_long longopts[] = {
+        {"latitude",       'a', OPTPARSE_REQUIRED},
+        {"longitude",      'o', OPTPARSE_REQUIRED},
+        {"datetime",       'd', OPTPARSE_REQUIRED},
+        {"threshold",      't', OPTPARSE_REQUIRED},
+        {"label-thresh",   'l', OPTPARSE_REQUIRED},
+        {"fps",            'f', OPTPARSE_REQUIRED},
+        {"speed",          's', OPTPARSE_REQUIRED},
+        {"color",          'c', OPTPARSE_NONE},
+        {"constellations", 'C', OPTPARSE_NONE},
+        {"grid",           'g', OPTPARSE_NONE},
+        {"unicode",        'u', OPTPARSE_NONE},
+        {"quit-on-any",    'q', OPTPARSE_NONE},
+        {"metadata",       'm', OPTPARSE_NONE},
+        {"aspect-ratio",   'r', OPTPARSE_REQUIRED},
+        {"city",           'i', OPTPARSE_REQUIRED},
+        {"help",           'h', OPTPARSE_NONE},
+        {"version",        'v', OPTPARSE_NONE},
+        {0}
+    };
 
-    struct arg_end *end = arg_end(20);
-
-    void *argtable[] = {latitude_arg, longitude_arg, datetime_arg, threshold_arg, label_arg,   fps_arg,
-                        speed_arg,    color_arg,     constell_arg, grid_arg,      unicode_arg, quit_arg,
-                        meta_arg,     ratio_arg,     help_arg,     city_arg,      version_arg, end};
-
-    int nerrors = arg_parse(argc, argv, argtable);
-
-    if (help_arg->count > 0)
+    struct optparse options;
+    optparse_init(&options, argv);
+    for (int opt; (opt = optparse_long(&options, longopts, NULL)) != -1;)
     {
-        printf("View stars, planets, and more, right in your terminal! ✨🪐\n\n");
-        printf("Usage: astroterm [OPTION]...\n\n");
-        arg_print_glossary_gnu(stdout, argtable);
-        exit(EXIT_SUCCESS);
-    }
-
-    if (nerrors > 0)
-    {
-        arg_print_errors(stderr, end, argv[0]);
-        printf("Try '--help' for more information.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (version_arg->count > 0)
-    {
-        printf("%s %s\n", PROJ_NAME, PROJ_VERSION);
-        exit(EXIT_SUCCESS);
-    }
-
-    if (latitude_arg->count > 0)
-    {
-        config->latitude = latitude_arg->dval[0];
-        if (config->latitude < -90 || config->latitude > 90)
+        switch (opt)
         {
-            fprintf(stderr, "ERROR: Latitude out of range [-90°, 90°]\n");
+        case 'a':
+            config->latitude = strtod(options.optarg, NULL);
+            if (config->latitude < -90 || config->latitude > 90)
+            {
+                fputs("ERROR: Latitude out of range [-90°, 90°]\n", stderr);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'o':
+            config->longitude = strtod(options.optarg, NULL);
+            if (config->longitude < -180 || config->longitude > 180)
+            {
+                fputs("ERROR: Longitude out of range [-180°, 180°]\n", stderr);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 'd':
+            config->threshold = strtod(options.optarg, NULL);
+            break;
+        case 't':
+            config->dt_string_utc = options.optarg;
+            break;
+        case 'l':
+            config->label_thresh = strtod(options.optarg, NULL);
+            break;
+        case 'f':
+            config->fps = atoi(options.optarg);
+            if (config->fps < 1)
+            {
+                fputs("ERROR: FPS must be greater than or equal to 1\n",
+                      stderr);
+                exit(EXIT_FAILURE);
+            }
+            break;
+        case 's':
+            config->speed = strtod(options.optarg, NULL);
+            break;
+        case 'c':
+            config->color = true;
+            break;
+        case 'C':
+            config->constell = true;
+            break;
+        case 'g':
+            config->grid = true;
+            break;
+        case 'u':
+            config->unicode = true;
+            break;
+        case 'q':
+            config->quit_on_any = true;
+            break;
+        case 'm':
+            config->metadata = true;
+            break;
+        case 'r':
+            config->aspect_ratio = strtod(options.optarg, NULL);
+            break;
+        case 'i':
+            CityData *city = get_city(options.optarg);
+            if (!city)
+            {
+                fprintf(stderr, "ERROR: Could not find city \"%s\"\n",
+                        options.optarg);
+                exit(EXIT_FAILURE);
+            }
+            config->latitude = city->latitude;
+            config->longitude = city->longitude;
+            free_city(city);
+            break;
+        case 'h':
+            usage();
+            exit(EXIT_SUCCESS);
+        case 'v':
+            printf("%s %s\n", PROJ_NAME, PROJ_VERSION);
+            exit(EXIT_SUCCESS);
+        case '?':
+            fprintf(stderr, "ERROR: %s\n", options.errmsg);
+            printf("Try '--help' for more information.\n");
             exit(EXIT_FAILURE);
         }
     }
-
-    if (longitude_arg->count > 0)
-    {
-        config->longitude = longitude_arg->dval[0];
-        if (config->longitude < -180 || config->longitude > 180)
-        {
-            fprintf(stderr, "ERROR: Longitude out of range [-180°, 180°]\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if (datetime_arg->count > 0)
-    {
-        config->dt_string_utc = datetime_arg->sval[0];
-    }
-
-    if (threshold_arg->count > 0)
-    {
-        config->threshold = (float)threshold_arg->dval[0];
-    }
-
-    if (label_arg->count > 0)
-    {
-        config->label_thresh = (float)label_arg->dval[0];
-    }
-
-    if (fps_arg->count > 0)
-    {
-        config->fps = fps_arg->ival[0];
-        if (config->fps < 1)
-        {
-            fprintf(stderr, "ERROR: FPS must be greater than or equal to 1\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    if (speed_arg->count > 0)
-    {
-        config->speed = (float)speed_arg->dval[0];
-    }
-
-    if (color_arg->count > 0)
-    {
-        config->color = true;
-    }
-
-    if (constell_arg->count > 0)
-    {
-        config->constell = true;
-    }
-
-    if (meta_arg->count > 0)
-    {
-        config->metadata = true;
-    }
-
-    if (grid_arg->count > 0)
-    {
-        config->grid = true;
-    }
-
-    if (unicode_arg->count > 0)
-    {
-        config->unicode = true;
-    }
-
-    if (quit_arg->count > 0)
-    {
-        config->quit_on_any = true;
-    }
-
-    if (ratio_arg->count > 0)
-    {
-        config->aspect_ratio = ratio_arg->dval[0];
-    }
-
-    if (city_arg->count > 0)
-    {
-        const char *city_name = city_arg->sval[0];
-        CityData *city = get_city(city_name);
-
-        if (!city)
-        {
-            fprintf(stderr, "ERROR: Could not find city \"%s\"\n", city_name);
-            exit(EXIT_FAILURE);
-        }
-
-        config->latitude = city->latitude;
-        config->longitude = city->longitude;
-        free_city(city);
-    }
-
-    // Free Argtable resources
-    arg_freetable(argtable, sizeof(argtable) / sizeof(argtable[0]));
 }
 
 void convert_options(struct Conf *config)

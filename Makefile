@@ -4,7 +4,7 @@ CFLAGS  = -Wall -Wextra \
   -g3 -fsanitize=undefined -fsanitize-undefined-trap-on-error
 LDFLAGS =
 INC     = -I. -Iinclude -Itest/third_party/unity-v2.6.0
-LIBS   != pkg-config --cflags --libs argtable2 ncursesw
+LIBS   != pkg-config --cflags --libs ncursesw
 
 sources != find src data -name '*.[ch]'
 generated = \
@@ -14,7 +14,7 @@ generated = \
   include/bsc5.h
 
 astroterm$(EXE): astroterm.c $(sources) $(generated)
-	$(CC) -DHAVE_ARGTABLE2 $(CFLAGS) $(LDFLAGS) $(INC) -o $@ astroterm.c $(LIBS) -lm
+	$(CC) $(CFLAGS) $(LDFLAGS) $(INC) -o $@ astroterm.c $(LIBS) -lm
 include/cities.h: data/cities.csv
 	xxd -i $^ | sed -r 's/data_|_csv//g' >$@
 include/bsc5_constellations.h: data/bsc5_constellations.txt

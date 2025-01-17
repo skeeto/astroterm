@@ -115,7 +115,6 @@ nix-env -iA unstable.astroterm
 - Unix-like environment (Linux, macOS, WSL, w64devkit, etc.)
 - C compiler
 - [`ncurses`](https://repology.org/project/ncurses/versions) library
-- [`argtable2`](https://repology.org/project/argtable2/versions)
 - Some common CLI tools
   - [`wget`](https://repology.org/project/wget/versions) or [`curl`](https://repology.org/project/curl/versions)
   - [`xxd`](https://repology.org/project/xxd/versions) (is also commonly packaged with [`vim`](https://repology.org/project/vim/versions))
@@ -150,7 +149,6 @@ nix-env -iA unstable.astroterm
 
 - [w64devkit](https://github.com/skeeto/w64devkit)
 - [`pdcurses`](https://github.com/wmcbrine/PDCurses/tree/master/wincon)*
-- [`argtable2`](https://github.com/jonathanmarvens/argtable2)*
 
 #### Install
 
